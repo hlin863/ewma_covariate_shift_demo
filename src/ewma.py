@@ -12,6 +12,25 @@ class EWMATrainingResult:
     error_variance: float
     error_standard_deviation: float
 
+def _validate_univariate_values(
+    values: np.ndarray,
+    *,
+    minimum_size: int = 1,
+) -> np.ndarray:
+    observations = np.asarray(values, dtype=float)
+
+    if observations.ndim != 1:
+        raise ValueError("values must be one-dimensional.")
+
+    if observations.size < minimum_size:
+        raise ValueError(
+            f"values must contain at least {minimum_size} observations."
+        )
+
+    if not np.isfinite(observations).all():
+        raise ValueError("values must contain only finite observations.")
+
+    return observations
 
 def calculate_ewma_training_path(
     values: np.ndarray,
@@ -84,7 +103,11 @@ def estimate_lambda(
 def fit_sd_ewma(
     training_values: np.ndarray,
 ) -> EWMATrainingResult:
-    observations = np.asarray(training_values, dtype=float)
+
+    observations = _validate_univariate_values(
+        training_values,
+        minimum_size=2,
+    )
 
     initial_z = float(observations.mean())
     best_lambda, _ = estimate_lambda(observations)
