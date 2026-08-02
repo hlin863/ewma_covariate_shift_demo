@@ -26,6 +26,7 @@ class CSEConfig:
     """Configuration for the complete CSE algorithm."""
 
     pca_components: int | float | None = None
+    lambda_override: float | None = None
     variance_smoothing: float = 0.05
     control_limit_multiplier: float = 3.0
     validation_before_size: int = 50
@@ -36,6 +37,14 @@ class CSEConfig:
     minimum_alarm_gap: int | None = None
 
     def __post_init__(self) -> None:
+        if (
+            self.lambda_override is not None
+            and not 0.0 < self.lambda_override <= 1.0
+        ):
+            raise ValueError(
+                "lambda_override must be in (0, 1] when provided."
+            )
+
         if not 0.0 < self.variance_smoothing <= 1.0:
             raise ValueError(
                 "variance_smoothing must be in (0, 1]."
@@ -81,6 +90,7 @@ class CSEResult:
 
     pca_result: CSEPCAResult
     ewma_training_result: EWMATrainingResult
+    effective_lambda: float
     training_signal: np.ndarray
     testing_transformed: np.ndarray
     testing_signal: np.ndarray
@@ -203,15 +213,21 @@ def _run_cse_warning_stage(
     testing_signal: np.ndarray,
     testing_times: np.ndarray,
     config: CSEConfig,
-) -> tuple[EWMATrainingResult, pd.DataFrame]:
+) -> tuple[EWMATrainingResult, float, pd.DataFrame]:
     """Fit EWMA and produce covariate-shift warnings."""
 
     ewma_training_result = fit_sd_ewma(
         training_values=training_signal,
     )
 
+    effective_lambda = (
+        ewma_training_result.lambda_value
+        if config.lambda_override is None
+        else float(config.lambda_override)
+    )
+
     ewma_config = SD_EWMA_Config(
-        lambda_value=ewma_training_result.lambda_value,
+        lambda_value=effective_lambda,
         variance_smoothing=config.variance_smoothing,
         control_limit_multiplier=(
             config.control_limit_multiplier
@@ -228,7 +244,11 @@ def _run_cse_warning_stage(
         config=ewma_config,
     )
 
-    return ewma_training_result, warning_results
+    return (
+        ewma_training_result,
+        effective_lambda,
+        warning_results,
+    )
 
 
 def _run_cse_validation_stage(
@@ -285,6 +305,7 @@ def run_cse(
 
     (
         ewma_training_result,
+        effective_lambda,
         warning_results,
     ) = _run_cse_warning_stage(
         training_signal=training_signal,
@@ -303,6 +324,7 @@ def run_cse(
     return CSEResult(
         pca_result=pca_result,
         ewma_training_result=ewma_training_result,
+        effective_lambda=effective_lambda,
         training_signal=training_signal,
         testing_transformed=testing_transformed,
         testing_signal=testing_signal,
