@@ -1,8 +1,8 @@
-"""Data-loading helpers for BCI Competition IV Dataset 2A.
+"""Data-loading helpers for BCI Competition IV Datasets 2A and 2B.
 
 The CSE detector consumes feature matrices with shape
-``(n_observations, n_features)``. This module deliberately keeps raw GDF
-loading separate from later EEG preprocessing and feature extraction.
+``(n_observations, n_features)``. Raw GDF loading is deliberately kept
+separate from EEG preprocessing and feature extraction.
 """
 
 from dataclasses import dataclass
@@ -13,11 +13,18 @@ import numpy as np
 
 
 _VALID_SESSIONS = {"T", "E"}
+_DATASET_2B_SESSION_SUFFIX = {
+    1: "T",
+    2: "T",
+    3: "T",
+    4: "E",
+    5: "E",
+}
 
 
 @dataclass(frozen=True)
 class BCISessionData:
-    """Raw EEG session loaded from one Dataset 2A GDF file."""
+    """Raw EEG session loaded from one BCI Competition GDF file."""
 
     subject: int
     session: str
@@ -42,28 +49,47 @@ def _validate_subject(subject: int) -> int:
         raise ValueError("subject must be an integer from 1 to 9.")
 
     value = int(subject)
-
     if not 1 <= value <= 9:
         raise ValueError("subject must be an integer from 1 to 9.")
-
     return value
 
 
 def _validate_session(session: str) -> str:
     value = str(session).upper()
-
     if value not in _VALID_SESSIONS:
         raise ValueError("session must be 'T' or 'E'.")
+    return value
 
+
+def _validate_dataset_2b_session(session: int) -> int:
+    if isinstance(session, bool) or not isinstance(session, (int, np.integer)):
+        raise ValueError("Dataset 2B session must be an integer from 1 to 5.")
+
+    value = int(session)
+    if value not in _DATASET_2B_SESSION_SUFFIX:
+        raise ValueError("Dataset 2B session must be an integer from 1 to 5.")
     return value
 
 
 def dataset_2a_filename(subject: int, session: str) -> str:
-    """Return the official Dataset 2A GDF filename."""
+    """Return an official Dataset 2A GDF filename."""
 
     subject_value = _validate_subject(subject)
     session_value = _validate_session(session)
     return f"A{subject_value:02d}{session_value}.gdf"
+
+
+def dataset_2b_filename(subject: int, session: int) -> str:
+    """Return an official Dataset 2B GDF filename.
+
+    Sessions 1--3 are training files and sessions 4--5 are evaluation files,
+    for example ``B0101T.gdf`` and ``B0104E.gdf``.
+    """
+
+    subject_value = _validate_subject(subject)
+    session_value = _validate_dataset_2b_session(session)
+    suffix = _DATASET_2B_SESSION_SUFFIX[session_value]
+    return f"B{subject_value:02d}{session_value:02d}{suffix}.gdf"
 
 
 def resolve_dataset_2a_path(
@@ -71,16 +97,30 @@ def resolve_dataset_2a_path(
     subject: int,
     session: str,
 ) -> Path:
-    """Resolve and validate the expected GDF path for one session."""
+    """Resolve and validate the expected Dataset 2A GDF path."""
 
     path = Path(data_directory) / dataset_2a_filename(subject, session)
-
     if not path.is_file():
         raise FileNotFoundError(
             "BCI Competition IV Dataset 2A file was not found: "
             f"{path}"
         )
+    return path
 
+
+def resolve_dataset_2b_path(
+    data_directory: str | Path,
+    subject: int,
+    session: int,
+) -> Path:
+    """Resolve and validate the expected Dataset 2B GDF path."""
+
+    path = Path(data_directory) / dataset_2b_filename(subject, session)
+    if not path.is_file():
+        raise FileNotFoundError(
+            "BCI Competition IV Dataset 2B file was not found: "
+            f"{path}"
+        )
     return path
 
 
@@ -89,35 +129,21 @@ def _import_mne() -> Any:
         import mne
     except ImportError as exc:
         raise ImportError(
-            "Loading Dataset 2A GDF files requires MNE. "
-            "Install it with: python -m pip install mne"
+            "Loading GDF files requires MNE. Install it with: "
+            "python -m pip install mne"
         ) from exc
-
     return mne
 
 
-def load_bci_competition_iv_2a_session(
-    data_directory: str | Path,
+def _read_gdf(
+    file_path: Path,
+    *,
     subject: int,
     session: str,
-    *,
-    eeg_only: bool = True,
-    preload: bool = True,
+    eeg_only: bool,
+    preload: bool,
+    allow_nonfinite: bool,
 ) -> BCISessionData:
-    """Load one Dataset 2A GDF session using MNE.
-
-    Returns samples as rows and channels as columns. This orientation is
-    convenient for later conversion into CSE feature matrices.
-    """
-
-    subject_value = _validate_subject(subject)
-    session_value = _validate_session(session)
-    file_path = resolve_dataset_2a_path(
-        data_directory=data_directory,
-        subject=subject_value,
-        session=session_value,
-    )
-
     mne = _import_mne()
     raw = mne.io.read_raw_gdf(
         file_path,
@@ -133,21 +159,15 @@ def load_bci_competition_iv_2a_session(
 
     if signals.ndim != 2:
         raise RuntimeError("Loaded EEG data must be two-dimensional.")
-
     if signals.shape[0] != times.size:
         raise RuntimeError(
             "Loaded EEG samples and time values must have equal length."
         )
-
-    if not np.isfinite(signals).all():
+    if not allow_nonfinite and not np.isfinite(signals).all():
         raise ValueError("Loaded EEG signals contain non-finite values.")
 
     annotations = tuple(
-        (
-            float(onset),
-            float(duration),
-            str(description),
-        )
+        (float(onset), float(duration), str(description))
         for onset, duration, description in zip(
             raw.annotations.onset,
             raw.annotations.duration,
@@ -156,8 +176,8 @@ def load_bci_competition_iv_2a_session(
     )
 
     return BCISessionData(
-        subject=subject_value,
-        session=session_value,
+        subject=subject,
+        session=session,
         file_path=file_path,
         signals=signals,
         times=times,
@@ -167,27 +187,72 @@ def load_bci_competition_iv_2a_session(
     )
 
 
+def load_bci_competition_iv_2a_session(
+    data_directory: str | Path,
+    subject: int,
+    session: str,
+    *,
+    eeg_only: bool = True,
+    preload: bool = True,
+) -> BCISessionData:
+    """Load one Dataset 2A session using MNE."""
+
+    subject_value = _validate_subject(subject)
+    session_value = _validate_session(session)
+    file_path = resolve_dataset_2a_path(
+        data_directory=data_directory,
+        subject=subject_value,
+        session=session_value,
+    )
+    return _read_gdf(
+        file_path,
+        subject=subject_value,
+        session=session_value,
+        eeg_only=eeg_only,
+        preload=preload,
+        allow_nonfinite=False,
+    )
+
+
+def load_bci_competition_iv_2b_session(
+    data_directory: str | Path,
+    subject: int,
+    session: int,
+    *,
+    eeg_only: bool = True,
+    preload: bool = True,
+) -> BCISessionData:
+    """Load one Dataset 2B session using MNE.
+
+    Dataset 2B recordings may contain non-finite separator samples between
+    runs. They are preserved here so downstream window extraction can skip
+    windows that cross a run boundary.
+    """
+
+    subject_value = _validate_subject(subject)
+    session_value = _validate_dataset_2b_session(session)
+    file_path = resolve_dataset_2b_path(
+        data_directory=data_directory,
+        subject=subject_value,
+        session=session_value,
+    )
+    suffix = _DATASET_2B_SESSION_SUFFIX[session_value]
+    return _read_gdf(
+        file_path,
+        subject=subject_value,
+        session=f"{session_value:02d}{suffix}",
+        eeg_only=eeg_only,
+        preload=preload,
+        allow_nonfinite=True,
+    )
+
+
 def load_cse_feature_file(
     file_path: str | Path,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray | None]:
-    """Load a processed CSE feature file stored in NumPy ``.npz`` format.
-
-    Required arrays
-    ---------------
-    features:
-        Two-dimensional matrix with observations as rows.
-    times:
-        One-dimensional observation identifiers or timestamps.
-
-    Optional arrays
-    ---------------
-    labels:
-        One-dimensional class labels, useful for later CSE-UAEL work but
-        not required by the unsupervised CSE detector.
-    """
+    """Load a processed CSE feature file stored in NumPy ``.npz`` format."""
 
     path = Path(file_path)
-
     if not path.is_file():
         raise FileNotFoundError(f"CSE feature file was not found: {path}")
 
@@ -207,10 +272,8 @@ def load_cse_feature_file(
 
     if features.ndim != 2:
         raise ValueError("features must be a two-dimensional matrix.")
-
     if times.ndim != 1:
         raise ValueError("times must be one-dimensional.")
-
     if features.shape[0] != times.size:
         raise ValueError("features and times must have equal length.")
 
