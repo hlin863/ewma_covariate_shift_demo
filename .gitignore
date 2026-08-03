@@ -1,2 +1,68 @@
+# Raw BCI datasets
 data/raw/bci_competition_iv_2a/
 data/raw/bci_competition_iv_2b/
+
+# Generated and processed experiment data
+data/processed/
+outputs/
+reports/
+figures/
+instance/
+files/
+
+# Python virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Python bytecode and build artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Test, coverage, and tool caches
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
+.nox/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Environment variables and local configuration
+.env
+.env.*
+!.env.example
+*.local
+
+# Logs and temporary files
+*.log
+*.tmp
+*.temp
+*.bak
+*.swp
+~$*
+
+# Local manuscripts and generated office documents
+*.docx
+
+# IDE and editor settings
+.vscode/
+.idea/
+*.code-workspace
+
+# Operating-system files
+.DS_Store
+Thumbs.db
+desktop.ini
