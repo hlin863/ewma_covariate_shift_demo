@@ -102,26 +102,35 @@ def estimate_lambda(
 
 def fit_sd_ewma(
     training_values: np.ndarray,
+    *,
+    lambda_override: float | None = None,
 ) -> EWMATrainingResult:
-
     observations = _validate_univariate_values(
         training_values,
         minimum_size=2,
     )
 
+    if lambda_override is not None:
+        if not 0.0 < lambda_override <= 1.0:
+            raise ValueError(
+                "lambda_override must be in the interval (0, 1]."
+            )
+        effective_lambda = float(lambda_override)
+    else:
+        effective_lambda, _ = estimate_lambda(observations)
+
     initial_z = float(observations.mean())
-    best_lambda, _ = estimate_lambda(observations)
 
     ewma_values, errors = calculate_ewma_training_path(
         values=observations,
-        lambda_value=best_lambda,
+        lambda_value=effective_lambda,
         initial_z=initial_z,
     )
 
     error_variance = float(np.mean(errors**2))
 
     return EWMATrainingResult(
-        lambda_value=best_lambda,
+        lambda_value=effective_lambda,
         initial_z=initial_z,
         final_z=float(ewma_values[-1]),
         error_variance=error_variance,

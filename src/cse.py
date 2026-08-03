@@ -185,12 +185,12 @@ def _run_cse_warning_stage(
     testing_times: np.ndarray,
     config: CSEConfig,
 ) -> tuple[EWMATrainingResult, float, pd.DataFrame]:
-    ewma_training_result = fit_sd_ewma(training_values=training_signal)
-    effective_lambda = (
-        ewma_training_result.lambda_value
-        if config.lambda_override is None
-        else float(config.lambda_override)
+    ewma_training_result = fit_sd_ewma(
+        training_values=training_signal,
+        lambda_override=config.lambda_override,
     )
+
+    effective_lambda = ewma_training_result.lambda_value
     initial_z = (
         ewma_training_result.initial_z
         if config.ewma_initialization == "training_mean"
