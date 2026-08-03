@@ -12,7 +12,11 @@ from src.bci_2b_experiment import (
 from src.bci_data import BCISessionData
 
 
-def _session(session: str, evaluation: bool = False) -> BCISessionData:
+def _session(
+    session: str,
+    evaluation: bool = False,
+    channel_names: tuple[str, str, str] = ("C3", "Cz", "C4"),
+) -> BCISessionData:
     rng = np.random.default_rng(7 + int(session[:2]))
     sampling_frequency = 100.0
     signals = rng.normal(scale=0.4, size=(5000, 3))
@@ -31,7 +35,7 @@ def _session(session: str, evaluation: bool = False) -> BCISessionData:
         file_path=Path(f"B01{session}.gdf"),
         signals=signals,
         times=np.arange(signals.shape[0]) / sampling_frequency,
-        channel_names=("C3", "Cz", "C4"),
+        channel_names=channel_names,
         sampling_frequency=sampling_frequency,
         annotations=tuple(annotations),
     )
@@ -52,6 +56,14 @@ def test_extract_dataset_2b_trials_returns_raw_cue_tensors() -> None:
     assert result.channel_names == ("C3", "Cz", "C4")
     np.testing.assert_array_equal(result.labels, [0, 1, 0, 1, 0, 1, 0, 1])
     assert np.isfinite(result.signals).all()
+
+
+def test_extract_dataset_2b_trials_accepts_mne_prefixed_channel_names() -> None:
+    result = extract_dataset_2b_trials(
+        _session("01T", channel_names=("EEG:C3", "EEG:Cz", "EEG:C4"))
+    )
+    assert result.signals.shape == (8, 3, 300)
+    assert result.channel_names == ("C3", "Cz", "C4")
 
 
 def test_evaluation_unknown_cues_do_not_become_training_classes() -> None:
