@@ -14,11 +14,7 @@ from src.bci_data import BCISessionData
 def _session(session: str, shift: float = 0.0) -> BCISessionData:
     rng = np.random.default_rng(7 + int(session[:2]))
     sampling_frequency = 100.0
-    signals = rng.normal(
-        loc=shift,
-        scale=1.0,
-        size=(5000, 3),
-    )
+    signals = rng.normal(loc=shift, scale=1.0, size=(5000, 3))
     annotations = tuple(
         (float(onset), 0.0, code)
         for onset, code in zip(
@@ -48,7 +44,6 @@ def test_published_dataset_2b_targets_are_complete() -> None:
 
 def test_extract_dataset_2b_trials_uses_one_row_per_cue() -> None:
     result = extract_dataset_2b_trials(_session("01T"))
-
     assert result.features.shape == (8, 6)
     assert result.times.shape == (8,)
     assert result.feature_names == (
@@ -65,15 +60,13 @@ def test_extract_dataset_2b_trials_uses_one_row_per_cue() -> None:
 def test_concatenate_trial_features_assigns_unique_times() -> None:
     first = extract_dataset_2b_trials(_session("01T"))
     second = extract_dataset_2b_trials(_session("02T"))
-
     result = concatenate_trial_features([first, second])
-
     assert result.features.shape == (16, 6)
     np.testing.assert_array_equal(result.times, np.arange(16))
     assert np.unique(result.times).size == 16
 
 
-def test_subject_experiment_uses_published_lambda_without_copying_counts() -> None:
+def test_subject_experiment_uses_algorithm1_configuration() -> None:
     training = concatenate_trial_features(
         [
             extract_dataset_2b_trials(_session("01T")),
@@ -88,13 +81,7 @@ def test_subject_experiment_uses_published_lambda_without_copying_counts() -> No
         ]
     )
 
-    result = run_dataset_2b_subject(
-        1,
-        training,
-        testing,
-        validation_before_size=3,
-        validation_after_size=3,
-    )
+    result = run_dataset_2b_subject(1, training, testing)
 
     assert result.subject == "B01"
     assert result.published_lambda == 0.28
@@ -107,3 +94,8 @@ def test_subject_experiment_uses_published_lambda_without_copying_counts() -> No
     assert result.computed_csv == int(
         result.cse_result.validation_results["confirmed_shift"].sum()
     )
+    assert set(result.cse_result.validation_results["status"]).issubset(
+        {"confirmed", "rejected"}
+    )
+    assert "training_size" in result.cse_result.validation_results.columns
+    assert "before_start_time" not in result.cse_result.validation_results.columns
