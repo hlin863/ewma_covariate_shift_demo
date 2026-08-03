@@ -38,7 +38,7 @@ class CSEConfig:
     pca_components: int | float | None = None
     lambda_override: float | None = None
     variance_smoothing: float = 0.05
-    control_limit_multiplier: float = 3.0
+    control_limit_multiplier: float = 1.96
     ewma_initialization: str = "training_final"
     validation_mode: str = "retrospective_windows"
     validation_before_size: int = 50
