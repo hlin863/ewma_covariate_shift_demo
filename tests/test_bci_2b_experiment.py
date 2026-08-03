@@ -4,24 +4,27 @@ import numpy as np
 
 from src.bci_2b_experiment import (
     PUBLISHED_2B_RESULTS,
-    concatenate_trial_features,
+    build_dataset_2b_fbcsp_features,
+    concatenate_trial_signals,
     extract_dataset_2b_trials,
     run_dataset_2b_subject,
 )
 from src.bci_data import BCISessionData
 
 
-def _session(session: str, shift: float = 0.0) -> BCISessionData:
+def _session(session: str, evaluation: bool = False) -> BCISessionData:
     rng = np.random.default_rng(7 + int(session[:2]))
     sampling_frequency = 100.0
-    signals = rng.normal(loc=shift, scale=1.0, size=(5000, 3))
-    annotations = tuple(
-        (float(onset), 0.0, code)
-        for onset, code in zip(
-            (2, 7, 12, 17, 22, 27, 32, 37),
-            ("769", "770", "769", "770", "769", "770", "769", "770"),
-        )
-    )
+    signals = rng.normal(scale=0.4, size=(5000, 3))
+    annotations = []
+    for index, onset in enumerate((2, 7, 12, 17, 22, 27, 32, 37)):
+        code = "783" if evaluation else ("769" if index % 2 == 0 else "770")
+        start = int(onset * sampling_frequency)
+        stop = start + int(3 * sampling_frequency)
+        time = np.arange(stop - start) / sampling_frequency
+        channel = 0 if index % 2 == 0 else 2
+        signals[start:stop, channel] += 2.0 * np.sin(2 * np.pi * 10.0 * time)
+        annotations.append((float(onset), 0.0, code))
     return BCISessionData(
         subject=1,
         session=session,
@@ -30,7 +33,7 @@ def _session(session: str, shift: float = 0.0) -> BCISessionData:
         times=np.arange(signals.shape[0]) / sampling_frequency,
         channel_names=("C3", "Cz", "C4"),
         sampling_frequency=sampling_frequency,
-        annotations=annotations,
+        annotations=tuple(annotations),
     )
 
 
@@ -42,46 +45,67 @@ def test_published_dataset_2b_targets_are_complete() -> None:
     assert PUBLISHED_2B_RESULTS["B09"] == (0.45, 18, 7)
 
 
-def test_extract_dataset_2b_trials_uses_one_row_per_cue() -> None:
+def test_extract_dataset_2b_trials_returns_raw_cue_tensors() -> None:
     result = extract_dataset_2b_trials(_session("01T"))
-    assert result.features.shape == (8, 6)
+    assert result.signals.shape == (8, 3, 300)
     assert result.times.shape == (8,)
-    assert result.feature_names == (
-        "C3_mu_8_12",
-        "C3_beta_14_30",
-        "Cz_mu_8_12",
-        "Cz_beta_14_30",
-        "C4_mu_8_12",
-        "C4_beta_14_30",
-    )
-    assert np.isfinite(result.features).all()
+    assert result.channel_names == ("C3", "Cz", "C4")
+    np.testing.assert_array_equal(result.labels, [0, 1, 0, 1, 0, 1, 0, 1])
+    assert np.isfinite(result.signals).all()
 
 
-def test_concatenate_trial_features_assigns_unique_times() -> None:
+def test_evaluation_unknown_cues_do_not_become_training_classes() -> None:
+    result = extract_dataset_2b_trials(_session("04E", evaluation=True))
+    np.testing.assert_array_equal(result.labels, np.full(8, -1))
+
+
+def test_concatenate_trial_signals_assigns_unique_times() -> None:
     first = extract_dataset_2b_trials(_session("01T"))
     second = extract_dataset_2b_trials(_session("02T"))
-    result = concatenate_trial_features([first, second])
-    assert result.features.shape == (16, 6)
+    result = concatenate_trial_signals([first, second])
+    assert result.signals.shape == (16, 3, 300)
     np.testing.assert_array_equal(result.times, np.arange(16))
     assert np.unique(result.times).size == 16
 
 
-def test_subject_experiment_uses_algorithm1_configuration() -> None:
-    training = concatenate_trial_features(
+def test_fbcsp_pipeline_produces_twenty_paper_features() -> None:
+    training = concatenate_trial_signals(
         [
             extract_dataset_2b_trials(_session("01T")),
             extract_dataset_2b_trials(_session("02T")),
             extract_dataset_2b_trials(_session("03T")),
         ]
     )
-    testing = concatenate_trial_features(
+    testing = concatenate_trial_signals(
         [
-            extract_dataset_2b_trials(_session("04E", shift=2.0)),
-            extract_dataset_2b_trials(_session("05E", shift=2.0)),
+            extract_dataset_2b_trials(_session("04E", evaluation=True)),
+            extract_dataset_2b_trials(_session("05E", evaluation=True)),
         ]
     )
+    pipeline = build_dataset_2b_fbcsp_features(training, testing)
+    assert pipeline.training.features.shape == (24, 20)
+    assert pipeline.testing.features.shape == (16, 20)
+    assert len(pipeline.training.feature_names) == 20
+    assert np.isfinite(pipeline.training.features).all()
+    assert np.isfinite(pipeline.testing.features).all()
 
-    result = run_dataset_2b_subject(1, training, testing)
+
+def test_subject_experiment_uses_algorithm1_configuration() -> None:
+    training_trials = concatenate_trial_signals(
+        [
+            extract_dataset_2b_trials(_session("01T")),
+            extract_dataset_2b_trials(_session("02T")),
+            extract_dataset_2b_trials(_session("03T")),
+        ]
+    )
+    testing_trials = concatenate_trial_signals(
+        [
+            extract_dataset_2b_trials(_session("04E", evaluation=True)),
+            extract_dataset_2b_trials(_session("05E", evaluation=True)),
+        ]
+    )
+    pipeline = build_dataset_2b_fbcsp_features(training_trials, testing_trials)
+    result = run_dataset_2b_subject(1, pipeline.training, pipeline.testing)
 
     assert result.subject == "B01"
     assert result.published_lambda == 0.28
