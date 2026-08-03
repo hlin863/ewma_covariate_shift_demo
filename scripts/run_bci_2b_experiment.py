@@ -22,7 +22,8 @@ def _parse_args():
     parser = ArgumentParser(
         description=(
             "Run cue-aligned Dataset 2B CSE experiments using the "
-            "published subject-specific lambda values."
+            "published subject-specific lambda values and the "
+            "Algorithm 1 training-reference validation path."
         )
     )
     parser.add_argument(
@@ -37,9 +38,17 @@ def _parse_args():
         nargs="+",
         default=list(range(1, 10)),
     )
-    parser.add_argument("--before-size", type=int, default=10)
-    parser.add_argument("--after-size", type=int, default=10)
     parser.add_argument("--alpha", type=float, default=0.05)
+    parser.add_argument(
+        "--control-limit-multiplier",
+        type=float,
+        default=3.0,
+    )
+    parser.add_argument(
+        "--variance-smoothing",
+        type=float,
+        default=0.05,
+    )
     parser.add_argument(
         "--output-file",
         type=Path,
@@ -82,9 +91,9 @@ def main() -> None:
             subject,
             training,
             testing,
-            validation_before_size=args.before_size,
-            validation_after_size=args.after_size,
             validation_alpha=args.alpha,
+            control_limit_multiplier=args.control_limit_multiplier,
+            variance_smoothing=args.variance_smoothing,
         )
 
         rows.append({
