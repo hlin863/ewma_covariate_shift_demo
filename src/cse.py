@@ -27,18 +27,13 @@ from src.multivariate_stage_2 import (
 
 @dataclass(frozen=True)
 class CSEConfig:
-    """Configuration for the complete CSE algorithm.
-
-    ``validation_mode='algorithm1_training_reference'`` follows Algorithm 1
-    of the 2019 CSE-UAEL paper: every Stage-I warning is tested against the
-    training reference distribution.  ``retrospective_windows`` preserves the
-    repository's earlier generic before/after-window validator.
-    """
+    """Configuration for the complete CSE algorithm."""
 
     pca_components: int | float | None = None
     lambda_override: float | None = None
     variance_smoothing: float = 0.05
     control_limit_multiplier: float = 1.96
+    variance_update_mode: str = "always"
     ewma_initialization: str = "training_final"
     validation_mode: str = "retrospective_windows"
     validation_before_size: int = 50
@@ -60,6 +55,15 @@ class CSEConfig:
             raise ValueError("variance_smoothing must be in (0, 1].")
         if self.control_limit_multiplier <= 0.0:
             raise ValueError("control_limit_multiplier must be positive.")
+        if self.variance_update_mode not in {
+            "always",
+            "frozen",
+            "non_alarm",
+        }:
+            raise ValueError(
+                "variance_update_mode must be 'always', 'frozen', "
+                "or 'non_alarm'."
+            )
         if self.ewma_initialization not in {"training_mean", "training_final"}:
             raise ValueError(
                 "ewma_initialization must be 'training_mean' or 'training_final'."
@@ -91,8 +95,6 @@ class CSEConfig:
 
 @dataclass(frozen=True)
 class CSEResult:
-    """Outputs produced by the complete CSE algorithm."""
-
     pca_result: CSEPCAResult
     ewma_training_result: EWMATrainingResult
     effective_lambda: float
@@ -189,7 +191,6 @@ def _run_cse_warning_stage(
         training_values=training_signal,
         lambda_override=config.lambda_override,
     )
-
     effective_lambda = ewma_training_result.lambda_value
     initial_z = (
         ewma_training_result.initial_z
@@ -205,6 +206,7 @@ def _run_cse_warning_stage(
             lambda_value=effective_lambda,
             variance_smoothing=config.variance_smoothing,
             control_limit_multiplier=config.control_limit_multiplier,
+            variance_update_mode=config.variance_update_mode,
         ),
     )
     return ewma_training_result, effective_lambda, warning_results
