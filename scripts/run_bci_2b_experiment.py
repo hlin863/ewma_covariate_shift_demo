@@ -1,4 +1,4 @@
-"""Run the Dataset 2B CSE experiment against the published Table 1 values."""
+"""Run the Dataset 2B CSE experiment against published Table 1 values."""
 
 from argparse import ArgumentParser
 from pathlib import Path
@@ -11,7 +11,8 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.bci_2b_experiment import (
-    concatenate_trial_features,
+    build_dataset_2b_fbcsp_features,
+    concatenate_trial_signals,
     extract_dataset_2b_trials,
     run_dataset_2b_subject,
 )
@@ -21,9 +22,8 @@ from src.bci_data import load_bci_competition_iv_2b_session
 def _parse_args():
     parser = ArgumentParser(
         description=(
-            "Run cue-aligned Dataset 2B CSE experiments using the "
-            "published subject-specific lambda values and the "
-            "Algorithm 1 training-reference validation path."
+            "Run cue-aligned Dataset 2B CSE experiments using the paper's "
+            "ten-band FBCSP features and published subject-specific lambdas."
         )
     )
     parser.add_argument(
@@ -39,16 +39,9 @@ def _parse_args():
         default=list(range(1, 10)),
     )
     parser.add_argument("--alpha", type=float, default=0.05)
-    parser.add_argument(
-        "--control-limit-multiplier",
-        type=float,
-        default=3.0,
-    )
-    parser.add_argument(
-        "--variance-smoothing",
-        type=float,
-        default=0.05,
-    )
+    parser.add_argument("--control-limit-multiplier", type=float, default=3.0)
+    parser.add_argument("--variance-smoothing", type=float, default=0.05)
+    parser.add_argument("--components-per-side", type=int, default=1)
     parser.add_argument(
         "--output-file",
         type=Path,
@@ -57,28 +50,40 @@ def _parse_args():
     return parser.parse_args()
 
 
-def _load_features(data_directory: Path, subject: int):
-    session_features = {}
+def _load_features(data_directory: Path, subject: int, components_per_side: int):
+    session_trials = {}
     for session_number in range(1, 6):
         session = load_bci_competition_iv_2b_session(
             data_directory=data_directory,
             subject=subject,
             session=session_number,
         )
-        trial_features = extract_dataset_2b_trials(session)
-        session_features[session_number] = trial_features
+        trials = extract_dataset_2b_trials(session)
+        session_trials[session_number] = trials
+        labelled = int((trials.labels >= 0).sum())
         print(
             f"B{subject:02d} session {session_number:02d}: "
-            f"{trial_features.features.shape[0]} cue-aligned trials"
+            f"{trials.signals.shape[0]} accepted cue-aligned trials "
+            f"({labelled} labelled)"
         )
 
-    training = concatenate_trial_features(
-        [session_features[1], session_features[2], session_features[3]]
+    training_trials = concatenate_trial_signals(
+        [session_trials[1], session_trials[2], session_trials[3]]
     )
-    testing = concatenate_trial_features(
-        [session_features[4], session_features[5]]
+    testing_trials = concatenate_trial_signals(
+        [session_trials[4], session_trials[5]]
     )
-    return training, testing
+    pipeline = build_dataset_2b_fbcsp_features(
+        training_trials,
+        testing_trials,
+        components_per_side=components_per_side,
+    )
+    print(
+        f"B{subject:02d}: FBCSP feature shape "
+        f"train={pipeline.training.features.shape}, "
+        f"test={pipeline.testing.features.shape}"
+    )
+    return pipeline.training, pipeline.testing
 
 
 def main() -> None:
@@ -86,7 +91,11 @@ def main() -> None:
     rows = []
 
     for subject in args.subjects:
-        training, testing = _load_features(args.data_directory, subject)
+        training, testing = _load_features(
+            args.data_directory,
+            subject,
+            args.components_per_side,
+        )
         result = run_dataset_2b_subject(
             subject,
             training,
