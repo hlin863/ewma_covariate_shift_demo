@@ -1,0 +1,10 @@
+subject,paper_lambda,paper_csw,paper_csv,observed_lambda,observed_csw,observed_csv,observation_count,testing_file,status,lambda_error,csw_error,csv_error,matches_paper,experiment_unit,replication_status
+B01,0.28,14,10,1.0,228,77,11267,data\processed\bci_2b\B01_evaluation_features.npz,computed,0.72,214,67,False,overlapping EEG windows,not_matched
+B02,0.17,18,13,1.0,62,17,2891,data\processed\bci_2b\B02_session_04E_features.npz,computed,0.83,44,4,False,overlapping EEG windows,not_matched
+B03,0.6,19,12,1.0,48,26,3714,data\processed\bci_2b\B03_session_04E_features.npz,computed,0.4,29,14,False,overlapping EEG windows,not_matched
+B04,0.2,11,6,1.0,47,18,3736,data\processed\bci_2b\B04_session_04E_features.npz,computed,0.8,36,12,False,overlapping EEG windows,not_matched
+B05,0.1,12,8,1.0,29,9,3333,data\processed\bci_2b\B05_session_04E_features.npz,computed,0.9,17,1,False,overlapping EEG windows,not_matched
+B06,0.33,22,12,1.0,71,20,3756,data\processed\bci_2b\B06_session_04E_features.npz,computed,0.6699999999999999,49,8,False,overlapping EEG windows,not_matched
+B07,0.3,17,11,1.0,52,19,3759,data\processed\bci_2b\B07_session_04E_features.npz,computed,0.7,35,8,False,overlapping EEG windows,not_matched
+B08,0.21,27,14,1.0,51,23,3795,data\processed\bci_2b\B08_session_04E_features.npz,computed,0.79,24,9,False,overlapping EEG windows,not_matched
+B09,0.45,18,7,1.0,67,33,3731,data\processed\bci_2b\B09_session_04E_features.npz,computed,0.55,49,26,False,overlapping EEG windows,not_matched
