@@ -8,6 +8,7 @@ log-normalised variance features from the extreme CSP components.
 """
 
 from dataclasses import dataclass
+import re
 
 import numpy as np
 
@@ -80,6 +81,43 @@ class Dataset2BExperimentResult:
     cse_result: CSEResult
 
 
+def _canonical_eeg_channel_name(name: str) -> str:
+    """Return a stable channel key for Dataset 2B GDF/MNE channel labels.
+
+    Depending on the MNE/GDF version, the three channels may be exposed as
+    ``C3``/``Cz``/``C4`` or with prefixes such as ``EEG:C3``.  Normalising to
+    alphanumeric text and taking the recognised suffix handles both forms
+    without relying on a particular MNE naming convention.
+    """
+
+    compact = re.sub(r"[^A-Z0-9]", "", str(name).upper())
+    for expected in ("C3", "CZ", "C4"):
+        if compact.endswith(expected):
+            return expected
+    return compact
+
+
+def _dataset_2b_channel_indices(
+    channel_names: tuple[str, ...],
+) -> tuple[int, int, int]:
+    """Resolve C3, Cz and C4 from raw Dataset 2B channel names."""
+
+    lookup: dict[str, int] = {}
+    for index, name in enumerate(channel_names):
+        canonical = _canonical_eeg_channel_name(name)
+        if canonical in {"C3", "CZ", "C4"} and canonical not in lookup:
+            lookup[canonical] = index
+
+    missing = [name for name in ("C3", "CZ", "C4") if name not in lookup]
+    if missing:
+        available = ", ".join(str(name) for name in channel_names)
+        raise ValueError(
+            "Dataset 2B session must contain C3, Cz, and C4. "
+            f"Missing: {', '.join(missing)}. Available channels: {available}"
+        )
+    return lookup["C3"], lookup["CZ"], lookup["C4"]
+
+
 def extract_dataset_2b_trials(
     session: BCISessionData,
     *,
@@ -100,14 +138,7 @@ def extract_dataset_2b_trials(
         raise ValueError("trial segment is too short for the sampling rate.")
 
     required_channels = ("C3", "Cz", "C4")
-    channel_lookup = {
-        str(name).strip().upper(): index
-        for index, name in enumerate(session.channel_names)
-    }
-    try:
-        channel_indices = [channel_lookup[name.upper()] for name in required_channels]
-    except KeyError as exc:
-        raise ValueError("Dataset 2B session must contain C3, Cz, and C4.") from exc
+    channel_indices = _dataset_2b_channel_indices(session.channel_names)
 
     rows: list[np.ndarray] = []
     times: list[float] = []
