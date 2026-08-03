@@ -1,14 +1,14 @@
-"""Prepare BCI Competition IV Dataset 2B features for CSE visualisation.
+"""Prepare BCI Competition IV Dataset 2B features for CSE experiments.
+
+The paper's Table 3 evaluates Session IV and Session V separately. This script
+therefore writes one processed feature file per session, plus a combined
+Sessions I-II training reference and a Session III tuning file.
 
 Example
 -------
 python scripts/prepare_bci_2b_cse_features.py \
     data/raw/bci_competition_iv_2b \
     --subject 1
-
-This creates:
-    data/processed/bci_2b/B01_training_features.npz
-    data/processed/bci_2b/B01_evaluation_features.npz
 """
 
 from argparse import ArgumentParser
@@ -82,24 +82,36 @@ def main() -> None:
     training = concatenate_feature_results(
         [session_results[1], session_results[2]]
     )
-    evaluation = concatenate_feature_results(
-        [session_results[3], session_results[4], session_results[5]]
-    )
 
     args.output_directory.mkdir(parents=True, exist_ok=True)
     prefix = f"B{args.subject:02d}"
-    training_path = args.output_directory / f"{prefix}_training_features.npz"
-    evaluation_path = args.output_directory / f"{prefix}_evaluation_features.npz"
 
-    _save_result(training_path, training)
-    _save_result(evaluation_path, evaluation)
+    outputs = {
+        "training": (
+            args.output_directory / f"{prefix}_training_features.npz",
+            training,
+        ),
+        "session_iii": (
+            args.output_directory / f"{prefix}_session_03T_features.npz",
+            session_results[3],
+        ),
+        "session_iv": (
+            args.output_directory / f"{prefix}_session_04E_features.npz",
+            session_results[4],
+        ),
+        "session_v": (
+            args.output_directory / f"{prefix}_session_05E_features.npz",
+            session_results[5],
+        ),
+    }
 
-    print(f"\nSaved training features: {training_path.resolve()}")
-    print(f"Saved evaluation features: {evaluation_path.resolve()}")
+    for label, (path, result) in outputs.items():
+        _save_result(path, result)
+        print(f"Saved {label}: {path.resolve()}")
+
     print(
-        "Suggested visualisation split index: "
-        f"{session_results[3].features.shape[0]} "
-        "(boundary after session 03T)"
+        "\nTable 3 inputs are the training reference plus "
+        "session_04E and session_05E evaluated separately."
     )
 
 
