@@ -230,21 +230,46 @@ def transform_cse_features(
     )
 
 
-def extract_first_component(
+def extract_first_component(transformed_features: np.ndarray)  -> np.ndarray: 
+    """Extract the first PCA component as a one-dimensional signal.
+    The first component is the scalar sequence monitored by the univariate EWMA warning stage of the CSE pipeline. """ 
+
+    values = _validate_feature_matrix( transformed_features, minimum_observations=1, ) 
+
+    return np.asarray(
+        values[:, 0], 
+        dtype=float
+    )
+
+
+def extract_retained_components(
     transformed_features: np.ndarray,
 ) -> np.ndarray:
-    """Extract the first PCA component as a one-dimensional signal.
+    """Return all retained PCA components for multivariate EWMA monitoring.
 
-    The first component is the scalar sequence monitored by the
-    univariate EWMA warning stage of the CSE pipeline.
+    For each observation x_t, PCA produces the retained-component vector
+
+        u_t = V_k.T @ (x_t - mu_train)
+
+    where:
+        x_t      is the original d-dimensional observation,
+        mu_train is the mean estimated from stationary training data,
+        V_k      contains the k retained principal directions,
+        u_t      is the resulting k-dimensional PCA feature vector.
+
+    Unlike the former PC1-only implementation, this function preserves
+    every retained component so that Stage I can monitor the complete
+    vector u_t rather than only
+
+        u_{t,1} = v_1.T @ (x_t - mu_train).
     """
 
     values = _validate_feature_matrix(
         transformed_features,
-        minimum_observations=1,
+        minimum_observations=1
     )
 
     return np.asarray(
-        values[:, 0],
-        dtype=float,
+        values,
+        dtype=float
     )
