@@ -46,6 +46,7 @@ class CSEConfig:
     covariance_regularization: float = 1e-6
     minimum_alarm_gap: int | None = None
     stage1_mode: str = "pc1_univariate"
+    multivariate_control_limit: float = 5.991
 
     def __post_init__(self) -> None:
         if self.lambda_override is not None and not 0.0 < self.lambda_override <= 1.0:
@@ -195,12 +196,18 @@ def _run_cse_warning_stage(
             lambda_value=effective_lambda,
         )
 
+        initial_z = (
+            ewma_training_result.initial_z
+            if config.ewma_initialization == "training_mean"
+            else ewma_training_result.final_z
+        )
+
         warning_results = run_msd_ewma(
             values=testing_signal,
             times=testing_times,
             initial_z=initial_z,
-            error_covariance=training_result.error_covariance,
-            inverse_error_covariance=(training_result.inverse_error_covariance),
+            lambda_value=effective_lambda,
+            inverse_error_covariance=(ewma_training_result.inverse_error_covariance),
             control_limit=config.multivariate_control_limit,
         )
     elif stage1_mode == "pc1_univariate":
@@ -228,7 +235,8 @@ def _run_cse_warning_stage(
                 variance_update_mode=config.variance_update_mode,
             ),
         )
-    return ewma_training_result, effective_lambda, warning_results
+
+    return warning_results, effective_lambda, warning_results
 
 
 def _run_cse_validation_stage(
@@ -300,6 +308,7 @@ def run_cse(
         testing_signal=testing_signal,
         testing_times=times,
         config=cse_config,
+        stage1_mode=cse_config.stage1_mode,
     )
     validation_results = _run_cse_validation_stage(
         training_transformed=pca_result.training_transformed,
