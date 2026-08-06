@@ -10,6 +10,7 @@ from src.cse_algorithm1_stage_2 import (
 from src.cse_preprocessing import (
     CSEPCAResult,
     extract_first_component,
+    extract_retained_components,
     fit_cse_pca,
     transform_cse_features,
 )
@@ -160,6 +161,7 @@ def _prepare_cse_features(
     testing_features: np.ndarray,
     *,
     pca_components: int | float | None,
+    stage1_mode: str
 ) -> tuple[CSEPCAResult, np.ndarray, np.ndarray, np.ndarray]:
     pca_result = fit_cse_pca(
         training_features=training_features,
@@ -169,15 +171,27 @@ def _prepare_cse_features(
         features=testing_features,
         fitted_result=pca_result,
     )
-    training_signal = extract_first_component(
-        pca_result.training_transformed,
-    )
-    testing_signal = extract_first_component(testing_transformed)
+
+    if stage1_mode == "pc1_univariate":
+        training_stage1 = extract_first_component(
+            pca_result.training_transformed,
+        )
+        testing_stage1 = extract_first_component(
+            testing_transformed,
+        )
+    else:
+        training_stage1 = extract_retained_components(
+            pca_result.training_transformed,
+        )
+        testing_stage1 = extract_retained_components(
+            testing_transformed,
+        )
+    testing_signal = extract_retained_components(testing_transformed)
     return (
         pca_result,
-        training_signal,
+        training_stage1,
         testing_transformed,
-        testing_signal,
+        testing_stage1,
     )
 
 
