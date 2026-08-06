@@ -235,8 +235,12 @@ def _run_cse_warning_stage(
                 variance_update_mode=config.variance_update_mode,
             ),
         )
+    else:
+        raise ValueError(
+            "stage1_mode must be 'pc1_univariate' " "or 'multivariate_pca'."
+        )
 
-    return warning_results, effective_lambda, warning_results
+    return ewma_training_result, effective_lambda, warning_results
 
 
 def _run_cse_validation_stage(

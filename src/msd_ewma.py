@@ -170,7 +170,7 @@ def run_msd_ewma(
                 "time": time_value,
                 "t_squared": t_squared,
                 "control_limit": control_limit,
-                "alarm": alarm,
+                "stage_1_alarm": alarm,
             }
         )
 
