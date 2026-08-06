@@ -43,6 +43,7 @@ class CSEConfig:
     covariance_method: str = "shrinkage"
     covariance_regularization: float = 1e-6
     minimum_alarm_gap: int | None = None
+    stage1_mode: str = "pc1_univariate"
 
     def __post_init__(self) -> None:
         if (
@@ -186,7 +187,7 @@ def _prepare_cse_features(
         testing_stage1 = extract_retained_components(
             testing_transformed,
         )
-    testing_signal = extract_retained_components(testing_transformed)
+
     return (
         pca_result,
         training_stage1,
@@ -284,6 +285,7 @@ def run_cse(
         training_features=training,
         testing_features=testing,
         pca_components=cse_config.pca_components,
+        stage1_mode=cse_config.stage1_mode,
     )
     (
         ewma_training_result,
