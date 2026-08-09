@@ -25,6 +25,8 @@ from src.multivariate_stage_2 import (
     validate_multivariate_alarms,
 )
 
+from src.msd_ewma import MSDTrainingResult, fit_msd_ewma, run_msd_ewma
+
 
 @dataclass(frozen=True)
 class CSEConfig:
@@ -44,15 +46,11 @@ class CSEConfig:
     covariance_regularization: float = 1e-6
     minimum_alarm_gap: int | None = None
     stage1_mode: str = "pc1_univariate"
+    multivariate_control_limit: float = 5.991
 
     def __post_init__(self) -> None:
-        if (
-            self.lambda_override is not None
-            and not 0.0 < self.lambda_override <= 1.0
-        ):
-            raise ValueError(
-                "lambda_override must be in (0, 1] when provided."
-            )
+        if self.lambda_override is not None and not 0.0 < self.lambda_override <= 1.0:
+            raise ValueError("lambda_override must be in (0, 1] when provided.")
         if not 0.0 < self.variance_smoothing <= 1.0:
             raise ValueError("variance_smoothing must be in (0, 1].")
         if self.control_limit_multiplier <= 0.0:
@@ -63,8 +61,7 @@ class CSEConfig:
             "non_alarm",
         }:
             raise ValueError(
-                "variance_update_mode must be 'always', 'frozen', "
-                "or 'non_alarm'."
+                "variance_update_mode must be 'always', 'frozen', " "or 'non_alarm'."
             )
         if self.ewma_initialization not in {"training_mean", "training_final"}:
             raise ValueError(
@@ -85,13 +82,8 @@ class CSEConfig:
         if not 0.0 < self.validation_alpha < 1.0:
             raise ValueError("validation_alpha must be in (0, 1).")
         if self.covariance_regularization < 0.0:
-            raise ValueError(
-                "covariance_regularization must not be negative."
-            )
-        if (
-            self.minimum_alarm_gap is not None
-            and self.minimum_alarm_gap < 0
-        ):
+            raise ValueError("covariance_regularization must not be negative.")
+        if self.minimum_alarm_gap is not None and self.minimum_alarm_gap < 0:
             raise ValueError("minimum_alarm_gap must not be negative.")
 
 
@@ -121,15 +113,11 @@ def _validate_cse_inputs(
     if testing.ndim != 2:
         raise ValueError("testing_features must be two-dimensional.")
     if training.shape[0] < 2:
-        raise ValueError(
-            "training_features must contain at least two observations."
-        )
+        raise ValueError("training_features must contain at least two observations.")
     if testing.shape[0] < 1:
         raise ValueError("testing_features must not be empty.")
     if training.shape[1] < 1:
-        raise ValueError(
-            "training_features must contain at least one feature."
-        )
+        raise ValueError("training_features must contain at least one feature.")
     if training.shape[1] != testing.shape[1]:
         raise ValueError(
             "training_features and testing_features must have the same "
@@ -143,17 +131,11 @@ def _validate_cse_inputs(
             "number of observations."
         )
     if not np.isfinite(training).all():
-        raise ValueError(
-            "training_features must contain only finite values."
-        )
+        raise ValueError("training_features must contain only finite values.")
     if not np.isfinite(testing).all():
-        raise ValueError(
-            "testing_features must contain only finite values."
-        )
+        raise ValueError("testing_features must contain only finite values.")
     if np.unique(times).size != times.size:
-        raise ValueError(
-            "testing_times must uniquely identify observations."
-        )
+        raise ValueError("testing_times must uniquely identify observations.")
     return training, testing, times
 
 
@@ -201,29 +183,63 @@ def _run_cse_warning_stage(
     testing_signal: np.ndarray,
     testing_times: np.ndarray,
     config: CSEConfig,
+    stage1_mode: str,
 ) -> tuple[EWMATrainingResult, float, pd.DataFrame]:
-    ewma_training_result = fit_sd_ewma(
-        training_values=training_signal,
-        lambda_override=config.lambda_override,
-    )
-    effective_lambda = ewma_training_result.lambda_value
-    initial_z = (
-        ewma_training_result.initial_z
-        if config.ewma_initialization == "training_mean"
-        else ewma_training_result.final_z
-    )
-    warning_results = run_sd_ewma(
-        values=testing_signal,
-        times=testing_times,
-        initial_z=initial_z,
-        initial_error_variance=ewma_training_result.error_variance,
-        config=SD_EWMA_Config(
+
+    if stage1_mode == "multivariate_pca":
+        effective_lambda = (
+            config.lambda_override if config.lambda_override is not None else 0.2
+        )
+
+        ewma_training_result = fit_msd_ewma(
+            training_values=training_signal,
             lambda_value=effective_lambda,
-            variance_smoothing=config.variance_smoothing,
-            control_limit_multiplier=config.control_limit_multiplier,
-            variance_update_mode=config.variance_update_mode,
-        ),
-    )
+        )
+
+        initial_z = (
+            ewma_training_result.initial_z
+            if config.ewma_initialization == "training_mean"
+            else ewma_training_result.final_z
+        )
+
+        warning_results = run_msd_ewma(
+            values=testing_signal,
+            times=testing_times,
+            initial_z=initial_z,
+            lambda_value=effective_lambda,
+            inverse_error_covariance=(ewma_training_result.inverse_error_covariance),
+            control_limit=config.multivariate_control_limit,
+        )
+    elif stage1_mode == "pc1_univariate":
+        ewma_training_result = fit_sd_ewma(
+            training_values=training_signal,
+            lambda_override=config.lambda_override,
+        )
+
+        effective_lambda = ewma_training_result.lambda_value
+        initial_z = (
+            ewma_training_result.initial_z
+            if config.ewma_initialization == "training_mean"
+            else ewma_training_result.final_z
+        )
+
+        warning_results = run_sd_ewma(
+            values=testing_signal,
+            times=testing_times,
+            initial_z=initial_z,
+            initial_error_variance=ewma_training_result.error_variance,
+            config=SD_EWMA_Config(
+                lambda_value=effective_lambda,
+                variance_smoothing=config.variance_smoothing,
+                control_limit_multiplier=config.control_limit_multiplier,
+                variance_update_mode=config.variance_update_mode,
+            ),
+        )
+    else:
+        raise ValueError(
+            "stage1_mode must be 'pc1_univariate' " "or 'multivariate_pca'."
+        )
+
     return ewma_training_result, effective_lambda, warning_results
 
 
@@ -296,6 +312,7 @@ def run_cse(
         testing_signal=testing_signal,
         testing_times=times,
         config=cse_config,
+        stage1_mode=cse_config.stage1_mode,
     )
     validation_results = _run_cse_validation_stage(
         training_transformed=pca_result.training_transformed,
