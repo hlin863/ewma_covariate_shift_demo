@@ -2,6 +2,7 @@ from dataclasses import dataclass
 
 import numpy as np
 import pandas as pd
+from scipy.stats import chi2
 
 from src.cse_algorithm1_stage_2 import (
     TrainingReferenceHotellingConfig,
@@ -47,6 +48,7 @@ class CSEConfig:
     minimum_alarm_gap: int | None = None
     stage1_mode: str = "pc1_univariate"
     multivariate_control_limit: float = 5.991
+    multivariate_alpha: float = 0.05
 
     def __post_init__(self) -> None:
         if self.lambda_override is not None and not 0.0 < self.lambda_override <= 1.0:
@@ -85,6 +87,8 @@ class CSEConfig:
             raise ValueError("covariance_regularization must not be negative.")
         if self.minimum_alarm_gap is not None and self.minimum_alarm_gap < 0:
             raise ValueError("minimum_alarm_gap must not be negative.")
+        if not 0.0 < self.multivariate_alpha < 1.0:
+            raise ValueError("multivariate_alpha must be in (0, 1).")
 
 
 @dataclass(frozen=True)
@@ -196,6 +200,15 @@ def _run_cse_warning_stage(
             lambda_value=effective_lambda,
         )
 
+        n_features = ewma_training_result.n_features
+
+        control_limit = float(
+            chi2.ppf(
+                1.0 - config.multivariate_alpha,
+                df=n_features,
+            )
+        )
+
         initial_z = (
             ewma_training_result.initial_z
             if config.ewma_initialization == "training_mean"
@@ -208,7 +221,7 @@ def _run_cse_warning_stage(
             initial_z=initial_z,
             lambda_value=effective_lambda,
             inverse_error_covariance=(ewma_training_result.inverse_error_covariance),
-            control_limit=config.multivariate_control_limit,
+            control_limit=control_limit,
         )
     elif stage1_mode == "pc1_univariate":
         ewma_training_result = fit_sd_ewma(
