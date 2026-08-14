@@ -8,6 +8,10 @@ from src.cse_algorithm1_stage_2 import (
     TrainingReferenceHotellingConfig,
     validate_algorithm1_alarms,
 )
+from src.cse_paper_stage_2 import (
+    PaperTwoSampleHotellingConfig,
+    validate_paper_two_sample_alarms,
+)
 from src.cse_preprocessing import (
     CSEPCAResult,
     extract_first_component,
@@ -25,7 +29,6 @@ from src.multivariate_stage_2 import (
     HotellingConfig,
     validate_multivariate_alarms,
 )
-
 from src.msd_ewma import MSDTrainingResult, fit_msd_ewma, run_msd_ewma
 
 
@@ -63,26 +66,38 @@ class CSEConfig:
             "non_alarm",
         }:
             raise ValueError(
-                "variance_update_mode must be 'always', 'frozen', " "or 'non_alarm'."
+                "variance_update_mode must be 'always', 'frozen', or 'non_alarm'."
             )
         if self.ewma_initialization not in {"training_mean", "training_final"}:
             raise ValueError(
                 "ewma_initialization must be 'training_mean' or 'training_final'."
             )
         if self.validation_mode not in {
+            "paper_two_sample",
             "algorithm1_training_reference",
             "retrospective_windows",
         }:
             raise ValueError(
-                "validation_mode must be 'algorithm1_training_reference' "
-                "or 'retrospective_windows'."
+                "validation_mode must be 'paper_two_sample', "
+                "'algorithm1_training_reference', or 'retrospective_windows'."
             )
         if self.validation_before_size <= 0:
             raise ValueError("validation_before_size must be positive.")
         if self.validation_after_size <= 0:
             raise ValueError("validation_after_size must be positive.")
+        if (
+            self.validation_mode == "paper_two_sample"
+            and self.validation_before_size != self.validation_after_size
+        ):
+            raise ValueError(
+                "paper_two_sample requires equal validation window sizes."
+            )
         if not 0.0 < self.validation_alpha < 1.0:
             raise ValueError("validation_alpha must be in (0, 1).")
+        if self.covariance_method not in {"empirical", "shrinkage"}:
+            raise ValueError(
+                "covariance_method must be 'empirical' or 'shrinkage'."
+            )
         if self.covariance_regularization < 0.0:
             raise ValueError("covariance_regularization must not be negative.")
         if self.minimum_alarm_gap is not None and self.minimum_alarm_gap < 0:
@@ -94,7 +109,7 @@ class CSEConfig:
 @dataclass(frozen=True)
 class CSEResult:
     pca_result: CSEPCAResult
-    ewma_training_result: EWMATrainingResult
+    ewma_training_result: EWMATrainingResult | MSDTrainingResult
     effective_lambda: float
     training_signal: np.ndarray
     testing_transformed: np.ndarray
@@ -148,7 +163,7 @@ def _prepare_cse_features(
     testing_features: np.ndarray,
     *,
     pca_components: int | float | None,
-    stage1_mode: str
+    stage1_mode: str,
 ) -> tuple[CSEPCAResult, np.ndarray, np.ndarray, np.ndarray]:
     pca_result = fit_cse_pca(
         training_features=training_features,
@@ -188,8 +203,7 @@ def _run_cse_warning_stage(
     testing_times: np.ndarray,
     config: CSEConfig,
     stage1_mode: str,
-) -> tuple[EWMATrainingResult, float, pd.DataFrame]:
-
+) -> tuple[EWMATrainingResult | MSDTrainingResult, float, pd.DataFrame]:
     if stage1_mode == "multivariate_pca":
         effective_lambda = (
             config.lambda_override if config.lambda_override is not None else 0.2
@@ -201,7 +215,6 @@ def _run_cse_warning_stage(
         )
 
         n_features = ewma_training_result.n_features
-
         control_limit = float(
             chi2.ppf(
                 1.0 - config.multivariate_alpha,
@@ -220,7 +233,7 @@ def _run_cse_warning_stage(
             times=testing_times,
             initial_z=initial_z,
             lambda_value=effective_lambda,
-            inverse_error_covariance=(ewma_training_result.inverse_error_covariance),
+            inverse_error_covariance=ewma_training_result.inverse_error_covariance,
             control_limit=control_limit,
         )
     elif stage1_mode == "pc1_univariate":
@@ -250,7 +263,7 @@ def _run_cse_warning_stage(
         )
     else:
         raise ValueError(
-            "stage1_mode must be 'pc1_univariate' " "or 'multivariate_pca'."
+            "stage1_mode must be 'pc1_univariate' or 'multivariate_pca'."
         )
 
     return ewma_training_result, effective_lambda, warning_results
@@ -263,6 +276,20 @@ def _run_cse_validation_stage(
     warning_results: pd.DataFrame,
     config: CSEConfig,
 ) -> pd.DataFrame:
+    if config.validation_mode == "paper_two_sample":
+        return validate_paper_two_sample_alarms(
+            features=testing_transformed,
+            times=testing_times,
+            stage_1_results=warning_results,
+            config=PaperTwoSampleHotellingConfig(
+                window_size=config.validation_before_size,
+                alpha=config.validation_alpha,
+                covariance_method=config.covariance_method,
+                regularization=config.covariance_regularization,
+                minimum_alarm_gap=config.minimum_alarm_gap,
+            ),
+        )
+
     if config.validation_mode == "algorithm1_training_reference":
         return validate_algorithm1_alarms(
             training_features=training_transformed,
@@ -297,7 +324,7 @@ def run_cse(
     testing_times: np.ndarray,
     config: CSEConfig | None = None,
 ) -> CSEResult:
-    """Run PCA, Algorithm-1-compatible EWMA warning, and CSV validation."""
+    """Run PCA, EWMA warning detection, and configured Stage-II validation."""
 
     cse_config = config or CSEConfig()
     training, testing, times = _validate_cse_inputs(
