@@ -28,6 +28,17 @@ PUBLISHED_2A_RESULTS: dict[str, tuple[float, int, int]] = {
     "A09": (0.70, 6, 4),
 }
 
+# The 22 EEG electrodes in the Dataset 2A GDF acquisition order. Some MNE
+# versions expose several GDF channel labels as generic names such as EEG-0,
+# EEG-1, ... rather than their 10-20 electrode labels.  The acquisition order
+# is fixed for Dataset 2A, so it provides a safe dataset-specific fallback.
+DATASET_2A_EEG_MONTAGE = (
+    "Fz", "FC3", "FC1", "FCz", "FC2", "FC4",
+    "C5", "C3", "C1", "Cz", "C2", "C4", "C6",
+    "CP3", "CP1", "CPz", "CP2", "CP4",
+    "P1", "Pz", "P2", "POz",
+)
+
 DATASET_2A_CHANNELS = (
     "C3", "FC3", "CP3", "C5", "C1",
     "C4", "FC4", "CP4", "C2", "C6",
@@ -78,24 +89,50 @@ class Dataset2AExperimentResult:
 
 
 def _canonical_channel_name(name: str) -> str:
+    """Normalise common GDF/MNE channel-label punctuation and EEG prefixes."""
+
     return re.sub(r"[^A-Z0-9]", "", str(name).upper()).replace("EEG", "")
 
 
 def _dataset_2a_channel_indices(channel_names: tuple[str, ...]) -> tuple[int, ...]:
-    lookup: dict[str, int] = {}
+    """Resolve the ten paper-selected Dataset 2A electrodes.
+
+    Prefer explicit electrode labels when the GDF reader exposes them.  If
+    MNE exposes generic labels for the 22 EEG channels, fall back to the fixed
+    Dataset 2A acquisition order rather than incorrectly reporting the
+    electrodes as absent.
+    """
+
     expected = tuple(name.upper() for name in DATASET_2A_CHANNELS)
+    lookup: dict[str, int] = {}
+
     for index, name in enumerate(channel_names):
         canonical = _canonical_channel_name(name)
         for target in expected:
-            if canonical.endswith(target) and target not in lookup:
+            if canonical == target and target not in lookup:
                 lookup[target] = index
                 break
+
+    if len(lookup) == len(expected):
+        return tuple(lookup[name] for name in expected)
+
+    # Dataset 2A has exactly 22 EEG channels in a fixed montage order.  MNE's
+    # GDF reader can preserve generic labels (e.g. EEG-0) for channels whose
+    # original labels are not descriptive.  When all 22 EEG channels are
+    # present, resolve the requested electrodes from that documented order.
+    if len(channel_names) == len(DATASET_2A_EEG_MONTAGE):
+        montage_lookup = {
+            name.upper(): index for index, name in enumerate(DATASET_2A_EEG_MONTAGE)
+        }
+        return tuple(montage_lookup[name] for name in expected)
+
     missing = [name for name in expected if name not in lookup]
-    if missing:
-        raise ValueError(
-            "Dataset 2A session is missing required channels: " + ", ".join(missing)
-        )
-    return tuple(lookup[name] for name in expected)
+    available = ", ".join(str(name) for name in channel_names)
+    raise ValueError(
+        "Dataset 2A session is missing required channels: "
+        + ", ".join(missing)
+        + f". Available channels ({len(channel_names)}): {available}"
+    )
 
 
 def extract_dataset_2a_trials(
@@ -215,7 +252,9 @@ def run_dataset_2a_subject(
     if subject_id not in PUBLISHED_2A_RESULTS:
         raise ValueError("subject must be an integer from 1 to 9.")
     published_lambda, published_csw, published_csv = PUBLISHED_2A_RESULTS[subject_id]
-    covariance_method = "empirical" if validation_mode == "paper_two_sample" else "shrinkage"
+    covariance_method = (
+        "empirical" if validation_mode == "paper_two_sample" else "shrinkage"
+    )
     result = run_cse(
         training_features=training.features,
         testing_features=testing.features,
