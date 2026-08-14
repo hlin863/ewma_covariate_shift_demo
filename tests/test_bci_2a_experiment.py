@@ -55,14 +55,38 @@ def test_extract_dataset_2a_training_trials_selects_ten_channels_and_left_right(
 
 
 def test_extract_dataset_2a_resolves_generic_mne_gdf_channel_names_by_montage_order() -> None:
-    # MNE can expose Dataset 2A GDF electrodes with one descriptive first
-    # label followed by generic EEG-N labels.  The GDF acquisition order is
-    # fixed, so the extractor must still recover the ten paper-selected sites.
     generic_names = tuple(
         "EEG-Fz" if index == 0 else f"EEG-{index - 1}"
         for index in range(len(DATASET_2A_EEG_MONTAGE))
     )
     session = _session("T", channel_names=generic_names)
+    result = extract_dataset_2a_trials(session)
+
+    assert result.signals.shape == (8, 10, 300)
+    assert result.channel_names == DATASET_2A_CHANNELS
+
+    expected_indices = [
+        DATASET_2A_EEG_MONTAGE.index(name) for name in DATASET_2A_CHANNELS
+    ]
+    first_onset = int(2 * session.sampling_frequency)
+    last_sample = first_onset + int(3 * session.sampling_frequency)
+    expected_first_trial = session.signals[
+        first_onset:last_sample, expected_indices
+    ].T
+    np.testing.assert_allclose(result.signals[0], expected_first_trial)
+
+
+def test_extract_dataset_2a_handles_real_mne_25_channel_layout_with_eog() -> None:
+    # This reproduces the channel-name layout observed from the real 2A GDF
+    # files in MNE: 22 EEG acquisition channels plus three EOG channels.
+    channel_names = (
+        "EEG-Fz", "EEG-0", "EEG-1", "EEG-2", "EEG-3", "EEG-4",
+        "EEG-5", "EEG-C3", "EEG-6", "EEG-Cz", "EEG-7", "EEG-C4",
+        "EEG-8", "EEG-9", "EEG-10", "EEG-11", "EEG-12", "EEG-13",
+        "EEG-14", "EEG-Pz", "EEG-15", "EEG-16",
+        "EOG-left", "EOG-central", "EOG-right",
+    )
+    session = _session("T", channel_names=channel_names)
     result = extract_dataset_2a_trials(session)
 
     assert result.signals.shape == (8, 10, 300)
