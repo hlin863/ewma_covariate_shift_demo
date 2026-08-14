@@ -18,6 +18,7 @@ Research reproduction and extension project for EWMA-based covariate-shift estim
   - configurable control limits and variance updates
 - Multivariate Stage-II Hotelling validation
 - Combined Dataset 2A/2B Table 1 reproduction output
+- Flask dashboard for published-versus-computed Table 1 results
 - Diagnostic and sensitivity-analysis utilities
 - Pytest coverage and GitHub Actions CI for the CSE/EWMA pipeline
 
@@ -60,6 +61,34 @@ outputs/metrics/bci_table1_comparison.csv
 `bci_table1_reproduction.md` contains the computed subject rows and mean row in the grouped Dataset 2A / Dataset 2B layout. `bci_table1_comparison.csv` contains published values, computed values, and CSW/CSV differences for calibration and reproducibility analysis.
 
 The combined runner does not replace computed results with the publication targets.
+
+## Flask visualisation dashboard
+
+The dashboard reads `outputs/metrics/bci_table1_comparison.csv` on each request, so re-running the reproduction experiment automatically updates the displayed results without copying values into the web application.
+
+Install the small web layer if Flask is not already present:
+
+```bash
+python -m pip install -r requirements-dashboard.txt
+```
+
+Generate the latest experiment output and start the dashboard:
+
+```bash
+python scripts/run_bci_table1_reproduction.py --validation-mode paper_two_sample
+python app.py
+```
+
+Then open the local Flask address shown in the terminal, normally `http://127.0.0.1:5000/`.
+
+The dashboard provides:
+
+- Dataset 2A and 2B mean published/computed CSW and CSV values
+- mean absolute reproduction error for CSW and CSV
+- subject-level published-versus-computed bar comparisons
+- signed CSW/CSV differences for each participant
+- a visible current-research interpretation panel highlighting Stage-I calibration, Stage-II under-confirmation, and the Dataset 2A evaluation-stream issue
+- an empty-state instruction if the Table 1 comparison CSV has not been generated yet
 
 ## Stage-II validation modes
 
@@ -104,7 +133,7 @@ Run the complete suite locally with:
 python -m pytest -q
 ```
 
-The tests include Dataset 2A trial extraction, Dataset 2A FBCSP feature construction, Stage-II two-sample validation, Table 1 formatting, existing Dataset 2B regression tests, and EWMA/CSE unit tests. GitHub Actions also runs the suite on pushes and pull requests.
+The tests include Dataset 2A trial extraction, Dataset 2A FBCSP feature construction, Stage-II two-sample validation, Table 1 formatting, Flask dashboard rendering, existing Dataset 2B regression tests, and EWMA/CSE unit tests. GitHub Actions also runs the suite on pushes and pull requests.
 
 ## Current research boundary
 
