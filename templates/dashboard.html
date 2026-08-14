@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CSE Table 1 Reproduction</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+</head>
+<body>
+  <main class="page-shell">
+    <header class="hero">
+      <div>
+        <p class="eyebrow">EWMA Covariate Shift Demo</p>
+        <h1>BCI Competition IV · Table 1 Reproduction</h1>
+        <p class="lede">A visual comparison of published and computed covariate-shift warnings (CSW) and validated shifts (CSV) for Dataset 2A and Dataset 2B.</p>
+      </div>
+      <div class="status-pill">paper_two_sample evaluation</div>
+    </header>
+
+    {% if not data_available %}
+      <section class="empty-state">
+        <h2>No reproduction output found yet</h2>
+        <p>Generate the comparison CSV first:</p>
+        <code>python scripts/run_bci_table1_reproduction.py --validation-mode paper_two_sample</code>
+        <p class="path">Expected file: {{ results_path }}</p>
+      </section>
+    {% else %}
+      <section class="summary-grid">
+        {% for summary in summaries %}
+          <article class="summary-card">
+            <div class="card-heading">
+              <span class="dataset-badge">Dataset {{ summary.dataset }}</span>
+              <span>{{ summary.subjects }} subjects</span>
+            </div>
+            <div class="metric-grid">
+              <div><span class="metric-label">Published CSW mean</span><strong>{{ "%.2f"|format(summary.published_csw_mean) }}</strong></div>
+              <div><span class="metric-label">Computed CSW mean</span><strong>{{ "%.2f"|format(summary.computed_csw_mean) }}</strong></div>
+              <div><span class="metric-label">Published CSV mean</span><strong>{{ "%.2f"|format(summary.published_csv_mean) }}</strong></div>
+              <div><span class="metric-label">Computed CSV mean</span><strong>{{ "%.2f"|format(summary.computed_csv_mean) }}</strong></div>
+            </div>
+            <div class="error-strip">
+              <span>CSW MAE <strong>{{ "%.2f"|format(summary.csw_mae) }}</strong></span>
+              <span>CSV MAE <strong>{{ "%.2f"|format(summary.csv_mae) }}</strong></span>
+            </div>
+          </article>
+        {% endfor %}
+      </section>
+
+      {% for dataset, rows in [('2A', rows_2a), ('2B', rows_2b)] %}
+        <section class="dataset-panel">
+          <div class="section-title">
+            <div>
+              <p class="eyebrow">Dataset {{ dataset }}</p>
+              <h2>Published vs computed results</h2>
+            </div>
+            <div class="legend">
+              <span><i class="swatch published"></i>Published</span>
+              <span><i class="swatch computed"></i>Computed</span>
+            </div>
+          </div>
+
+          <div class="subject-grid">
+            {% for row in rows %}
+              <article class="subject-card">
+                <div class="subject-header">
+                  <div>
+                    <h3>{{ row.subject }}</h3>
+                    <span>λ = {{ "%.2f"|format(row.lambda) }}</span>
+                  </div>
+                  <div class="difference-badges">
+                    <span class="difference {{ 'positive' if row.csw_difference > 0 else 'negative' if row.csw_difference < 0 else 'neutral' }}">CSW {{ '%+d'|format(row.csw_difference) }}</span>
+                    <span class="difference {{ 'positive' if row.csv_difference > 0 else 'negative' if row.csv_difference < 0 else 'neutral' }}">CSV {{ '%+d'|format(row.csv_difference) }}</span>
+                  </div>
+                </div>
+
+                <div class="measure-block">
+                  <div class="measure-title"><span>CSW</span><strong>{{ row.computed_csw }} / {{ row.published_csw }}</strong></div>
+                  <div class="bar-track"><span class="bar published" style="width: {{ row.published_csw_width }}%"></span></div>
+                  <div class="bar-track"><span class="bar computed" style="width: {{ row.computed_csw_width }}%"></span></div>
+                </div>
+
+                <div class="measure-block">
+                  <div class="measure-title"><span>CSV</span><strong>{{ row.computed_csv }} / {{ row.published_csv }}</strong></div>
+                  <div class="bar-track"><span class="bar published" style="width: {{ row.published_csv_width }}%"></span></div>
+                  <div class="bar-track"><span class="bar computed" style="width: {{ row.computed_csv_width }}%"></span></div>
+                </div>
+              </article>
+            {% endfor %}
+          </div>
+        </section>
+      {% endfor %}
+
+      <section class="interpretation-panel">
+        <div>
+          <p class="eyebrow">Current reproduction signal</p>
+          <h2>What the dashboard makes visible</h2>
+        </div>
+        <div class="interpretation-grid">
+          <div><strong>Stage I</strong><p>CSW counts are in the same broad numerical range as the paper, but subject-level calibration remains uneven.</p></div>
+          <div><strong>Stage II</strong><p>Computed CSV counts are markedly lower than the published targets, making Stage-II validation the clearest current calibration gap.</p></div>
+          <div><strong>Dataset 2A</strong><p>The current evaluation stream contains 288 trials; the paper's binary left/right analysis should be checked against the released evaluation labels.</p></div>
+        </div>
+      </section>
+    {% endif %}
+  </main>
+</body>
+</html>
