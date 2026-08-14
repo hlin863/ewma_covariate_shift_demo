@@ -86,12 +86,33 @@ def comparison_dataframe(rows: list[Table1Row]) -> pd.DataFrame:
     return pd.DataFrame([row.long_row() for row in rows])
 
 
+def _format_value(value: object, *, decimal: bool = False) -> str:
+    if isinstance(value, str):
+        return value
+    if decimal:
+        return f"{float(value):.2f}"
+    if isinstance(value, float) and not value.is_integer():
+        return f"{value:.2f}"
+    return str(int(value))
+
+
 def paper_style_markdown(rows: list[Table1Row]) -> str:
-    """Render the computed experiment in the same 2A/2B grouped structure."""
+    """Render computed results in the paper's grouped 2A/2B table structure."""
 
     frame = paper_style_dataframe(rows)
-    return (
-        "# Table 1 reproduction: CSE on BCI Competition IV Dataset 2A and 2B\n\n"
-        + frame.to_markdown(index=False, floatfmt=("", ".2f", ".2f", ".2f", "", ".2f", ".2f", ".2f"))
-        + "\n"
-    )
+    headers = list(frame.columns)
+    lines = [
+        "# Table 1 reproduction: CSE on BCI Competition IV Dataset 2A and 2B",
+        "",
+        "| " + " | ".join(headers) + " |",
+        "| " + " | ".join(["---"] * len(headers)) + " |",
+    ]
+    decimal_columns = {"2A λ", "2B λ", "2A CSW", "2A CSV", "2B CSW", "2B CSV"}
+    for _, row in frame.iterrows():
+        cells = [
+            _format_value(row[column], decimal=column in decimal_columns)
+            for column in headers
+        ]
+        lines.append("| " + " | ".join(cells) + " |")
+    lines.append("")
+    return "\n".join(lines)
