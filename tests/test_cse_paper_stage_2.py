@@ -51,10 +51,12 @@ def test_paper_validator_builds_equal_disjoint_windows_around_warning() -> None:
     after = rng.normal(3.0, 0.2, size=(10, 2))
     features = np.vstack([before, after])
     times = np.arange(features.shape[0])
-    stage_1 = pd.DataFrame({
-        "time": times,
-        "stage_1_alarm": [0] * 9 + [1] + [0] * 10,
-    })
+    stage_1 = pd.DataFrame(
+        {
+            "time": times,
+            "stage_1_alarm": [0] * 9 + [1] + [0] * 10,
+        }
+    )
 
     results = validate_paper_two_sample_alarms(
         features=features,
@@ -80,10 +82,12 @@ def test_paper_validator_builds_equal_disjoint_windows_around_warning() -> None:
 def test_paper_validator_marks_warning_pending_without_second_window() -> None:
     features = np.zeros((15, 2))
     times = np.arange(15)
-    stage_1 = pd.DataFrame({
-        "time": times,
-        "stage_1_alarm": [0] * 9 + [1] + [0] * 5,
-    })
+    stage_1 = pd.DataFrame(
+        {
+            "time": times,
+            "stage_1_alarm": [0] * 9 + [1] + [0] * 5,
+        }
+    )
 
     results = validate_paper_two_sample_alarms(
         features=features,
