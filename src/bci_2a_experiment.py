@@ -30,8 +30,8 @@ PUBLISHED_2A_RESULTS: dict[str, tuple[float, int, int]] = {
 
 # The 22 EEG electrodes in the Dataset 2A GDF acquisition order. Some MNE
 # versions expose several GDF channel labels as generic names such as EEG-0,
-# EEG-1, ... rather than their 10-20 electrode labels.  The acquisition order
-# is fixed for Dataset 2A, so it provides a safe dataset-specific fallback.
+# EEG-1, ... rather than their 10-20 electrode labels. The acquisition order
+# is fixed for Dataset 2A, so it provides a dataset-specific fallback.
 DATASET_2A_EEG_MONTAGE = (
     "Fz", "FC3", "FC1", "FCz", "FC2", "FC4",
     "C5", "C3", "C1", "Cz", "C2", "C4", "C6",
@@ -94,13 +94,21 @@ def _canonical_channel_name(name: str) -> str:
     return re.sub(r"[^A-Z0-9]", "", str(name).upper()).replace("EEG", "")
 
 
+def _is_eog_channel(name: str) -> bool:
+    """Return True for the three Dataset 2A electro-oculogram channels."""
+
+    return "EOG" in re.sub(r"[^A-Z0-9]", "", str(name).upper())
+
+
 def _dataset_2a_channel_indices(channel_names: tuple[str, ...]) -> tuple[int, ...]:
     """Resolve the ten paper-selected Dataset 2A electrodes.
 
-    Prefer explicit electrode labels when the GDF reader exposes them.  If
-    MNE exposes generic labels for the 22 EEG channels, fall back to the fixed
-    Dataset 2A acquisition order rather than incorrectly reporting the
-    electrodes as absent.
+    Prefer explicit electrode labels when the GDF reader exposes all of them.
+    MNE commonly exposes Dataset 2A as 25 channels: 22 EEG channels followed
+    by three EOG channels, while many of the EEG labels are generic ``EEG-N``
+    names. In that case the 22 non-EOG channels are mapped through the fixed
+    Dataset 2A acquisition montage. Explicit anchor labels such as C3/Cz/C4/Pz
+    are checked against that order before the fallback is accepted.
     """
 
     expected = tuple(name.upper() for name in DATASET_2A_CHANNELS)
@@ -116,15 +124,38 @@ def _dataset_2a_channel_indices(channel_names: tuple[str, ...]) -> tuple[int, ..
     if len(lookup) == len(expected):
         return tuple(lookup[name] for name in expected)
 
-    # Dataset 2A has exactly 22 EEG channels in a fixed montage order.  MNE's
-    # GDF reader can preserve generic labels (e.g. EEG-0) for channels whose
-    # original labels are not descriptive.  When all 22 EEG channels are
-    # present, resolve the requested electrodes from that documented order.
-    if len(channel_names) == len(DATASET_2A_EEG_MONTAGE):
+    # Do not use len(channel_names) == 22 here: MNE can retain the three EOG
+    # channels even when the caller requested EEG data, yielding the observed
+    # 25-channel layout. Strip EOG channels first and then validate the fixed
+    # 22-electrode Dataset 2A acquisition order.
+    eeg_indices = [
+        index for index, name in enumerate(channel_names) if not _is_eog_channel(name)
+    ]
+    if len(eeg_indices) == len(DATASET_2A_EEG_MONTAGE):
         montage_lookup = {
-            name.upper(): index for index, name in enumerate(DATASET_2A_EEG_MONTAGE)
+            name.upper(): position
+            for position, name in enumerate(DATASET_2A_EEG_MONTAGE)
         }
-        return tuple(montage_lookup[name] for name in expected)
+
+        # Validate every descriptive electrode label that MNE did preserve.
+        # This prevents silently applying the montage fallback to an unrelated
+        # 22-channel recording with a different order.
+        descriptive_montage_names = set(montage_lookup)
+        for absolute_index in eeg_indices:
+            canonical = _canonical_channel_name(channel_names[absolute_index])
+            if canonical not in descriptive_montage_names:
+                continue
+            expected_position = montage_lookup[canonical]
+            if eeg_indices[expected_position] != absolute_index:
+                raise ValueError(
+                    "Dataset 2A channel order does not match the documented "
+                    f"22-electrode montage at {channel_names[absolute_index]!r}."
+                )
+
+        return tuple(
+            eeg_indices[montage_lookup[name]]
+            for name in expected
+        )
 
     missing = [name for name in expected if name not in lookup]
     available = ", ".join(str(name) for name in channel_names)
