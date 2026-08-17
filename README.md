@@ -51,6 +51,24 @@ python scripts/run_bci_table1_reproduction.py --validation-mode algorithm1_train
 python scripts/run_bci_table1_reproduction.py --validation-mode retrospective_windows
 ```
 
+PCA retention is an explicit experiment option rather than a hidden three-component assumption. Stage I still monitors PC1 only, as described by Algorithm 1. Examples:
+
+```bash
+# Retain only PC1
+python scripts/run_bci_table1_reproduction.py --validation-mode algorithm1_training_reference --pca-components 1
+
+# Retain three components for multivariate Stage II
+python scripts/run_bci_table1_reproduction.py --validation-mode algorithm1_training_reference --pca-components 3
+
+# Retain enough components to explain 95% of training variance
+python scripts/run_bci_table1_reproduction.py --validation-mode algorithm1_training_reference --pca-components 0.95
+
+# Retain all available PCA components (also the default)
+python scripts/run_bci_table1_reproduction.py --validation-mode algorithm1_training_reference --pca-components all
+```
+
+Each subject line also reports the retained PCA component count and the PC1 explained-variance ratio so PCA behavior can be audited alongside CSW/CSV results.
+
 Outputs:
 
 ```text
@@ -133,7 +151,7 @@ Run the complete suite locally with:
 python -m pytest -q
 ```
 
-The tests include Dataset 2A trial extraction, Dataset 2A FBCSP feature construction, Stage-II two-sample validation, Table 1 formatting, Flask dashboard rendering, existing Dataset 2B regression tests, and EWMA/CSE unit tests. GitHub Actions also runs the suite on pushes and pull requests.
+The tests include Dataset 2A trial extraction, Dataset 2A FBCSP feature construction, Stage-II two-sample validation, Table 1 formatting, Flask dashboard rendering, PCA CLI parsing, existing Dataset 2B regression tests, and EWMA/CSE unit tests. GitHub Actions also runs the suite on pushes and pull requests.
 
 ## Current research boundary
 
