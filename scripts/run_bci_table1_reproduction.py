@@ -1,6 +1,6 @@
 """Reproduce the 2019 paper's CSE Table 1 layout for Datasets 2A and 2B."""
 
-from argparse import ArgumentParser
+from argparse import ArgumentParser, ArgumentTypeError
 from pathlib import Path
 import sys
 
@@ -30,6 +30,41 @@ from src.table1_reproduction import (
     paper_style_dataframe,
     paper_style_markdown,
 )
+
+
+def _parse_pca_components(value: str) -> int | float | None:
+    """Parse PCA retention from CLI.
+
+    Accepted forms:
+    - ``all`` / ``none``: retain all available components (``None``)
+    - positive integer: retain exactly that many components
+    - float in (0, 1): retain enough components to explain that fraction of variance
+    """
+
+    text = str(value).strip().lower()
+    if text in {"all", "none"}:
+        return None
+
+    try:
+        if any(marker in text for marker in (".", "e")):
+            parsed_float = float(text)
+            if 0.0 < parsed_float < 1.0:
+                return parsed_float
+            raise ArgumentTypeError(
+                "--pca-components as a float must be in (0, 1), for example 0.95."
+            )
+
+        parsed_int = int(text)
+    except ValueError as error:
+        raise ArgumentTypeError(
+            "--pca-components must be 'all', a positive integer, or a float in (0, 1)."
+        ) from error
+
+    if parsed_int < 1:
+        raise ArgumentTypeError(
+            "--pca-components as an integer must be at least 1."
+        )
+    return parsed_int
 
 
 def _parse_args():
@@ -70,6 +105,16 @@ def _parse_args():
     )
     parser.add_argument("--components-per-side", type=int, default=1)
     parser.add_argument(
+        "--pca-components",
+        type=_parse_pca_components,
+        default=None,
+        metavar="N|FRACTION|all",
+        help=(
+            "PCA components retained before CSE. Use a positive integer (e.g. 1 or 3), "
+            "a variance fraction such as 0.95, or 'all'. Stage I still monitors PC1 only."
+        ),
+    )
+    parser.add_argument(
         "--markdown-output",
         type=Path,
         default=Path("outputs/metrics/bci_table1_reproduction.md"),
@@ -96,6 +141,7 @@ def _run_2a(args, subject: int) -> Table1Row:
         subject,
         pipeline.training,
         pipeline.testing,
+        pca_components=args.pca_components,
         validation_mode=args.validation_mode,
         validation_window_size=args.validation_window_size,
         validation_alpha=args.alpha,
@@ -105,6 +151,8 @@ def _run_2a(args, subject: int) -> Table1Row:
     )
     print(
         f"{result.subject}: train={result.training_trials}, test={result.testing_trials}, "
+        f"PCA={result.cse_result.pca_result.n_components}, "
+        f"PC1var={result.cse_result.pca_result.explained_variance_ratio[0]:.3f}, "
         f"CSW={result.computed_csw}/{result.published_csw}, "
         f"CSV={result.computed_csv}/{result.published_csv}"
     )
@@ -134,13 +182,15 @@ def _run_2b(args, subject: int) -> Table1Row:
 
     subject_id = f"B{subject:02d}"
     published_lambda, published_csw, published_csv = PUBLISHED_2B_RESULTS[subject_id]
-    covariance_method = "empirical" if args.validation_mode == "paper_two_sample" else "shrinkage"
+    covariance_method = (
+        "empirical" if args.validation_mode == "paper_two_sample" else "shrinkage"
+    )
     cse_result = run_cse(
         training_features=pipeline.training.features,
         testing_features=pipeline.testing.features,
         testing_times=pipeline.testing.times,
         config=CSEConfig(
-            pca_components=min(3, pipeline.training.features.shape[1]),
+            pca_components=args.pca_components,
             lambda_override=published_lambda,
             variance_smoothing=args.variance_smoothing,
             control_limit_multiplier=args.control_limit_multiplier,
@@ -158,6 +208,8 @@ def _run_2b(args, subject: int) -> Table1Row:
     print(
         f"{subject_id}: train={pipeline.training.features.shape[0]}, "
         f"test={pipeline.testing.features.shape[0]}, "
+        f"PCA={cse_result.pca_result.n_components}, "
+        f"PC1var={cse_result.pca_result.explained_variance_ratio[0]:.3f}, "
         f"CSW={computed_csw}/{published_csw}, CSV={computed_csv}/{published_csv}"
     )
     return Table1Row(
