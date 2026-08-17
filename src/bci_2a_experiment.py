@@ -15,7 +15,6 @@ from src.bci_data import BCISessionData
 from src.cse import CSEConfig, CSEResult, run_cse
 from src.fbcsp import FBCSPModel, fit_transform_fbcsp
 
-
 PUBLISHED_2A_RESULTS: dict[str, tuple[float, int, int]] = {
     "A01": (0.50, 12, 6),
     "A02": (0.55, 15, 8),
@@ -33,15 +32,41 @@ PUBLISHED_2A_RESULTS: dict[str, tuple[float, int, int]] = {
 # EEG-1, ... rather than their 10-20 electrode labels. The acquisition order
 # is fixed for Dataset 2A, so it provides a dataset-specific fallback.
 DATASET_2A_EEG_MONTAGE = (
-    "Fz", "FC3", "FC1", "FCz", "FC2", "FC4",
-    "C5", "C3", "C1", "Cz", "C2", "C4", "C6",
-    "CP3", "CP1", "CPz", "CP2", "CP4",
-    "P1", "Pz", "P2", "POz",
+    "Fz",
+    "FC3",
+    "FC1",
+    "FCz",
+    "FC2",
+    "FC4",
+    "C5",
+    "C3",
+    "C1",
+    "Cz",
+    "C2",
+    "C4",
+    "C6",
+    "CP3",
+    "CP1",
+    "CPz",
+    "CP2",
+    "CP4",
+    "P1",
+    "Pz",
+    "P2",
+    "POz",
 )
 
 DATASET_2A_CHANNELS = (
-    "C3", "FC3", "CP3", "C5", "C1",
-    "C4", "FC4", "CP4", "C2", "C6",
+    "C3",
+    "FC3",
+    "CP3",
+    "C5",
+    "C1",
+    "C4",
+    "FC4",
+    "CP4",
+    "C2",
+    "C6",
 )
 
 _TRAINING_LABELS = {"769": 0, "770": 1}
@@ -152,10 +177,7 @@ def _dataset_2a_channel_indices(channel_names: tuple[str, ...]) -> tuple[int, ..
                     f"22-electrode montage at {channel_names[absolute_index]!r}."
                 )
 
-        return tuple(
-            eeg_indices[montage_lookup[name]]
-            for name in expected
-        )
+        return tuple(eeg_indices[montage_lookup[name]] for name in expected)
 
     missing = [name for name in expected if name not in lookup]
     available = ", ".join(str(name) for name in channel_names)
@@ -202,7 +224,9 @@ def extract_dataset_2a_trials(
         descriptions.append(code)
 
     if not rows:
-        raise ValueError("no finite Dataset 2A left/right motor-imagery trials were found.")
+        raise ValueError(
+            "no finite Dataset 2A left/right motor-imagery trials were found."
+        )
     signals = np.stack(rows)
     return Dataset2ATrialSignalResult(
         signals=signals,
@@ -237,7 +261,9 @@ def build_dataset_2a_fbcsp_features(
     if training.channel_names != testing.channel_names:
         raise ValueError("training and testing channel orders must match.")
     if np.any(training.labels < 0):
-        raise ValueError("Dataset 2A training trials must be labelled left/right trials.")
+        raise ValueError(
+            "Dataset 2A training trials must be labelled left/right trials."
+        )
     model, train_features, test_features = fit_transform_fbcsp(
         training.signals,
         training.labels,
@@ -270,6 +296,7 @@ def run_dataset_2a_subject(
     training: Dataset2ATrialFeatureResult,
     testing: Dataset2ATrialFeatureResult,
     *,
+    pca_components: int | float | None = None,
     validation_mode: str = "algorithm1_training_reference",
     validation_window_size: int = 10,
     validation_alpha: float = 0.05,
@@ -291,7 +318,7 @@ def run_dataset_2a_subject(
         testing_features=testing.features,
         testing_times=testing.times,
         config=CSEConfig(
-            pca_components=min(3, training.features.shape[1]),
+            pca_components=pca_components,
             lambda_override=published_lambda,
             variance_smoothing=variance_smoothing,
             control_limit_multiplier=control_limit_multiplier,
@@ -310,7 +337,9 @@ def run_dataset_2a_subject(
         published_csw=published_csw,
         published_csv=published_csv,
         computed_csw=int(result.warning_results["stage_1_alarm"].astype(bool).sum()),
-        computed_csv=int(result.validation_results["confirmed_shift"].astype(bool).sum()),
+        computed_csv=int(
+            result.validation_results["confirmed_shift"].astype(bool).sum()
+        ),
         training_trials=int(training.features.shape[0]),
         testing_trials=int(testing.features.shape[0]),
         cse_result=result,
