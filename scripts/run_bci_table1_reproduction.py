@@ -8,10 +8,13 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
+from src.bci_2a_development_pipeline import (
+    build_dataset_2a_development_fbcsp_features,
+)
 from src.bci_2a_experiment import (
-    build_dataset_2a_fbcsp_features,
     extract_dataset_2a_trials,
     run_dataset_2a_subject,
+    split_dataset_2a_session1,
 )
 from src.bci_2b_experiment import (
     PUBLISHED_2B_RESULTS,
@@ -33,13 +36,7 @@ from src.table1_reproduction import (
 
 
 def _parse_pca_components(value: str) -> int | float | None:
-    """Parse PCA retention from CLI.
-
-    Accepted forms:
-    - ``all`` / ``none``: retain all available components (``None``)
-    - positive integer: retain exactly that many components
-    - float in (0, 1): retain enough components to explain that fraction of variance
-    """
+    """Parse PCA retention from CLI."""
 
     text = str(value).strip().lower()
     if text in {"all", "none"}:
@@ -65,6 +62,13 @@ def _parse_pca_components(value: str) -> int | float | None:
             "--pca-components as an integer must be at least 1."
         )
     return parsed_int
+
+
+def _fraction(value: str) -> float:
+    parsed = float(value)
+    if not 0.0 < parsed < 1.0:
+        raise ArgumentTypeError("fraction must be in (0, 1).")
+    return parsed
 
 
 def _parse_args():
@@ -115,6 +119,24 @@ def _parse_args():
         ),
     )
     parser.add_argument(
+        "--session1-validation-fraction",
+        type=_fraction,
+        default=0.30,
+        help=(
+            "Dataset 2A Session-I fraction held out for validation before FBCSP/PCA/CSE "
+            "model fitting. The paper specifies 30%%; default: 0.30."
+        ),
+    )
+    parser.add_argument(
+        "--session1-split-seed",
+        type=int,
+        default=42,
+        help=(
+            "Deterministic seed for the stratified Dataset 2A Session-I 70/30 split. "
+            "The paper does not report its exact random partition."
+        ),
+    )
+    parser.add_argument(
         "--markdown-output",
         type=Path,
         default=Path("outputs/metrics/bci_table1_reproduction.md"),
@@ -128,15 +150,22 @@ def _parse_args():
 
 
 def _run_2a(args, subject: int) -> Table1Row:
-    training_session = load_bci_competition_iv_2a_session(args.data_2a, subject, "T")
-    testing_session = load_bci_competition_iv_2a_session(args.data_2a, subject, "E")
-    training_trials = extract_dataset_2a_trials(training_session)
-    testing_trials = extract_dataset_2a_trials(testing_session)
-    pipeline = build_dataset_2a_fbcsp_features(
-        training_trials,
+    session1 = load_bci_competition_iv_2a_session(args.data_2a, subject, "T")
+    session2 = load_bci_competition_iv_2a_session(args.data_2a, subject, "E")
+    session1_trials = extract_dataset_2a_trials(session1)
+    testing_trials = extract_dataset_2a_trials(session2)
+
+    development_split = split_dataset_2a_session1(
+        session1_trials,
+        validation_fraction=args.session1_validation_fraction,
+        random_state=args.session1_split_seed,
+    )
+    pipeline = build_dataset_2a_development_fbcsp_features(
+        development_split,
         testing_trials,
         components_per_side=args.components_per_side,
     )
+
     result = run_dataset_2a_subject(
         subject,
         pipeline.training,
@@ -150,7 +179,10 @@ def _run_2a(args, subject: int) -> Table1Row:
         variance_update_mode=args.variance_update_mode,
     )
     print(
-        f"{result.subject}: train={result.training_trials}, test={result.testing_trials}, "
+        f"{result.subject}: session1={session1_trials.signals.shape[0]}, "
+        f"dev_train={pipeline.training.features.shape[0]}, "
+        f"validation={pipeline.validation.features.shape[0]}, "
+        f"test={result.testing_trials}, "
         f"PCA={result.cse_result.pca_result.n_components}, "
         f"PC1var={result.cse_result.pca_result.explained_variance_ratio[0]:.3f}, "
         f"CSW={result.computed_csw}/{result.published_csw}, "
@@ -243,6 +275,11 @@ def main() -> None:
     print(paper_table.to_string(index=False, float_format=lambda value: f"{value:.2f}"))
     print(f"\nSaved paper-style table to: {args.markdown_output.resolve()}")
     print(f"Saved published/computed comparison to: {args.comparison_output.resolve()}")
+    print(
+        "Dataset 2A uses a stratified Session-I development split before FBCSP fitting: "
+        f"validation_fraction={args.session1_validation_fraction:.2f}, "
+        f"seed={args.session1_split_seed}."
+    )
     print(
         "Published values are retained only as reference targets. "
         "The formatted table always contains computed CSW/CSV values."
