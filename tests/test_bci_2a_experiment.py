@@ -1,7 +1,6 @@
 from pathlib import Path
 
 import numpy as np
-import pytest
 
 from src.bci_2a_experiment import (
     DATASET_2A_CHANNELS,
@@ -19,13 +18,7 @@ def _session(
     channel_names: tuple[str, ...] = DATASET_2A_CHANNELS,
     n_trials: int = 8,
 ) -> BCISessionData:
-    """Build a deterministic synthetic Dataset 2A-like session.
-
-    Small training fixtures keep most unit tests fast. Evaluation tests can
-    request the official Dataset 2A Session-II size of 288 cues so that the
-    extractor is tested against the same cue/label-count contract as the
-    released evaluation files.
-    """
+    """Build a deterministic synthetic Dataset 2A-like session."""
 
     rng = np.random.default_rng(70 if session == "T" else 71)
     sfreq = 100.0
@@ -125,12 +118,14 @@ def test_extract_dataset_2a_handles_real_mne_25_channel_layout_with_eog() -> Non
     np.testing.assert_allclose(result.signals[0], expected_first_trial)
 
 
-def test_extract_dataset_2a_evaluation_requires_official_labels() -> None:
-    with pytest.raises(ValueError, match="requires official evaluation labels"):
-        extract_dataset_2a_trials(_session("E", n_trials=288))
+def test_extract_dataset_2a_evaluation_gdf_only_remains_unlabelled() -> None:
+    result = extract_dataset_2a_trials(_session("E", n_trials=288))
+
+    assert result.signals.shape == (288, 10, 300)
+    np.testing.assert_array_equal(result.labels, np.full(288, -1, dtype=int))
 
 
-def test_extract_dataset_2a_evaluation_filters_to_left_right() -> None:
+def test_extract_dataset_2a_evaluation_filters_to_left_right_when_labels_are_supplied() -> None:
     labels = _official_size_evaluation_labels()
     result = extract_dataset_2a_trials(
         _session("E", n_trials=288),
@@ -146,14 +141,11 @@ def test_extract_dataset_2a_evaluation_filters_to_left_right() -> None:
 
 def test_dataset_2a_fbcsp_produces_paper_filter_bank_features() -> None:
     training = extract_dataset_2a_trials(_session("T"))
-    testing = extract_dataset_2a_trials(
-        _session("E", n_trials=288),
-        evaluation_labels=_official_size_evaluation_labels(),
-    )
+    testing = extract_dataset_2a_trials(_session("E", n_trials=288))
     pipeline = build_dataset_2a_fbcsp_features(training, testing)
 
     assert pipeline.training.features.shape == (8, 20)
-    assert pipeline.testing.features.shape == (144, 20)
+    assert pipeline.testing.features.shape == (288, 20)
     assert len(pipeline.training.feature_names) == 20
     assert np.isfinite(pipeline.training.features).all()
     assert np.isfinite(pipeline.testing.features).all()
