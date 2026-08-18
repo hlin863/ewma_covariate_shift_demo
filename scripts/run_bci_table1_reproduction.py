@@ -18,6 +18,9 @@ from src.bci.datasets.dataset2a import (
     run_dataset_2a_subject,
     split_dataset_2a_session1,
 )
+from src.bci.datasets.dataset2a.evaluation_labels import (
+    load_dataset_2a_evaluation_labels,
+)
 from src.bci.datasets.dataset2b import (
     PUBLISHED_2B_RESULTS,
     build_dataset_2b_fbcsp_features,
@@ -161,6 +164,16 @@ def _parse_args():
 def _run_2a(args, subject: int) -> Table1Row:
     session1 = load_bci_competition_iv_2a_session(args.data_2a, subject, "T")
     session2 = load_bci_competition_iv_2a_session(args.data_2a, subject, "E")
+
+    label_path = args.data_2a / f"A{subject:02d}E.mat"
+
+    evaluation_labels = load_dataset_2a_evaluation_labels(label_path)
+
+    testing_trials = extract_dataset_2a_trials(
+        session2,
+        evaluation_labels=evaluation_labels,
+    )
+
     session1_trials = extract_dataset_2a_trials(session1)
     testing_trials = extract_dataset_2a_trials(session2)
 
@@ -225,7 +238,9 @@ def _run_2a(args, subject: int) -> Table1Row:
 def _run_2b(args, subject: int) -> Table1Row:
     session_trials = []
     for session_number in range(1, 6):
-        session = load_bci_competition_iv_2b_session(args.data_2b, subject, session_number)
+        session = load_bci_competition_iv_2b_session(
+            args.data_2b, subject, session_number
+        )
         session_trials.append(extract_dataset_2b_trials(session))
     training_trials = concatenate_trial_signals(session_trials[:3])
     testing_trials = concatenate_trial_signals(session_trials[3:])
@@ -259,7 +274,9 @@ def _run_2b(args, subject: int) -> Table1Row:
         ),
     )
     computed_csw = int(cse_result.warning_results["stage_1_alarm"].astype(bool).sum())
-    computed_csv = int(cse_result.validation_results["confirmed_shift"].astype(bool).sum())
+    computed_csv = int(
+        cse_result.validation_results["confirmed_shift"].astype(bool).sum()
+    )
     print(
         f"{subject_id}: train={pipeline.training.features.shape[0]}, "
         f"test={pipeline.testing.features.shape[0]}, "

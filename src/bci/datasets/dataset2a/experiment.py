@@ -27,13 +27,41 @@ PUBLISHED_2A_RESULTS: dict[str, tuple[float, int, int]] = {
 }
 
 DATASET_2A_EEG_MONTAGE = (
-    "Fz", "FC3", "FC1", "FCz", "FC2", "FC4", "C5", "C3", "C1", "Cz",
-    "C2", "C4", "C6", "CP3", "CP1", "CPz", "CP2", "CP4", "P1", "Pz",
-    "P2", "POz",
+    "Fz",
+    "FC3",
+    "FC1",
+    "FCz",
+    "FC2",
+    "FC4",
+    "C5",
+    "C3",
+    "C1",
+    "Cz",
+    "C2",
+    "C4",
+    "C6",
+    "CP3",
+    "CP1",
+    "CPz",
+    "CP2",
+    "CP4",
+    "P1",
+    "Pz",
+    "P2",
+    "POz",
 )
 
 DATASET_2A_CHANNELS = (
-    "C3", "FC3", "CP3", "C5", "C1", "C4", "FC4", "CP4", "C2", "C6",
+    "C3",
+    "FC3",
+    "CP3",
+    "C5",
+    "C1",
+    "C4",
+    "FC4",
+    "CP4",
+    "C2",
+    "C6",
 )
 
 _TRAINING_LABELS = {"769": 0, "770": 1}
@@ -116,7 +144,9 @@ def split_dataset_2a_session1(
         raise ValueError("Session-I labels must contain one label per trial.")
     classes = np.unique(labels)
     if classes.size != 2 or np.any(classes < 0):
-        raise ValueError("Session-I development splitting requires two labelled classes.")
+        raise ValueError(
+            "Session-I development splitting requires two labelled classes."
+        )
 
     rng = np.random.default_rng(random_state)
     training_indices: list[int] = []
@@ -197,42 +227,131 @@ def _dataset_2a_channel_indices(channel_names: tuple[str, ...]) -> tuple[int, ..
 def extract_dataset_2a_trials(
     session: BCISessionData,
     *,
+    evaluation_labels: np.ndarray | None = None,
     seconds_after_cue: float = 3.0,
 ) -> Dataset2ATrialSignalResult:
     if seconds_after_cue <= 0.0:
         raise ValueError("seconds_after_cue must be positive.")
+
     sfreq = float(session.sampling_frequency)
     segment_size = int(round(seconds_after_cue * sfreq))
     channel_indices = _dataset_2a_channel_indices(session.channel_names)
+
     is_evaluation = str(session.session).upper() == "E"
-    accepted = {_EVALUATION_CUE} if is_evaluation else set(_TRAINING_LABELS)
+
+    if is_evaluation:
+        if evaluation_labels is None:
+            raise ValueError(
+                "Dataset 2A Session-II requires official evaluation labels "
+                "for the paper reproduction."
+            )
+
+        evaluation_labels = np.asarray(
+            evaluation_labels,
+            dtype=int,
+        ).reshape(-1)
+
+        if evaluation_labels.size != 288:
+            raise ValueError(
+                "Dataset 2A Session-II should contain 288 official labels; "
+                f"received {evaluation_labels.size}."
+            )
+
+        if not np.isin(evaluation_labels, [1, 2, 3, 4]).all():
+            raise ValueError("Dataset 2A evaluation labels must be in {1, 2, 3, 4}.")
 
     rows: list[np.ndarray] = []
     labels: list[int] = []
     descriptions: list[str] = []
+
+    evaluation_index = 0
+
     for onset, _, description in session.annotations:
         code = str(description).strip()
-        if code not in accepted:
-            continue
+
+        # -------------------------
+        # Session-II / evaluation
+        # -------------------------
+        if is_evaluation:
+            if code != _EVALUATION_CUE:
+                continue
+
+            if evaluation_index >= evaluation_labels.size:
+                raise ValueError(
+                    "More Dataset 2A evaluation cues were found than "
+                    "official evaluation labels."
+                )
+
+            original_label = int(evaluation_labels[evaluation_index])
+
+            # Important:
+            # advance for EVERY 783 cue before filtering.
+            evaluation_index += 1
+
+            # Paper reproduction uses left/right only.
+            # Official Dataset 2A classes:
+            # 1 = left hand
+            # 2 = right hand
+            # 3 = feet
+            # 4 = tongue
+            if original_label not in {1, 2}:
+                continue
+
+            binary_label = 0 if original_label == 1 else 1
+
+        # -------------------------
+        # Session-I / training
+        # -------------------------
+        else:
+            if code not in _TRAINING_LABELS:
+                continue
+
+            binary_label = _TRAINING_LABELS[code]
+
+        # -------------------------
+        # Extract the 3-second EEG
+        # -------------------------
         start = int(round(float(onset) * sfreq))
         stop = start + segment_size
+
         if start < 0 or stop > session.signals.shape[0]:
             continue
-        segment = session.signals[start:stop, channel_indices].T
+
+        segment = session.signals[
+            start:stop,
+            channel_indices,
+        ].T
+
         if not np.isfinite(segment).all():
             continue
+
         rows.append(segment)
-        labels.append(-1 if is_evaluation else _TRAINING_LABELS[code])
+        labels.append(binary_label)
         descriptions.append(code)
 
+    # Validate that every Session-II cue had a released label.
+    if is_evaluation and evaluation_index != evaluation_labels.size:
+        raise ValueError(
+            "Dataset 2A evaluation cue/label mismatch: "
+            f"found {evaluation_index} cues but "
+            f"{evaluation_labels.size} labels."
+        )
+
     if not rows:
-        raise ValueError("no finite Dataset 2A left/right motor-imagery trials were found.")
+        raise ValueError(
+            "no finite Dataset 2A left/right motor-imagery trials were found."
+        )
+
     signals = np.stack(rows)
+
     return Dataset2ATrialSignalResult(
         signals=signals,
         labels=np.asarray(labels, dtype=int),
         times=np.arange(signals.shape[0], dtype=int),
-        cue_descriptions=np.asarray(descriptions, dtype="U8"),
+        cue_descriptions=np.asarray(
+            descriptions,
+            dtype="U8",
+        ),
         channel_names=DATASET_2A_CHANNELS,
         sampling_frequency=sfreq,
         session_id=str(session.session),
@@ -259,7 +378,9 @@ def build_dataset_2a_fbcsp_features(
     if training.channel_names != testing.channel_names:
         raise ValueError("training and testing channel orders must match.")
     if np.any(training.labels < 0):
-        raise ValueError("Dataset 2A training trials must be labelled left/right trials.")
+        raise ValueError(
+            "Dataset 2A training trials must be labelled left/right trials."
+        )
     model, train_features, test_features = fit_transform_fbcsp(
         training.signals,
         training.labels,
@@ -354,7 +475,9 @@ def run_dataset_2a_subject(
         published_csw=published_csw,
         published_csv=published_csv,
         computed_csw=int(result.warning_results["stage_1_alarm"].astype(bool).sum()),
-        computed_csv=int(result.validation_results["confirmed_shift"].astype(bool).sum()),
+        computed_csv=int(
+            result.validation_results["confirmed_shift"].astype(bool).sum()
+        ),
         training_trials=int(training.features.shape[0]),
         testing_trials=int(testing.features.shape[0]),
         selected_control_limit_multiplier=selected_control_limit_multiplier,
