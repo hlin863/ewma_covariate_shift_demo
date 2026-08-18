@@ -2,11 +2,59 @@
 
 Research reproduction and extension project for EWMA-based covariate-shift estimation in non-stationary data, with a particular focus on the CSE and CSE-UAEL methods described by Raza et al. (2015, 2019).
 
+## Project structure
+
+The active code is organised by research responsibility rather than as one flat `src` directory:
+
+```text
+src/
+├── bci/
+│   ├── data.py                       # GDF loading and raw session models
+│   ├── features.py                   # generic repo-specific EEG features
+│   ├── fbcsp.py                      # paper-aligned Butterworth + CSP/FBCSP
+│   └── datasets/
+│       ├── dataset2a/
+│       │   ├── experiment.py         # Dataset 2A trial/expt logic
+│       │   ├── development_split.py  # Session-I 70/30 split
+│       │   └── development_pipeline.py
+│       └── dataset2b/
+│           ├── experiment.py
+│           ├── diagnostics.py
+│           └── reference.py
+├── detection/
+│   ├── core.py                       # dataset-agnostic CSE orchestration
+│   ├── preprocessing.py              # PCA fit/transform helpers
+│   ├── stage1/
+│   │   ├── sd_ewma.py
+│   │   └── msd_ewma.py
+│   └── stage2/                       # Hotelling validation API
+├── reporting/
+│   ├── table1.py                     # Table 1 output/comparison
+│   └── metrics.py                    # detector evaluation metrics
+├── simulation/
+│   └── gaussian.py                   # synthetic mean-shift streams
+└── web/
+    └── dashboard.py                  # Flask presentation layer
+```
+
+New code should use these structured imports, for example:
+
+```python
+from src.bci.data import load_bci_competition_iv_2a_session
+from src.bci.datasets.dataset2a import extract_dataset_2a_trials
+from src.detection import CSEConfig, run_cse
+from src.detection.stage2 import validate_algorithm1_alarms
+from src.reporting.table1 import Table1Row
+```
+
+The former flat modules such as `src.cse`, `src.fbcsp`, `src.bci_data`, `src.ewma`, and `src.table1_reproduction` are retained as compatibility shims so existing notebooks/tests do not have to migrate in one breaking change. See `docs/project_structure.md` for the responsibility boundaries and migration policy.
+
 ## Implemented pipeline
 
 - BCI Competition IV Dataset 2A/2B data loading helpers
 - Cue-aligned EEG trial extraction for Dataset 2A and Dataset 2B
 - Dataset 2A paper channel selection: C3, FC3, CP3, C5, C1, C4, FC4, CP4, C2, C6
+- Dataset 2A Session-I stratified 70/30 development split before FBCSP fitting
 - Dataset 2A left/right-hand training from Session I and unlabeled Session II evaluation
 - 10-band filter-bank CSP feature extraction
   - 8th-order zero-phase Butterworth band-pass filters
@@ -24,7 +72,7 @@ Research reproduction and extension project for EWMA-based covariate-shift estim
 
 ## Reproduce the paper's Table 1 structure
 
-The paper reports subject-level smoothing constant (lambda), covariate-shift warnings (CSW), and covariate-shift validations (CSV) for nine Dataset 2A subjects and nine Dataset 2B subjects. The repository now keeps those published values only as reference targets and writes the experiment's computed values into the same side-by-side 2A/2B structure.
+The paper reports subject-level smoothing constant (lambda), covariate-shift warnings (CSW), and covariate-shift validations (CSV) for nine Dataset 2A subjects and nine Dataset 2B subjects. The repository keeps those published values only as reference targets and writes the experiment's computed values into the same side-by-side 2A/2B structure.
 
 Expected raw-data layout:
 
@@ -43,7 +91,17 @@ Run the combined reproduction:
 python scripts/run_bci_table1_reproduction.py
 ```
 
-The default run uses the paper-oriented equal-window two-sample Stage-II mode. The validation interpretation can also be compared explicitly:
+Dataset 2A now applies its Session-I 70/30 development split before FBCSP fitting. The validation fraction and reproducible split seed are explicit experiment controls:
+
+```bash
+python scripts/run_bci_table1_reproduction.py \
+  --session1-validation-fraction 0.30 \
+  --session1-split-seed 42
+```
+
+The paper specifies the 70/30 ratio but does not report the exact random partition, so the seed is a repository reproducibility choice rather than a paper-defined parameter.
+
+The Stage-II interpretation can be compared explicitly:
 
 ```bash
 python scripts/run_bci_table1_reproduction.py --validation-mode paper_two_sample
@@ -51,23 +109,16 @@ python scripts/run_bci_table1_reproduction.py --validation-mode algorithm1_train
 python scripts/run_bci_table1_reproduction.py --validation-mode retrospective_windows
 ```
 
-PCA retention is an explicit experiment option rather than a hidden three-component assumption. Stage I still monitors PC1 only, as described by Algorithm 1. Examples:
+PCA retention is an explicit experiment option. Stage I still monitors PC1 only in the univariate Algorithm-1 path:
 
 ```bash
-# Retain only PC1
-python scripts/run_bci_table1_reproduction.py --validation-mode algorithm1_training_reference --pca-components 1
-
-# Retain three components for multivariate Stage II
-python scripts/run_bci_table1_reproduction.py --validation-mode algorithm1_training_reference --pca-components 3
-
-# Retain enough components to explain 95% of training variance
-python scripts/run_bci_table1_reproduction.py --validation-mode algorithm1_training_reference --pca-components 0.95
-
-# Retain all available PCA components (also the default)
-python scripts/run_bci_table1_reproduction.py --validation-mode algorithm1_training_reference --pca-components all
+python scripts/run_bci_table1_reproduction.py --pca-components 1
+python scripts/run_bci_table1_reproduction.py --pca-components 3
+python scripts/run_bci_table1_reproduction.py --pca-components 0.95
+python scripts/run_bci_table1_reproduction.py --pca-components all
 ```
 
-Each subject line also reports the retained PCA component count and the PC1 explained-variance ratio so PCA behavior can be audited alongside CSW/CSV results.
+Each subject line reports the retained PCA component count and the PC1 explained-variance ratio so PCA behavior can be audited alongside CSW/CSV results.
 
 Outputs:
 
@@ -76,54 +127,34 @@ outputs/metrics/bci_table1_reproduction.md
 outputs/metrics/bci_table1_comparison.csv
 ```
 
-`bci_table1_reproduction.md` contains the computed subject rows and mean row in the grouped Dataset 2A / Dataset 2B layout. `bci_table1_comparison.csv` contains published values, computed values, and CSW/CSV differences for calibration and reproducibility analysis.
-
-The combined runner does not replace computed results with the publication targets.
+`bci_table1_reproduction.md` contains computed subject rows and the mean row in the grouped Dataset 2A / Dataset 2B layout. `bci_table1_comparison.csv` contains published values, computed values, and CSW/CSV differences for calibration and reproducibility analysis.
 
 ## Flask visualisation dashboard
 
-The dashboard reads `outputs/metrics/bci_table1_comparison.csv` on each request, so re-running the reproduction experiment automatically updates the displayed results without copying values into the web application.
-
-Install the small web layer if Flask is not already present:
+The dashboard implementation lives in `src/web/dashboard.py`; root `app.py` remains a stable launch/compatibility entry point.
 
 ```bash
 python -m pip install -r requirements-dashboard.txt
-```
-
-Generate the latest experiment output and start the dashboard:
-
-```bash
 python scripts/run_bci_table1_reproduction.py --validation-mode paper_two_sample
 python app.py
 ```
 
-Then open the local Flask address shown in the terminal, normally `http://127.0.0.1:5000/`.
-
-The dashboard provides:
-
-- Dataset 2A and 2B mean published/computed CSW and CSV values
-- mean absolute reproduction error for CSW and CSV
-- subject-level published-versus-computed bar comparisons
-- signed CSW/CSV differences for each participant
-- a visible current-research interpretation panel highlighting Stage-I calibration, Stage-II under-confirmation, and the Dataset 2A evaluation-stream issue
-- an empty-state instruction if the Table 1 comparison CSV has not been generated yet
+The dashboard reads `outputs/metrics/bci_table1_comparison.csv` on each request, so new experiment output updates the visualisation without copying values into the web application.
 
 ## Stage-II validation modes
 
-`CSEConfig.validation_mode` currently supports three explicitly separated interpretations:
+`CSEConfig.validation_mode` supports three explicitly separated interpretations:
 
-- `paper_two_sample`: paper-aligned equal-length, disjoint multivariate subsequences around a Stage-I warning. This is the preferred mode when reproducing the two-sample Hotelling procedure described in the CSE methodology.
-- `algorithm1_training_reference`: literal interpretation of the 2019 Algorithm 1 wording, comparing the current transformed feature vector against the training reference distribution.
-- `retrospective_windows`: general retrospective before/after-window validation that allows unequal window sizes and additional experimental settings.
+- `paper_two_sample`: equal-length disjoint multivariate subsequences around a Stage-I warning.
+- `algorithm1_training_reference`: interpretation of the 2019 Algorithm 1 wording, comparing the current transformed feature vector against the training reference distribution.
+- `retrospective_windows`: general before/after-window validation supporting additional experimental settings.
 
-The separation is intentional because the 2019 paper's Algorithm 1 wording and the detailed two-sample methodology inherited from the cited 2015 CSE paper are not identical descriptions of Stage II.
+These remain separated because the 2019 Algorithm 1 wording and the detailed two-sample methodology are not identical descriptions of Stage II.
 
-## Paper-aligned two-sample Stage II
-
-Use equal validation windows:
+Example using the canonical detection namespace:
 
 ```python
-from src.cse import CSEConfig, run_cse
+from src.detection import CSEConfig, run_cse
 
 config = CSEConfig(
     validation_mode="paper_two_sample",
@@ -141,18 +172,17 @@ result = run_cse(
 )
 ```
 
-`paper_two_sample` rejects unequal sample sizes instead of silently converting a single feature vector into a sample. The validation result records the reference and current subsequence boundaries, validation time, Hotelling statistic, F statistic, p-value, and confirmed/rejected status.
-
 ## Testing
 
-Run the complete suite locally with:
+Run the architecture smoke test first, then the complete suite:
 
 ```bash
+python -m pytest tests/test_project_structure.py -v
 python -m pytest -q
 ```
 
-The tests include Dataset 2A trial extraction, Dataset 2A FBCSP feature construction, Stage-II two-sample validation, Table 1 formatting, Flask dashboard rendering, PCA CLI parsing, existing Dataset 2B regression tests, and EWMA/CSE unit tests. GitHub Actions also runs the suite on pushes and pull requests.
+The test suite covers Dataset 2A trial extraction and 70/30 development processing, FBCSP construction, Stage-II validation, Table 1 formatting, Flask dashboard rendering, PCA parsing, Dataset 2B regression behavior, EWMA/CSE logic, and legacy-import compatibility.
 
 ## Current research boundary
 
-The repository currently covers the signal-processing, feature-extraction, CSE warning, and Stage-II validation portions of the 2019 CSE-UAEL pipeline. The PWKNN-driven unsupervised adaptation, dynamic LDA ensemble growth, and weighted ensemble classification remain future implementation stages.
+The repository currently covers signal processing, feature extraction, CSE warning, and Stage-II validation portions of the 2019 CSE-UAEL pipeline. PWKNN-driven unsupervised adaptation, dynamic LDA ensemble growth, and weighted ensemble classification remain future implementation stages.
