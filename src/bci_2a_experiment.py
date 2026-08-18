@@ -12,6 +12,7 @@ import re
 import numpy as np
 
 from src.bci_data import BCISessionData
+from src.bci_2a_development_split import Dataset2ADevelopmentSplit
 from src.cse import CSEConfig, CSEResult, run_cse
 from src.fbcsp import FBCSPModel, fit_transform_fbcsp
 
@@ -113,6 +114,82 @@ class Dataset2AExperimentResult:
     cse_result: CSEResult
 
 
+def _subset_trial_signal_result(
+    trials: Dataset2ATrialSignalResult,
+    indices: np.ndarray,
+) -> Dataset2ATrialSignalResult:
+    """Return one Session-I subset while preserving experiment metadata."""
+
+    selected = np.asarray(indices, dtype=int)
+    return Dataset2ATrialSignalResult(
+        signals=np.asarray(trials.signals[selected], dtype=float),
+        labels=np.asarray(trials.labels[selected], dtype=int),
+        times=np.asarray(trials.times[selected]),
+        cue_descriptions=np.asarray(trials.cue_descriptions[selected]),
+        channel_names=trials.channel_names,
+        sampling_frequency=float(trials.sampling_frequency),
+        session_id=trials.session_id,
+    )
+
+
+def split_dataset_2a_session1(
+    trials: Dataset2ATrialSignalResult,
+    *,
+    validation_fraction: float = 0.30,
+    random_state: int = 42,
+) -> Dataset2ADevelopmentSplit:
+    """Create a deterministic stratified 70/30-style split of Session-I.
+
+    The paper states that the existing training dataset was further partitioned
+    into 70% training and 30% validation subsets. Dataset 2A Session-I contains
+    balanced left/right trials, so this implementation splits each class
+    independently and then restores chronological order within each subset.
+
+    The exact random partition used in the paper is not reported, therefore
+    ``random_state`` is explicit and reproducible rather than being presented
+    as a uniquely specified paper value.
+    """
+
+    if str(trials.session_id).upper() != "T":
+        raise ValueError("70/30 development splitting is only valid for Session-I/T.")
+    if not 0.0 < validation_fraction < 1.0:
+        raise ValueError("validation_fraction must be in (0, 1).")
+
+    labels = np.asarray(trials.labels, dtype=int)
+    if labels.ndim != 1 or labels.size != trials.signals.shape[0]:
+        raise ValueError("Session-I labels must contain one label per trial.")
+    classes = np.unique(labels)
+    if classes.size != 2 or np.any(classes < 0):
+        raise ValueError("Session-I development splitting requires two labelled classes.")
+
+    rng = np.random.default_rng(random_state)
+    training_indices: list[int] = []
+    validation_indices: list[int] = []
+
+    for label in classes:
+        class_indices = np.flatnonzero(labels == label)
+        if class_indices.size < 2:
+            raise ValueError("each class must contain at least two Session-I trials.")
+        shuffled = rng.permutation(class_indices)
+        n_validation = int(round(class_indices.size * validation_fraction))
+        n_validation = min(max(n_validation, 1), class_indices.size - 1)
+        validation_indices.extend(int(index) for index in shuffled[:n_validation])
+        training_indices.extend(int(index) for index in shuffled[n_validation:])
+
+    training_array = np.asarray(sorted(training_indices), dtype=int)
+    validation_array = np.asarray(sorted(validation_indices), dtype=int)
+
+    if np.intersect1d(training_array, validation_array).size:
+        raise RuntimeError("training and validation subsets must not overlap.")
+    if training_array.size + validation_array.size != labels.size:
+        raise RuntimeError("development split must preserve every Session-I trial.")
+
+    return Dataset2ADevelopmentSplit(
+        training=_subset_trial_signal_result(trials, training_array),
+        validation=_subset_trial_signal_result(trials, validation_array),
+    )
+
+
 def _canonical_channel_name(name: str) -> str:
     """Normalise common GDF/MNE channel-label punctuation and EEG prefixes."""
 
@@ -149,10 +226,6 @@ def _dataset_2a_channel_indices(channel_names: tuple[str, ...]) -> tuple[int, ..
     if len(lookup) == len(expected):
         return tuple(lookup[name] for name in expected)
 
-    # Do not use len(channel_names) == 22 here: MNE can retain the three EOG
-    # channels even when the caller requested EEG data, yielding the observed
-    # 25-channel layout. Strip EOG channels first and then validate the fixed
-    # 22-electrode Dataset 2A acquisition order.
     eeg_indices = [
         index for index, name in enumerate(channel_names) if not _is_eog_channel(name)
     ]
@@ -162,9 +235,6 @@ def _dataset_2a_channel_indices(channel_names: tuple[str, ...]) -> tuple[int, ..
             for position, name in enumerate(DATASET_2A_EEG_MONTAGE)
         }
 
-        # Validate every descriptive electrode label that MNE did preserve.
-        # This prevents silently applying the montage fallback to an unrelated
-        # 22-channel recording with a different order.
         descriptive_montage_names = set(montage_lookup)
         for absolute_index in eeg_indices:
             canonical = _canonical_channel_name(channel_names[absolute_index])
