@@ -8,26 +8,24 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from src.bci_2a_development_pipeline import (
-    build_dataset_2a_development_fbcsp_features,
+from src.bci.data import (
+    load_bci_competition_iv_2a_session,
+    load_bci_competition_iv_2b_session,
 )
-from src.bci_2a_experiment import (
+from src.bci.datasets.dataset2a import (
+    build_dataset_2a_development_fbcsp_features,
     extract_dataset_2a_trials,
     run_dataset_2a_subject,
     split_dataset_2a_session1,
 )
-from src.bci_2b_experiment import (
+from src.bci.datasets.dataset2b import (
     PUBLISHED_2B_RESULTS,
     build_dataset_2b_fbcsp_features,
     concatenate_trial_signals,
     extract_dataset_2b_trials,
 )
-from src.bci_data import (
-    load_bci_competition_iv_2a_session,
-    load_bci_competition_iv_2b_session,
-)
-from src.cse import CSEConfig, run_cse
-from src.table1_reproduction import (
+from src.detection import CSEConfig, run_cse
+from src.reporting.table1 import (
     Table1Row,
     comparison_dataframe,
     paper_style_dataframe,
@@ -50,7 +48,6 @@ def _parse_pca_components(value: str) -> int | float | None:
             raise ArgumentTypeError(
                 "--pca-components as a float must be in (0, 1), for example 0.95."
             )
-
         parsed_int = int(text)
     except ValueError as error:
         raise ArgumentTypeError(
@@ -58,9 +55,7 @@ def _parse_pca_components(value: str) -> int | float | None:
         ) from error
 
     if parsed_int < 1:
-        raise ArgumentTypeError(
-            "--pca-components as an integer must be at least 1."
-        )
+        raise ArgumentTypeError("--pca-components as an integer must be at least 1.")
     return parsed_int
 
 
@@ -79,14 +74,10 @@ def _parse_args():
         )
     )
     parser.add_argument(
-        "--data-2a",
-        type=Path,
-        default=Path("data/raw/bci_competition_iv_2a"),
+        "--data-2a", type=Path, default=Path("data/raw/bci_competition_iv_2a")
     )
     parser.add_argument(
-        "--data-2b",
-        type=Path,
-        default=Path("data/raw/bci_competition_iv_2b"),
+        "--data-2b", type=Path, default=Path("data/raw/bci_competition_iv_2b")
     )
     parser.add_argument("--subjects", type=int, nargs="+", default=list(range(1, 10)))
     parser.add_argument(
@@ -165,7 +156,6 @@ def _run_2a(args, subject: int) -> Table1Row:
         testing_trials,
         components_per_side=args.components_per_side,
     )
-
     result = run_dataset_2a_subject(
         subject,
         pipeline.training,
