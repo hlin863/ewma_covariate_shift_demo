@@ -13,11 +13,11 @@ from src.bci_2a_experiment import (
     run_dataset_2a_subject,
     split_dataset_2a_session1,
 )
-from src.bci_2a_development_pipeline import (
+from src.bci.datasets.dataset2a.development_pipeline import (
     Dataset2ADevelopmentFeaturePipelineResult,
     build_dataset_2a_development_fbcsp_features,
 )
-from src.bci_2a_development_split import Dataset2ADevelopmentSplit
+from src.bci.datasets.dataset2a.development_split import Dataset2ADevelopmentSplit
 
 __all__ = [
     "DATASET_2A_CHANNELS",
