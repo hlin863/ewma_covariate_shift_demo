@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from src.ewma import (
+from src.detection.stage1 import (
     SD_EWMA_Config,
     fit_sd_ewma,
     run_sd_ewma,
@@ -35,6 +35,11 @@ def test_d1_detects_a_post_shift_alarm(
             ),
             variance_smoothing=0.05,
             control_limit_multiplier=3.0,
+            # This benchmark checks recognition against the stationary
+            # training-error limits. Updating the variance on every test
+            # observation is an engineering extension and widens the limits
+            # during the shift, changing the benchmark being tested.
+            variance_update_mode="frozen",
         ),
     )
 
