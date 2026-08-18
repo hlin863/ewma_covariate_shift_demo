@@ -18,6 +18,10 @@ from src.bci.datasets.dataset2a.development_pipeline import (
     build_dataset_2a_development_fbcsp_features,
 )
 from src.bci.datasets.dataset2a.development_split import Dataset2ADevelopmentSplit
+from src.bci.datasets.dataset2a.validation_calibration import (
+    Dataset2AStage1ValidationCalibration,
+    calibrate_stage1_control_limit_from_validation,
+)
 
 __all__ = [
     "DATASET_2A_CHANNELS",
@@ -27,10 +31,12 @@ __all__ = [
     "Dataset2ADevelopmentSplit",
     "Dataset2AExperimentResult",
     "Dataset2AFeaturePipelineResult",
+    "Dataset2AStage1ValidationCalibration",
     "Dataset2ATrialFeatureResult",
     "Dataset2ATrialSignalResult",
     "build_dataset_2a_development_fbcsp_features",
     "build_dataset_2a_fbcsp_features",
+    "calibrate_stage1_control_limit_from_validation",
     "extract_dataset_2a_trials",
     "run_dataset_2a_subject",
     "split_dataset_2a_session1",
