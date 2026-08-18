@@ -5,7 +5,7 @@ models, and Stage-II validation methods by function. Existing flat modules are
 kept import-compatible while experiments migrate to this package.
 """
 
-from src.cse import CSEConfig, CSEResult, run_cse
+from src.detection.core import CSEConfig, CSEResult, run_cse
 from src.detection.preprocessing import (
     CSEPCAResult,
     extract_first_component,
