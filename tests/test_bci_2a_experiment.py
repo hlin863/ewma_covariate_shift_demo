@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import numpy as np
+import pytest
 
 from src.bci_2a_experiment import (
     DATASET_2A_CHANNELS,
@@ -77,8 +78,6 @@ def test_extract_dataset_2a_resolves_generic_mne_gdf_channel_names_by_montage_or
 
 
 def test_extract_dataset_2a_handles_real_mne_25_channel_layout_with_eog() -> None:
-    # This reproduces the channel-name layout observed from the real 2A GDF
-    # files in MNE: 22 EEG acquisition channels plus three EOG channels.
     channel_names = (
         "EEG-Fz", "EEG-0", "EEG-1", "EEG-2", "EEG-3", "EEG-4",
         "EEG-5", "EEG-C3", "EEG-6", "EEG-Cz", "EEG-7", "EEG-C4",
@@ -103,15 +102,27 @@ def test_extract_dataset_2a_handles_real_mne_25_channel_layout_with_eog() -> Non
     np.testing.assert_allclose(result.signals[0], expected_first_trial)
 
 
-def test_extract_dataset_2a_evaluation_trials_remains_unlabelled() -> None:
-    result = extract_dataset_2a_trials(_session("E"))
-    assert result.signals.shape == (8, 10, 300)
-    np.testing.assert_array_equal(result.labels, np.full(8, -1))
+def test_extract_dataset_2a_evaluation_requires_official_labels() -> None:
+    with pytest.raises(ValueError, match="requires official evaluation labels"):
+        extract_dataset_2a_trials(_session("E"))
+
+
+def test_extract_dataset_2a_evaluation_filters_to_left_right() -> None:
+    # Official 2A class IDs: 1=left, 2=right, 3=feet, 4=tongue.
+    labels = np.asarray([1, 2, 3, 4, 1, 2, 3, 4], dtype=int)
+    result = extract_dataset_2a_trials(_session("E"), evaluation_labels=labels)
+
+    assert result.signals.shape == (4, 10, 300)
+    np.testing.assert_array_equal(result.labels, [0, 1, 0, 1])
 
 
 def test_dataset_2a_fbcsp_produces_paper_filter_bank_features() -> None:
     training = extract_dataset_2a_trials(_session("T"))
-    testing = extract_dataset_2a_trials(_session("E"))
+    evaluation_labels = np.asarray([1, 2, 1, 2, 1, 2, 1, 2], dtype=int)
+    testing = extract_dataset_2a_trials(
+        _session("E"),
+        evaluation_labels=evaluation_labels,
+    )
     pipeline = build_dataset_2a_fbcsp_features(training, testing)
     assert pipeline.training.features.shape == (8, 20)
     assert pipeline.testing.features.shape == (8, 20)
