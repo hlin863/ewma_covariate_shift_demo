@@ -128,6 +128,24 @@ def _parse_args():
         ),
     )
     parser.add_argument(
+        "--calibrate-control-limit-from-validation",
+        action="store_true",
+        help=(
+            "Dataset 2A only: estimate the Stage-I control-limit multiplier L from "
+            "held-out Session-I validation prediction errors. This is a transparent "
+            "repo calibration extension; the paper does not report its exact L-selection rule."
+        ),
+    )
+    parser.add_argument(
+        "--validation-false-alarm-rate",
+        type=_fraction,
+        default=0.05,
+        help=(
+            "Target upper-tail rate used when validation-error calibration of L is enabled. "
+            "Default: 0.05."
+        ),
+    )
+    parser.add_argument(
         "--markdown-output",
         type=Path,
         default=Path("outputs/metrics/bci_table1_reproduction.md"),
@@ -160,6 +178,7 @@ def _run_2a(args, subject: int) -> Table1Row:
         subject,
         pipeline.training,
         pipeline.testing,
+        validation=pipeline.validation,
         pca_components=args.pca_components,
         validation_mode=args.validation_mode,
         validation_window_size=args.validation_window_size,
@@ -167,7 +186,19 @@ def _run_2a(args, subject: int) -> Table1Row:
         control_limit_multiplier=args.control_limit_multiplier,
         variance_smoothing=args.variance_smoothing,
         variance_update_mode=args.variance_update_mode,
+        calibrate_control_limit_from_validation=(
+            args.calibrate_control_limit_from_validation
+        ),
+        validation_false_alarm_rate=args.validation_false_alarm_rate,
     )
+    calibration_text = ""
+    if result.validation_calibration is not None:
+        calibration = result.validation_calibration
+        calibration_text = (
+            f", Lval={calibration.control_limit_multiplier:.3f}, "
+            f"valRMSE={calibration.validation_rmse:.3f}, "
+            f"valTail={calibration.observed_exceedance_rate:.3f}"
+        )
     print(
         f"{result.subject}: session1={session1_trials.signals.shape[0]}, "
         f"dev_train={pipeline.training.features.shape[0]}, "
@@ -175,8 +206,10 @@ def _run_2a(args, subject: int) -> Table1Row:
         f"test={result.testing_trials}, "
         f"PCA={result.cse_result.pca_result.n_components}, "
         f"PC1var={result.cse_result.pca_result.explained_variance_ratio[0]:.3f}, "
+        f"L={result.selected_control_limit_multiplier:.3f}, "
         f"CSW={result.computed_csw}/{result.published_csw}, "
         f"CSV={result.computed_csv}/{result.published_csv}"
+        f"{calibration_text}"
     )
     return Table1Row(
         dataset="2A",
@@ -270,6 +303,11 @@ def main() -> None:
         f"validation_fraction={args.session1_validation_fraction:.2f}, "
         f"seed={args.session1_split_seed}."
     )
+    if args.calibrate_control_limit_from_validation:
+        print(
+            "Dataset 2A Stage-I L was calibrated from held-out Session-I validation "
+            "prediction errors only; Session-II and Table 1 targets were not used."
+        )
     print(
         "Published values are retained only as reference targets. "
         "The formatted table always contains computed CSW/CSV values."
