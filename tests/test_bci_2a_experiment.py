@@ -17,12 +17,28 @@ def _session(
     session: str,
     *,
     channel_names: tuple[str, ...] = DATASET_2A_CHANNELS,
+    n_trials: int = 8,
 ) -> BCISessionData:
+    """Build a deterministic synthetic Dataset 2A-like session.
+
+    Small training fixtures keep most unit tests fast. Evaluation tests can
+    request the official Dataset 2A Session-II size of 288 cues so that the
+    extractor is tested against the same cue/label-count contract as the
+    released evaluation files.
+    """
+
     rng = np.random.default_rng(70 if session == "T" else 71)
     sfreq = 100.0
-    signals = rng.normal(scale=0.25, size=(6000, len(channel_names)))
-    annotations = []
-    for index, onset in enumerate((2, 7, 12, 17, 22, 27, 32, 37)):
+    first_onset = 2.0
+    spacing = 5.0
+    last_onset = first_onset + (n_trials - 1) * spacing
+    n_samples = int(np.ceil((last_onset + 4.0) * sfreq))
+
+    signals = rng.normal(scale=0.25, size=(n_samples, len(channel_names)))
+    annotations: list[tuple[float, float, str]] = []
+
+    for index in range(n_trials):
+        onset = first_onset + index * spacing
         code = "783" if session == "E" else ("769" if index % 2 == 0 else "770")
         start = int(onset * sfreq)
         stop = start + int(3 * sfreq)
@@ -30,6 +46,7 @@ def _session(
         channel = 0 if index % 2 == 0 else min(5, len(channel_names) - 1)
         signals[start:stop, channel] += 1.5 * np.sin(2 * np.pi * 10.0 * time)
         annotations.append((float(onset), 0.0, code))
+
     return BCISessionData(
         subject=1,
         session=session,
@@ -40,6 +57,12 @@ def _session(
         sampling_frequency=sfreq,
         annotations=tuple(annotations),
     )
+
+
+def _official_size_evaluation_labels() -> np.ndarray:
+    """Return 288 labels with 72 trials from each official 2A class."""
+
+    return np.tile(np.asarray([1, 2, 3, 4], dtype=int), 72)
 
 
 def test_published_dataset_2a_targets_match_table1() -> None:
@@ -104,28 +127,33 @@ def test_extract_dataset_2a_handles_real_mne_25_channel_layout_with_eog() -> Non
 
 def test_extract_dataset_2a_evaluation_requires_official_labels() -> None:
     with pytest.raises(ValueError, match="requires official evaluation labels"):
-        extract_dataset_2a_trials(_session("E"))
+        extract_dataset_2a_trials(_session("E", n_trials=288))
 
 
 def test_extract_dataset_2a_evaluation_filters_to_left_right() -> None:
-    # Official 2A class IDs: 1=left, 2=right, 3=feet, 4=tongue.
-    labels = np.asarray([1, 2, 3, 4, 1, 2, 3, 4], dtype=int)
-    result = extract_dataset_2a_trials(_session("E"), evaluation_labels=labels)
+    labels = _official_size_evaluation_labels()
+    result = extract_dataset_2a_trials(
+        _session("E", n_trials=288),
+        evaluation_labels=labels,
+    )
 
-    assert result.signals.shape == (4, 10, 300)
-    np.testing.assert_array_equal(result.labels, [0, 1, 0, 1])
+    assert result.signals.shape == (144, 10, 300)
+    assert result.labels.shape == (144,)
+    assert np.count_nonzero(result.labels == 0) == 72
+    assert np.count_nonzero(result.labels == 1) == 72
+    assert set(np.unique(result.labels)) == {0, 1}
 
 
 def test_dataset_2a_fbcsp_produces_paper_filter_bank_features() -> None:
     training = extract_dataset_2a_trials(_session("T"))
-    evaluation_labels = np.asarray([1, 2, 1, 2, 1, 2, 1, 2], dtype=int)
     testing = extract_dataset_2a_trials(
-        _session("E"),
-        evaluation_labels=evaluation_labels,
+        _session("E", n_trials=288),
+        evaluation_labels=_official_size_evaluation_labels(),
     )
     pipeline = build_dataset_2a_fbcsp_features(training, testing)
+
     assert pipeline.training.features.shape == (8, 20)
-    assert pipeline.testing.features.shape == (8, 20)
+    assert pipeline.testing.features.shape == (144, 20)
     assert len(pipeline.training.feature_names) == 20
     assert np.isfinite(pipeline.training.features).all()
     assert np.isfinite(pipeline.testing.features).all()
