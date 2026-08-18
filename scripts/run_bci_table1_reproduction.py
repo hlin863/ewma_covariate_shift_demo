@@ -166,16 +166,19 @@ def _run_2a(args, subject: int) -> Table1Row:
     session2 = load_bci_competition_iv_2a_session(args.data_2a, subject, "E")
 
     label_path = args.data_2a / f"A{subject:02d}E.mat"
-
     evaluation_labels = load_dataset_2a_evaluation_labels(label_path)
 
+    session1_trials = extract_dataset_2a_trials(session1)
     testing_trials = extract_dataset_2a_trials(
         session2,
         evaluation_labels=evaluation_labels,
     )
 
-    session1_trials = extract_dataset_2a_trials(session1)
-    testing_trials = extract_dataset_2a_trials(session2)
+    if testing_trials.signals.shape[0] != 144:
+        raise RuntimeError(
+            "Dataset 2A paper reproduction expects 144 left/right Session-II trials; "
+            f"{testing_trials.signals.shape[0]} were extracted for A{subject:02d}."
+        )
 
     development_split = split_dataset_2a_session1(
         session1_trials,
