@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from src.bci_2a_experiment import Dataset2ATrialSignalResult
+    from src.bci.datasets.dataset2a.experiment import Dataset2ATrialSignalResult
 
 
 @dataclass(frozen=True)
