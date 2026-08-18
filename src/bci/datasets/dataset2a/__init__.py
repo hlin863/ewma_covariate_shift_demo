@@ -1,6 +1,6 @@
 """BCI Competition IV Dataset 2A reproduction helpers."""
 
-from src.bci_2a_experiment import (
+from src.bci.datasets.dataset2a.experiment import (
     DATASET_2A_CHANNELS,
     DATASET_2A_EEG_MONTAGE,
     PUBLISHED_2A_RESULTS,
