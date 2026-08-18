@@ -6,7 +6,7 @@ kept import-compatible while experiments migrate to this package.
 """
 
 from src.cse import CSEConfig, CSEResult, run_cse
-from src.cse_preprocessing import (
+from src.detection.preprocessing import (
     CSEPCAResult,
     extract_first_component,
     extract_retained_components,
