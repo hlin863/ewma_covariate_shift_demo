@@ -20,6 +20,7 @@ from src.bci.datasets.dataset2a import (
 )
 from src.bci.datasets.dataset2a.evaluation_labels import (
     load_dataset_2a_evaluation_labels,
+    resolve_dataset_2a_evaluation_label_path,
 )
 from src.bci.datasets.dataset2b import (
     PUBLISHED_2B_RESULTS,
@@ -78,6 +79,16 @@ def _parse_args():
     )
     parser.add_argument(
         "--data-2a", type=Path, default=Path("data/raw/bci_competition_iv_2a")
+    )
+    parser.add_argument(
+        "--labels-2a",
+        type=Path,
+        default=Path("data/raw/bci_competition_iv_2a_labels"),
+        help=(
+            "Directory containing the separately released Dataset 2A Session-II "
+            "true-label MAT files (A01E.mat ... A09E.mat). The original Dataset 2A "
+            "signal download contains GDF files only."
+        ),
     )
     parser.add_argument(
         "--data-2b", type=Path, default=Path("data/raw/bci_competition_iv_2b")
@@ -165,7 +176,11 @@ def _run_2a(args, subject: int) -> Table1Row:
     session1 = load_bci_competition_iv_2a_session(args.data_2a, subject, "T")
     session2 = load_bci_competition_iv_2a_session(args.data_2a, subject, "E")
 
-    label_path = args.data_2a / f"A{subject:02d}E.mat"
+    label_path = resolve_dataset_2a_evaluation_label_path(
+        subject,
+        data_directory=args.data_2a,
+        labels_directory=args.labels_2a,
+    )
     evaluation_labels = load_dataset_2a_evaluation_labels(label_path)
 
     session1_trials = extract_dataset_2a_trials(session1)
