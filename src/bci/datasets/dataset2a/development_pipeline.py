@@ -9,7 +9,10 @@ from dataclasses import dataclass
 import numpy as np
 
 from src.bci.datasets.dataset2a.development_split import Dataset2ADevelopmentSplit
-from src.bci_2a_experiment import Dataset2ATrialFeatureResult, Dataset2ATrialSignalResult
+from src.bci.datasets.dataset2a.experiment import (
+    Dataset2ATrialFeatureResult,
+    Dataset2ATrialSignalResult,
+)
 from src.bci.fbcsp import FBCSPModel, fit_fbcsp, transform_fbcsp
 
 
