@@ -1,3 +1,3 @@
-"""Compatibility shim for ``src.bci.datasets.dataset2a.experiment``."""
+"""Compatibility shim for ``src.bci.datasets.dataset2a``."""
 
-from src.bci.datasets.dataset2a.experiment import *  # noqa: F401,F403
+from src.bci.datasets.dataset2a import *  # noqa: F401,F403
