@@ -7,6 +7,10 @@ import numpy as np
 
 from src.bci.data import BCISessionData
 from src.bci.datasets.dataset2a.development_split import Dataset2ADevelopmentSplit
+from src.bci.datasets.dataset2a.validation_calibration import (
+    Dataset2AStage1ValidationCalibration,
+    calibrate_stage1_control_limit_from_validation,
+)
 from src.bci.fbcsp import FBCSPModel, fit_transform_fbcsp
 from src.detection import CSEConfig, CSEResult, run_cse
 
@@ -73,6 +77,8 @@ class Dataset2AExperimentResult:
     computed_csv: int
     training_trials: int
     testing_trials: int
+    selected_control_limit_multiplier: float
+    validation_calibration: Dataset2AStage1ValidationCalibration | None
     cse_result: CSEResult
 
 
@@ -286,6 +292,7 @@ def run_dataset_2a_subject(
     training: Dataset2ATrialFeatureResult,
     testing: Dataset2ATrialFeatureResult,
     *,
+    validation: Dataset2ATrialFeatureResult | None = None,
     pca_components: int | float | None = None,
     validation_mode: str = "algorithm1_training_reference",
     validation_window_size: int = 10,
@@ -293,11 +300,33 @@ def run_dataset_2a_subject(
     control_limit_multiplier: float = 1.96,
     variance_smoothing: float = 0.05,
     variance_update_mode: str = "always",
+    calibrate_control_limit_from_validation: bool = False,
+    validation_false_alarm_rate: float = 0.05,
 ) -> Dataset2AExperimentResult:
     subject_id = f"A{subject:02d}"
     if subject_id not in PUBLISHED_2A_RESULTS:
         raise ValueError("subject must be an integer from 1 to 9.")
     published_lambda, published_csw, published_csv = PUBLISHED_2A_RESULTS[subject_id]
+
+    calibration: Dataset2AStage1ValidationCalibration | None = None
+    selected_control_limit_multiplier = float(control_limit_multiplier)
+    if calibrate_control_limit_from_validation:
+        if validation is None:
+            raise ValueError(
+                "validation features are required when validation-based control-limit "
+                "calibration is enabled."
+            )
+        calibration = calibrate_stage1_control_limit_from_validation(
+            training_features=training.features,
+            validation_features=validation.features,
+            lambda_value=published_lambda,
+            pca_components=pca_components,
+            variance_smoothing=variance_smoothing,
+            variance_update_mode=variance_update_mode,
+            target_false_alarm_rate=validation_false_alarm_rate,
+        )
+        selected_control_limit_multiplier = calibration.control_limit_multiplier
+
     covariance_method = (
         "empirical" if validation_mode == "paper_two_sample" else "shrinkage"
     )
@@ -309,7 +338,7 @@ def run_dataset_2a_subject(
             pca_components=pca_components,
             lambda_override=published_lambda,
             variance_smoothing=variance_smoothing,
-            control_limit_multiplier=control_limit_multiplier,
+            control_limit_multiplier=selected_control_limit_multiplier,
             variance_update_mode=variance_update_mode,
             ewma_initialization="training_mean",
             validation_mode=validation_mode,
@@ -328,5 +357,7 @@ def run_dataset_2a_subject(
         computed_csv=int(result.validation_results["confirmed_shift"].astype(bool).sum()),
         training_trials=int(training.features.shape[0]),
         testing_trials=int(testing.features.shape[0]),
+        selected_control_limit_multiplier=selected_control_limit_multiplier,
+        validation_calibration=calibration,
         cse_result=result,
     )
