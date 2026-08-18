@@ -1,7 +1,10 @@
 """BCI Competition IV Dataset 2B reproduction helpers."""
 
-from src.bci_2b_diagnostics import Dataset2BDiagnosticResult, run_dataset_2b_diagnostic
-from src.bci_2b_experiment import (
+from src.bci.datasets.dataset2b.diagnostics import (
+    Dataset2BDiagnosticResult,
+    run_dataset_2b_diagnostic,
+)
+from src.bci.datasets.dataset2b.experiment import (
     PUBLISHED_2B_RESULTS,
     Dataset2BExperimentResult,
     Dataset2BFeaturePipelineResult,
@@ -12,7 +15,10 @@ from src.bci_2b_experiment import (
     extract_dataset_2b_trials,
     run_dataset_2b_subject,
 )
-from src.bci_2b_reference import BCI_2B_TABLE1_ROWS, bci_2b_table1_reference
+from src.bci.datasets.dataset2b.reference import (
+    BCI_2B_TABLE1_ROWS,
+    bci_2b_table1_reference,
+)
 
 __all__ = [
     "BCI_2B_TABLE1_ROWS",
