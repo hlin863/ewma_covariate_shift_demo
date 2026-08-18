@@ -3,7 +3,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from src.bci_data import (
+from src.bci.data import (
     dataset_2a_filename,
     load_bci_competition_iv_2a_session,
     load_cse_feature_file,
@@ -155,8 +155,9 @@ def test_load_bci_session_uses_mne_and_returns_samples_by_channels(
     class FakeMNE:
         io = FakeIO()
 
+    # Patch the canonical implementation, not the deprecated compatibility shim.
     monkeypatch.setattr(
-        "src.bci_data._import_mne",
+        "src.bci.data._import_mne",
         lambda: FakeMNE(),
     )
 
