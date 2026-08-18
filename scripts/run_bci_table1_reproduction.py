@@ -83,11 +83,11 @@ def _parse_args():
     parser.add_argument(
         "--labels-2a",
         type=Path,
-        default=Path("data/raw/bci_competition_iv_2a_labels"),
+        default=None,
         help=(
-            "Directory containing the separately released Dataset 2A Session-II "
-            "true-label MAT files (A01E.mat ... A09E.mat). The original Dataset 2A "
-            "signal download contains GDF files only."
+            "Optional directory containing separately released Dataset 2A Session-II "
+            "true-label MAT files. If omitted, the runner uses the available GDF files "
+            "only and keeps all Session-II 783 trials unlabelled."
         ),
     )
     parser.add_argument(
@@ -176,12 +176,16 @@ def _run_2a(args, subject: int) -> Table1Row:
     session1 = load_bci_competition_iv_2a_session(args.data_2a, subject, "T")
     session2 = load_bci_competition_iv_2a_session(args.data_2a, subject, "E")
 
-    label_path = resolve_dataset_2a_evaluation_label_path(
-        subject,
-        data_directory=args.data_2a,
-        labels_directory=args.labels_2a,
-    )
-    evaluation_labels = load_dataset_2a_evaluation_labels(label_path)
+    evaluation_labels = None
+    evaluation_mode = "GDF-only"
+    if args.labels_2a is not None:
+        label_path = resolve_dataset_2a_evaluation_label_path(
+            subject,
+            data_directory=args.data_2a,
+            labels_directory=args.labels_2a,
+        )
+        evaluation_labels = load_dataset_2a_evaluation_labels(label_path)
+        evaluation_mode = "released-label left/right"
 
     session1_trials = extract_dataset_2a_trials(session1)
     testing_trials = extract_dataset_2a_trials(
@@ -189,10 +193,10 @@ def _run_2a(args, subject: int) -> Table1Row:
         evaluation_labels=evaluation_labels,
     )
 
-    if testing_trials.signals.shape[0] != 144:
+    if evaluation_labels is not None and testing_trials.signals.shape[0] != 144:
         raise RuntimeError(
-            "Dataset 2A paper reproduction expects 144 left/right Session-II trials; "
-            f"{testing_trials.signals.shape[0]} were extracted for A{subject:02d}."
+            "Dataset 2A released-label reproduction expects 144 left/right Session-II "
+            f"trials; {testing_trials.signals.shape[0]} were extracted for A{subject:02d}."
         )
 
     development_split = split_dataset_2a_session1(
@@ -235,6 +239,7 @@ def _run_2a(args, subject: int) -> Table1Row:
         f"dev_train={pipeline.training.features.shape[0]}, "
         f"validation={pipeline.validation.features.shape[0]}, "
         f"test={result.testing_trials}, "
+        f"eval_mode={evaluation_mode}, "
         f"PCA={result.cse_result.pca_result.n_components}, "
         f"PC1var={result.cse_result.pca_result.explained_variance_ratio[0]:.3f}, "
         f"L={result.selected_control_limit_multiplier:.3f}, "
@@ -338,6 +343,17 @@ def main() -> None:
         f"validation_fraction={args.session1_validation_fraction:.2f}, "
         f"seed={args.session1_split_seed}."
     )
+    if args.labels_2a is None:
+        print(
+            "Dataset 2A is running in GDF-only mode: Session-II class labels are unavailable, "
+            "so all 783 evaluation trials are retained unlabelled. These values are useful "
+            "for implementation diagnostics but are not the paper's exact left/right test set."
+        )
+    else:
+        print(
+            "Dataset 2A uses separately released Session-II labels and retains left/right "
+            "trials only for comparison with the paper's binary experiment."
+        )
     if args.calibrate_control_limit_from_validation:
         print(
             "Dataset 2A Stage-I L was calibrated from held-out Session-I validation "
