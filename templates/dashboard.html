@@ -17,6 +17,13 @@
 </head>
 <body>
   <main class="page-shell">
+    <nav class="top-nav" aria-label="Primary navigation">
+      <a class="brand" href="{{ url_for('dashboard') }}">EWMA · CSE</a>
+      <div class="nav-links">
+        <a class="active" aria-current="page" href="{{ url_for('dashboard') }}">Table 1</a>
+        <a href="{{ url_for('covariate_shift') }}">A07 shift visualisation</a>
+      </div>
+    </nav>
     <header class="hero">
       <div>
         <p class="eyebrow">EWMA Covariate Shift Demo</p>

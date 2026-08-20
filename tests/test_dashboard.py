@@ -59,6 +59,7 @@ def test_dashboard_renders_current_reproduction_results(tmp_path: Path) -> None:
     assert "B01" in html
     assert "Published CSV mean" in html
     assert "Computed CSV mean" in html
+    assert "A07 shift visualisation" in html
 
 
 def test_dashboard_shows_generation_command_when_results_missing(tmp_path: Path) -> None:
@@ -71,3 +72,21 @@ def test_dashboard_shows_generation_command_when_results_missing(tmp_path: Path)
 
     assert response.status_code == 200
     assert "run_bci_table1_reproduction.py" in response.get_data(as_text=True)
+
+
+def test_covariate_shift_page_renders_mu_and_beta_panels(tmp_path: Path) -> None:
+    app.config.update(
+        TESTING=True,
+        A07_COVARIATE_SHIFT_PATH=str(tmp_path / "missing.json"),
+    )
+
+    response = app.test_client().get("/covariate-shift")
+
+    assert response.status_code == 200
+    html = response.get_data(as_text=True)
+    assert "Covariate shift across μ and β bands" in html
+    assert "8–12 Hz" in html
+    assert "14–30 Hz" in html
+    assert "Paper-aligned schematic" in html
+    assert 'data-band="mu"' in html
+    assert 'data-band="beta"' in html

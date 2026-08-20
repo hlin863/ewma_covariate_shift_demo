@@ -7,9 +7,14 @@ from pathlib import Path
 import pandas as pd
 from flask import Flask, render_template
 
+from src.web.covariate_shift import visualisation_for
+
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_RESULTS_PATH = PROJECT_ROOT / "outputs" / "metrics" / "bci_table1_comparison.csv"
+DEFAULT_A07_VISUALISATION_PATH = (
+    PROJECT_ROOT / "outputs" / "visualisations" / "a07_covariate_shift.json"
+)
 
 app = Flask(
     __name__,
@@ -17,6 +22,10 @@ app = Flask(
     static_folder=str(PROJECT_ROOT / "static"),
 )
 app.config.setdefault("TABLE1_RESULTS_PATH", str(DEFAULT_RESULTS_PATH))
+app.config.setdefault(
+    "A07_COVARIATE_SHIFT_PATH",
+    str(DEFAULT_A07_VISUALISATION_PATH),
+)
 
 
 def _load_results(path: str | Path) -> pd.DataFrame:
@@ -138,4 +147,16 @@ def dashboard():
         summaries=summaries,
         rows_2a=_chart_rows(frame, "2A"),
         rows_2b=_chart_rows(frame, "2B"),
+    )
+
+
+@app.get("/covariate-shift")
+def covariate_shift():
+    data_path = Path(app.config["A07_COVARIATE_SHIFT_PATH"])
+    visualisation, measured_data = visualisation_for(data_path)
+    return render_template(
+        "covariate_shift.html",
+        visualisation=visualisation,
+        measured_data=measured_data,
+        data_path=data_path,
     )

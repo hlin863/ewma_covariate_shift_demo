@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>A07 Covariate Shift · μ and β bands</title>
+  <script>
+    (function () {
+      const saved = localStorage.getItem("dashboard-theme");
+      const preferred = window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+      document.documentElement.dataset.theme = saved || preferred;
+    })();
+  </script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+</head>
+<body>
+  <main class="page-shell">
+    <nav class="top-nav" aria-label="Primary navigation">
+      <a class="brand" href="{{ url_for('dashboard') }}">EWMA · CSE</a>
+      <div class="nav-links">
+        <a href="{{ url_for('dashboard') }}">Table 1</a>
+        <a class="active" aria-current="page" href="{{ url_for('covariate_shift') }}">A07 shift visualisation</a>
+      </div>
+    </nav>
+
+    <header class="hero shift-hero">
+      <div>
+        <p class="eyebrow">Paper Fig. 1 · Subject A07</p>
+        <h1>Covariate shift across μ and β bands</h1>
+        <p class="lede">Training and test CSP-feature distributions for BCI Competition IV Dataset 2A. Blue solid geometry represents P<sub>train</sub>(x); red dashed geometry represents P<sub>test</sub>(x).</p>
+      </div>
+      <div class="hero-actions">
+        <div class="theme-switcher" role="group" aria-label="Colour theme">
+          <button class="theme-button" type="button" data-theme-option="light">Light</button>
+          <button class="theme-button" type="button" data-theme-option="dark">Dark</button>
+        </div>
+        <span class="status-pill {{ 'measured' if measured_data else 'schematic' }}">{{ visualisation.source_label }}</span>
+      </div>
+    </header>
+
+    <section class="shift-summary" aria-label="Figure interpretation">
+      <div><span>Subject</span><strong>A07</strong></div>
+      <div><span>Training</span><strong>Session I</strong></div>
+      <div><span>Testing</span><strong>Session II</strong></div>
+      <div><span>Shift condition</span><strong>P<sub>train</sub>(x) ≠ P<sub>test</sub>(x)</strong></div>
+    </section>
+
+    <section class="shift-grid" aria-label="Covariate-shift plots">
+      {% for band in visualisation.bands %}
+        <article class="shift-card">
+          <div class="shift-card-heading">
+            <div><p class="eyebrow">Panel {{ '(a)' if band.id == 'mu' else '(b)' }}</p><h2>{{ band.title }} <span>{{ band.range }}</span></h2></div>
+            <div class="legend">
+              <span><i class="swatch train"></i>Training</span>
+              <span><i class="swatch test"></i>Test</span>
+            </div>
+          </div>
+          <div class="shift-chart" data-band="{{ band.id }}" role="img" aria-label="{{ band.title }} training and test feature distributions"></div>
+        </article>
+      {% endfor %}
+    </section>
+
+    <section class="interpretation-panel shift-notes">
+      <div><p class="eyebrow">Reading the figure</p><h2>The task stays stable while the inputs move</h2></div>
+      <div class="interpretation-grid">
+        <div><strong>Blue solid</strong><p>Session-I training distribution and its training classification hyperplane.</p></div>
+        <div><strong>Red dashed</strong><p>Session-II test distribution and its shifted classification hyperplane.</p></div>
+        <div><strong>Covariate shift</strong><p>The marginal CSP-feature distribution changes between sessions even when the motor-imagery task remains left versus right.</p></div>
+      </div>
+    </section>
+
+    {% if not measured_data %}
+      <aside class="data-notice">
+        <strong>Schematic mode.</strong> {{ visualisation.notice }}
+        Generate the local A07 coordinates with
+        <code>python scripts/generate_a07_covariate_shift.py --evaluation-labels path/to/A07E.mat</code>.
+        Expected output: <span class="path">{{ data_path }}</span>
+      </aside>
+    {% endif %}
+
+    <p class="paper-link">Source description: <a href="{{ visualisation.paper_url }}" target="_blank" rel="noreferrer">CSE-UAEL paper, Fig. 1</a>.</p>
+  </main>
+
+  <script id="shift-data" type="application/json">{{ visualisation|tojson }}</script>
+  <script src="{{ url_for('static', filename='covariate_shift.js') }}"></script>
+  <script>
+    (function () {
+      const root = document.documentElement;
+      const buttons = document.querySelectorAll("[data-theme-option]");
+      function apply(theme) {
+        root.dataset.theme = theme;
+        localStorage.setItem("dashboard-theme", theme);
+        buttons.forEach((button) => {
+          const active = button.dataset.themeOption === theme;
+          button.classList.toggle("active", active);
+          button.setAttribute("aria-pressed", active ? "true" : "false");
+        });
+      }
+      buttons.forEach((button) => button.addEventListener("click", () => apply(button.dataset.themeOption)));
+      apply(root.dataset.theme || "dark");
+    })();
+  </script>
+</body>
+</html>
