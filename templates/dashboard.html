@@ -1,9 +1,18 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>CSE Table 1 Reproduction</title>
+  <script>
+    (function () {
+      const storedTheme = localStorage.getItem("dashboard-theme");
+      const preferredTheme = window.matchMedia("(prefers-color-scheme: light)").matches
+        ? "light"
+        : "dark";
+      document.documentElement.dataset.theme = storedTheme || preferredTheme;
+    })();
+  </script>
   <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
 </head>
 <body>
@@ -14,7 +23,13 @@
         <h1>BCI Competition IV · Table 1 Reproduction</h1>
         <p class="lede">A visual comparison of published and computed covariate-shift warnings (CSW) and validated shifts (CSV) for Dataset 2A and Dataset 2B.</p>
       </div>
-      <div class="status-pill">paper_two_sample evaluation</div>
+      <div class="hero-actions">
+        <div class="theme-switcher" role="group" aria-label="Colour theme">
+          <button class="theme-button" type="button" data-theme-option="light" aria-pressed="false">Light</button>
+          <button class="theme-button" type="button" data-theme-option="dark" aria-pressed="false">Dark</button>
+        </div>
+        <div class="status-pill">paper_two_sample evaluation</div>
+      </div>
     </header>
 
     {% if not data_available %}
@@ -103,5 +118,28 @@
       </section>
     {% endif %}
   </main>
+
+  <script>
+    (function () {
+      const root = document.documentElement;
+      const buttons = document.querySelectorAll("[data-theme-option]");
+
+      function applyTheme(theme) {
+        root.dataset.theme = theme;
+        localStorage.setItem("dashboard-theme", theme);
+        buttons.forEach((button) => {
+          const active = button.dataset.themeOption === theme;
+          button.setAttribute("aria-pressed", active ? "true" : "false");
+          button.classList.toggle("active", active);
+        });
+      }
+
+      buttons.forEach((button) => {
+        button.addEventListener("click", () => applyTheme(button.dataset.themeOption));
+      });
+
+      applyTheme(root.dataset.theme || "dark");
+    })();
+  </script>
 </body>
 </html>
