@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Figure 1 · A07 Covariate Shift</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+</head>
+<body>
+  <main class="page-shell">
+    <header class="hero figure-hero">
+      <div>
+        <p class="eyebrow">CSE-UAEL · Dataset 2A</p>
+        <h1>Figure 1 · Covariate Shift in CSP Features</h1>
+        <p class="lede">A07 is generated from the same BCI Competition IV GDF loading, 3-second trial extraction, band-pass filtering and CSP implementation used by the reproduction code. No scatter coordinates or ellipse locations are synthetic.</p>
+      </div>
+      <div class="hero-actions">
+        <a class="nav-button" href="{{ url_for('dashboard') }}">Table 1</a>
+        <button class="theme-button" type="button" data-theme-choice="light">Light</button>
+        <button class="theme-button" type="button" data-theme-choice="dark">Dark</button>
+      </div>
+    </header>
+
+    {% if not data_available %}
+      <section class="empty-state">
+        <h2>Figure 1 data could not be built</h2>
+        <p>{{ error_message }}</p>
+        <p class="path">Dataset 2A directory: {{ data_directory }}</p>
+      </section>
+    {% else %}
+      <section class="figure-meta-grid">
+        <article class="meta-card"><span>Subject</span><strong>{{ figure.subject }}</strong></article>
+        <article class="meta-card"><span>Training</span><strong>{{ figure.training_session }}</strong></article>
+        <article class="meta-card"><span>Testing</span><strong>{{ figure.testing_session }}</strong></article>
+        <article class="meta-card"><span>Shift condition</span><strong>P<sub>train</sub>(x) ≠ P<sub>test</sub>(x)</strong></article>
+      </section>
+
+      <section class="figure-note">
+        <strong>Evaluation mode:</strong> {{ figure.evaluation_mode }}.
+        {% if 'GDF-only' in figure.evaluation_mode %}
+          The evaluation GDF exposes cue 783 without class identity, so this page shows the real Session-II marginal distribution. It does not invent the paper's test C1/C2 labels or a test decision boundary.
+        {% else %}
+          Released evaluation labels are available, so the left/right test distribution and its class-aware boundary can be drawn.
+        {% endif %}
+      </section>
+
+      <section class="figure-grid">
+        {% for band in figure.bands %}
+          <article class="figure-card">
+            <div class="figure-card-header">
+              <div>
+                <p class="eyebrow">Panel {{ '(A)' if loop.index == 1 else '(B)' }}</p>
+                <h2>{{ band.name }} band <small>{{ band.low_hz|int }}–{{ band.high_hz|int }} Hz</small></h2>
+              </div>
+              <div class="legend">
+                <span><i class="swatch training-point"></i>Training</span>
+                <span><i class="swatch testing-point"></i>Test</span>
+              </div>
+            </div>
+            <canvas class="csp-canvas" data-band-index="{{ loop.index0 }}" aria-label="{{ band.name }} band CSP feature covariate shift plot"></canvas>
+            <p class="feature-footnote">Displayed CSP dimensions are the two training-ranked features with highest Fisher scores: components {{ band.feature_indices[0] + 1 }} and {{ band.feature_indices[1] + 1 }}.</p>
+          </article>
+        {% endfor %}
+      </section>
+    {% endif %}
+  </main>
+
+  <script>
+    (() => {
+      const saved = localStorage.getItem('dashboard-theme');
+      const preferred = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+      document.documentElement.dataset.theme = saved || preferred;
+      document.querySelectorAll('[data-theme-choice]').forEach((button) => {
+        button.addEventListener('click', () => {
+          const theme = button.dataset.themeChoice;
+          document.documentElement.dataset.theme = theme;
+          localStorage.setItem('dashboard-theme', theme);
+          window.dispatchEvent(new Event('resize'));
+        });
+      });
+    })();
+  </script>
+
+  {% if data_available %}
+  <script>
+    const figureData = {{ figure|tojson }};
+
+    function css(name) {
+      return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    }
+
+    function drawBand(canvas, band) {
+      const ratio = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      const width = Math.max(rect.width, 320);
+      const height = Math.max(width * 0.62, 320);
+      canvas.width = Math.round(width * ratio);
+      canvas.height = Math.round(height * ratio);
+      canvas.style.height = `${height}px`;
+      const ctx = canvas.getContext('2d');
+      ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+      ctx.clearRect(0, 0, width, height);
+
+      const all = [...band.training_points, ...band.testing_points];
+      const xs = all.map(p => p[0]);
+      const ys = all.map(p => p[1]);
+      let xmin = Math.min(...xs), xmax = Math.max(...xs), ymin = Math.min(...ys), ymax = Math.max(...ys);
+      const xpad = Math.max((xmax - xmin) * 0.12, 0.05);
+      const ypad = Math.max((ymax - ymin) * 0.12, 0.05);
+      xmin -= xpad; xmax += xpad; ymin -= ypad; ymax += ypad;
+
+      const margin = {left: 58, right: 24, top: 25, bottom: 48};
+      const plotW = width - margin.left - margin.right;
+      const plotH = height - margin.top - margin.bottom;
+      const sx = x => margin.left + (x - xmin) / (xmax - xmin) * plotW;
+      const sy = y => margin.top + plotH - (y - ymin) / (ymax - ymin) * plotH;
+
+      ctx.fillStyle = css('--plot-bg');
+      ctx.fillRect(margin.left, margin.top, plotW, plotH);
+      ctx.strokeStyle = css('--line');
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(margin.left, margin.top + plotH);
+      ctx.lineTo(margin.left + plotW, margin.top + plotH);
+      ctx.moveTo(margin.left, margin.top);
+      ctx.lineTo(margin.left, margin.top + plotH);
+      ctx.stroke();
+
+      function points(values, color) {
+        ctx.fillStyle = color;
+        for (const point of values) {
+          ctx.beginPath();
+          ctx.arc(sx(point[0]), sy(point[1]), 3.0, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      function path(values, color, dashed=false, widthPx=2.4) {
+        if (!values || values.length < 2) return;
+        ctx.strokeStyle = color;
+        ctx.lineWidth = widthPx;
+        ctx.setLineDash(dashed ? [8, 7] : []);
+        ctx.beginPath();
+        values.forEach((point, index) => {
+          if (index === 0) ctx.moveTo(sx(point[0]), sy(point[1]));
+          else ctx.lineTo(sx(point[0]), sy(point[1]));
+        });
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+
+      const training = css('--figure-training');
+      const testing = css('--figure-testing');
+      points(band.training_points, css('--figure-training-point'));
+      points(band.testing_points, css('--figure-testing-point'));
+      path(band.training_ellipse, training, false, 2.6);
+      path(band.testing_ellipse, testing, true, 2.6);
+      path(band.training_boundary, training, false, 2.2);
+      path(band.testing_boundary, testing, true, 2.2);
+
+      ctx.fillStyle = css('--muted');
+      ctx.font = '13px Inter, system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('CSP feature 1', margin.left + plotW / 2, height - 13);
+      ctx.save();
+      ctx.translate(17, margin.top + plotH / 2);
+      ctx.rotate(-Math.PI / 2);
+      ctx.fillText('CSP feature 2', 0, 0);
+      ctx.restore();
+    }
+
+    function drawAll() {
+      document.querySelectorAll('.csp-canvas').forEach((canvas) => {
+        drawBand(canvas, figureData.bands[Number(canvas.dataset.bandIndex)]);
+      });
+    }
+
+    let timer;
+    window.addEventListener('resize', () => {
+      clearTimeout(timer);
+      timer = setTimeout(drawAll, 80);
+    });
+    drawAll();
+  </script>
+  {% endif %}
+</body>
+</html>
