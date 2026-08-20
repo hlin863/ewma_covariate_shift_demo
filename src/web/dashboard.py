@@ -7,9 +7,13 @@ from pathlib import Path
 import pandas as pd
 from flask import Flask, render_template
 
+from src.web.figure1 import build_dataset_2a_figure1, serialise_figure1
+
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_RESULTS_PATH = PROJECT_ROOT / "outputs" / "metrics" / "bci_table1_comparison.csv"
+DEFAULT_DATASET_2A_PATH = PROJECT_ROOT / "data" / "raw" / "bci_competition_iv_2a"
+DEFAULT_DATASET_2A_LABELS_PATH = PROJECT_ROOT / "data" / "raw" / "bci_competition_iv_2a_labels"
 
 app = Flask(
     __name__,
@@ -17,6 +21,8 @@ app = Flask(
     static_folder=str(PROJECT_ROOT / "static"),
 )
 app.config.setdefault("TABLE1_RESULTS_PATH", str(DEFAULT_RESULTS_PATH))
+app.config.setdefault("DATASET_2A_PATH", str(DEFAULT_DATASET_2A_PATH))
+app.config.setdefault("DATASET_2A_LABELS_PATH", str(DEFAULT_DATASET_2A_LABELS_PATH))
 
 
 def _load_results(path: str | Path) -> pd.DataFrame:
@@ -138,4 +144,32 @@ def dashboard():
         summaries=summaries,
         rows_2a=_chart_rows(frame, "2A"),
         rows_2b=_chart_rows(frame, "2B"),
+    )
+
+
+@app.get("/figure-1")
+def figure_1():
+    data_directory = Path(app.config["DATASET_2A_PATH"])
+    labels_directory = Path(app.config["DATASET_2A_LABELS_PATH"])
+    try:
+        figure = build_dataset_2a_figure1(
+            data_directory,
+            subject=7,
+            labels_directory=labels_directory,
+        )
+    except (FileNotFoundError, ImportError, ValueError, RuntimeError) as error:
+        return render_template(
+            "figure1.html",
+            data_available=False,
+            error_message=str(error),
+            data_directory=data_directory,
+            figure=None,
+        )
+
+    return render_template(
+        "figure1.html",
+        data_available=True,
+        error_message=None,
+        data_directory=data_directory,
+        figure=serialise_figure1(figure),
     )
