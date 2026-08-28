@@ -40,8 +40,10 @@ class Stage2ValidationResult:
 def _validate_stream_inputs(values, times):
     observations = np.asarray(values, dtype=float)
     time_values = np.asarray(times)
-    if observations.ndim != 1 or time_values.ndim != 1:
-        raise ValueError("values and times must be one-dimensional.")
+    if observations.ndim != 1:
+        raise ValueError("values must be one-dimensional.")
+    if time_values.ndim != 1:
+        raise ValueError("times must be one-dimensional.")
     if observations.size != time_values.size:
         raise ValueError("values and times must have equal length.")
     if observations.size == 0:
