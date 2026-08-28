@@ -28,7 +28,11 @@ src/
 │   ├── table1.py                     # paper-style Table 1 output
 │   └── metrics.py                    # detector evaluation metrics
 ├── simulation/
-│   └── gaussian.py                   # synthetic mean-shift data
+│   ├── gaussian.py                   # synthetic abrupt mean-shift data
+│   └── jumping_mean.py               # D2 AR jumping-mean data and truth
+├── experiments/
+│   └── paper2015/
+│       └── d2.py                     # paper-specific D2 orchestration
 └── web/
     └── dashboard.py                  # Flask visualisation layer
 ```
@@ -54,9 +58,11 @@ Former flat modules remain import-compatible where practical so notebooks, tests
 - `src/bci/datasets`: dataset-specific assumptions such as sessions, channels, cue codes, development splits and published reproduction targets.
 - `src/detection`: dataset-agnostic covariate-shift estimation logic.
 - `src/detection/stage1`: EWMA-based CS warning generation.
-- `src/detection/stage2`: CS warning validation and Hotelling variants.
+- `src/detection/stage2`: K-S/Hotelling CS warning validation methods.
+- `src/detection/two_stage.py`: reusable univariate TSSD-EWMA orchestration.
 - `src/reporting`: experiment metrics, paper-style output and published/computed comparisons.
-- `src/simulation`: synthetic datasets used to validate detector behaviour independently of BCI data.
+- `src/simulation`: synthetic generators and ground-truth labels, independent of detector configuration.
+- `src/experiments`: paper-specific dataset splits, detector settings and evaluation scope.
 - `src/web`: presentation only; it consumes generated result files and does not execute EEG/CSE processing.
 - `scripts`: executable experiment orchestration.
 - `tests`: unit, regression, integration and architecture smoke tests.
