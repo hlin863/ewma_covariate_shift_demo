@@ -32,7 +32,11 @@ src/
 │   ├── table1.py                     # Table 1 output/comparison
 │   └── metrics.py                    # detector evaluation metrics
 ├── simulation/
-│   └── gaussian.py                   # synthetic mean-shift streams
+│   ├── gaussian.py                   # synthetic abrupt mean-shift streams
+│   └── jumping_mean.py               # paper D2 AR jumping-mean stream
+├── experiments/
+│   └── paper2015/
+│       └── d2.py                     # D2 generation/detection/evaluation
 └── web/
     └── dashboard.py                  # Flask presentation layer
 ```
@@ -68,6 +72,8 @@ The former flat modules such as `src.cse`, `src.fbcsp`, `src.bci_data`, `src.ewm
 - Combined Dataset 2A/2B Table 1 reproduction output
 - Flask dashboard for published-versus-computed Table 1 results
 - Diagnostic and sensitivity-analysis utilities
+- Paper-aligned D2 jumping-mean generator with repeated-shift truth labels
+- Full-stream SD-EWMA/TSSD-EWMA D2 experiment and event-level metrics
 - Pytest coverage and GitHub Actions CI for the CSE/EWMA pipeline
 
 ## Reproduce the paper's Table 1 structure
@@ -171,6 +177,28 @@ result = run_cse(
     config=config,
 )
 ```
+
+## Reproduce the 2015 D2 jumping-mean experiment
+
+Run the full testing-stream evaluation with lambda estimated from the configured
+training section:
+
+```bash
+python scripts/run_2015_synthetic_reproduction.py --dataset d2
+```
+
+Use the paper's reported lambda of 0.40 as an explicit diagnostic mode:
+
+```bash
+python scripts/run_2015_synthetic_reproduction.py \
+  --dataset d2 \
+  --lambda-mode configured
+```
+
+The runner writes a JSON summary, Stage-I/Stage-II event tables and detector
+traces beneath `outputs/metrics/paper2015/d2/`. See
+[`docs/d2_reproduction.md`](docs/d2_reproduction.md) for the indexing,
+final-regime and Table III evaluation-scope decisions.
 
 ## Testing
 
