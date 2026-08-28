@@ -1,5 +1,11 @@
 """Stage-II covariate-shift validation methods."""
 
+from src.detection.stage2.ks import (
+    Stage2Config,
+    Stage2ValidationResult,
+    validate_stage_1_alarm,
+    validate_stage_1_alarms,
+)
 from src.cse_algorithm1_stage_2 import (
     TrainingReferenceHotellingConfig,
     calculate_training_reference_hotelling,
@@ -14,11 +20,15 @@ from src.multivariate_stage_2 import HotellingConfig, validate_multivariate_alar
 
 __all__ = [
     "HotellingConfig",
+    "Stage2Config",
+    "Stage2ValidationResult",
     "PaperTwoSampleHotellingConfig",
     "TrainingReferenceHotellingConfig",
     "calculate_paper_two_sample_hotelling",
     "calculate_training_reference_hotelling",
     "validate_algorithm1_alarms",
+    "validate_stage_1_alarm",
+    "validate_stage_1_alarms",
     "validate_multivariate_alarms",
     "validate_paper_two_sample_alarms",
 ]
