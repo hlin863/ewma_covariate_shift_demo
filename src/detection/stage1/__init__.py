@@ -14,16 +14,24 @@ from src.detection.stage1.msd_ewma import (
     fit_msd_ewma,
     run_msd_ewma,
 )
+from src.detection.stage1.paper_msd_ewma import (
+    PaperMSDTrainingResult,
+    fit_paper_msd_ewma,
+    run_paper_msd_ewma,
+)
 
 __all__ = [
     "EWMATrainingResult",
     "MSDTrainingResult",
+    "PaperMSDTrainingResult",
     "SD_EWMA_Config",
     "calculate_ewma_training_path",
     "calculate_multivariate_ewma_path",
     "estimate_lambda",
     "fit_msd_ewma",
+    "fit_paper_msd_ewma",
     "fit_sd_ewma",
     "run_msd_ewma",
+    "run_paper_msd_ewma",
     "run_sd_ewma",
 ]
