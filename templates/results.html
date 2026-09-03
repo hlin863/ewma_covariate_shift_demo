@@ -15,7 +15,7 @@
   </script>
   <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
 </head>
-<body>
+<body class="results-page">
   <main class="page-shell results-shell">
     <header class="hero results-hero">
       <div>
@@ -34,27 +34,31 @@
     </header>
 
     <section class="results-overview" aria-label="Results overview">
-      <article class="overview-stat">
+      <div class="overview-copy">
+        <p class="eyebrow">Result flow</p>
+        <h2>Generated evidence, ordered from reproduction to diagnostics.</h2>
+      </div>
+      <div class="overview-stat">
         <span class="metric-label">Experiment families</span>
         <strong>{{ available_experiments }} / {{ experiment_count }}</strong>
         <small>primary result available</small>
-      </article>
-      <article class="overview-stat">
+      </div>
+      <div class="overview-stat">
         <span class="metric-label">Generated artifacts</span>
         <strong>{{ available_artifacts }} / {{ total_artifacts }}</strong>
         <small>files found under outputs/</small>
-      </article>
-      <article class="overview-stat overview-path">
+      </div>
+      <div class="overview-stat overview-path">
         <span class="metric-label">Results root</span>
         <code>{{ results_root }}</code>
         <small>generated locally and intentionally Git-ignored</small>
-      </article>
+      </div>
     </section>
 
     <section class="results-toolbar" aria-label="Filter result families">
       <div>
         <p class="eyebrow">Research map</p>
-        <h2>Datasets and methods stay explicitly separated</h2>
+        <h2>Move through each result family without losing the thread.</h2>
       </div>
       <div class="filter-switcher" role="group" aria-label="Result domain filter">
         <button class="filter-button active" type="button" data-result-filter="all" aria-pressed="true">All</button>
@@ -63,135 +67,145 @@
       </div>
     </section>
 
-    <section class="result-grid" id="result-grid" aria-live="polite">
+    <section class="result-flow" id="result-grid" aria-live="polite">
       {% for group in result_groups %}
-        <article class="result-card" data-result-domain="{{ group.domain }}">
-          <div class="result-card-header">
-            <div>
-              <span class="domain-badge">{{ group.domain_label }}</span>
-              <h2>{{ group.title }}</h2>
+        <article class="result-story" data-result-domain="{{ group.domain }}">
+          <aside class="result-index" aria-label="{{ group.title }} position">
+            <span class="step-number">{{ "%02d"|format(loop.index) }}</span>
+            <span class="domain-badge">{{ group.domain_label }}</span>
+          </aside>
+
+          <div class="result-body">
+            <div class="result-title-row">
+              <div>
+                <h2>{{ group.title }}</h2>
+                <p class="result-purpose">{{ group.purpose }}</p>
+              </div>
+              <span class="availability-badge {{ 'available' if group.status == 'available' else 'missing' }}">
+                {{ 'Available' if group.status == 'available' else 'Not generated' }}
+              </span>
             </div>
-            <span class="availability-badge {{ 'available' if group.status == 'available' else 'missing' }}">
-              {{ 'Available' if group.status == 'available' else 'Not generated' }}
-            </span>
-          </div>
 
-          <p class="result-purpose">{{ group.purpose }}</p>
-
-          <div class="result-taxonomy">
-            <div class="taxonomy-block datasets-block">
-              <span class="taxonomy-label">Datasets</span>
-              <div class="tag-list">
-                {% for dataset in group.datasets %}
-                  <span class="tag dataset-tag">{{ dataset }}</span>
-                {% endfor %}
+            <div class="result-taxonomy">
+              <div class="taxonomy-block datasets-block">
+                <span class="taxonomy-label">Datasets</span>
+                <div class="tag-list">
+                  {% for dataset in group.datasets %}
+                    <span class="tag dataset-tag">{{ dataset }}</span>
+                  {% endfor %}
+                </div>
+              </div>
+              <div class="taxonomy-block methods-block">
+                <span class="taxonomy-label">Methods</span>
+                <div class="tag-list">
+                  {% for method in group.methods %}
+                    <span class="tag method-tag">{{ method }}</span>
+                  {% endfor %}
+                </div>
+              </div>
+              <div class="command-block">
+                <span class="taxonomy-label">Run experiment</span>
+                <code>{{ group.command }}</code>
               </div>
             </div>
-            <div class="taxonomy-block methods-block">
-              <span class="taxonomy-label">Methods</span>
-              <div class="tag-list">
-                {% for method in group.methods %}
-                  <span class="tag method-tag">{{ method }}</span>
-                {% endfor %}
-              </div>
-            </div>
-          </div>
 
-          <div class="command-block">
-            <span class="taxonomy-label">Run experiment</span>
-            <code>{{ group.command }}</code>
-          </div>
-
-          <div class="field-section">
-            <span class="taxonomy-label">Tracked fields</span>
-            <div class="field-list">
-              {% for column in group.preview_columns %}
-                <span class="field-chip {{ 'missing' if group.preview and column in group.preview.missing_columns else '' }}">{{ column }}</span>
-              {% endfor %}
-            </div>
-          </div>
-
-          <div class="artifact-section">
-            <div class="artifact-heading">
-              <span class="taxonomy-label">Generated artifacts</span>
-              <span>{{ group.available_count }} / {{ group.artifact_count }} found</span>
-            </div>
-            <ul class="artifact-list">
-              {% for artifact in group.artifacts %}
-                <li>
-                  <span class="artifact-state {{ 'available' if artifact.available else 'missing' }}" aria-hidden="true"></span>
-                  <div>
-                    <strong>{{ artifact.label }}</strong>
-                    <code>{{ artifact.relative_path }}</code>
-                  </div>
-                  <span class="artifact-meta">
-                    {% if artifact.available %}
-                      {{ artifact.size_kb }} KB
+            <div class="result-evidence">
+              <div class="evidence-main">
+                {% if group.preview %}
+                  <div class="preview-section">
+                    <div class="preview-heading">
+                      <div>
+                        <span class="taxonomy-label">Live CSV preview</span>
+                        {% if not group.preview.error %}
+                          <span>{{ group.preview.rows }} rows · {{ group.preview.column_count }} columns</span>
+                        {% endif %}
+                      </div>
+                    </div>
+                    {% if group.preview.error %}
+                      <p class="preview-error">Could not parse the primary CSV: {{ group.preview.error }}</p>
+                    {% elif group.preview.records %}
+                      <div class="table-scroll" tabindex="0" aria-label="Preview table for {{ group.title }}">
+                        <table class="preview-table">
+                          <thead>
+                            <tr>
+                              {% for column in group.preview.columns %}
+                                <th scope="col">{{ column }}</th>
+                              {% endfor %}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {% for row in group.preview.records %}
+                              <tr>
+                                {% for column in group.preview.columns %}
+                                  <td>{{ row[column] }}</td>
+                                {% endfor %}
+                              </tr>
+                            {% endfor %}
+                          </tbody>
+                        </table>
+                      </div>
                     {% else %}
-                      pending
+                      <p class="preview-empty">The primary CSV exists but has no rows.</p>
                     {% endif %}
-                  </span>
-                </li>
-              {% endfor %}
-            </ul>
-          </div>
-
-          {% if group.has_figures %}
-            <div class="figure-strip" aria-label="Generated figures for {{ group.title }}">
-              {% for artifact in group.artifacts %}
-                {% if artifact.is_figure %}
-                  <figure>
-                    <img src="{{ url_for('outputs_file', filename=artifact.relative_path) }}" alt="{{ artifact.label }}">
-                    <figcaption>{{ artifact.label }}</figcaption>
-                  </figure>
+                  </div>
+                {% else %}
+                  <div class="preview-section preview-placeholder">
+                    <span class="taxonomy-label">Result display</span>
+                    <p>Run the command above to populate this area with a live preview of the primary result CSV.</p>
+                  </div>
                 {% endif %}
-              {% endfor %}
-            </div>
-          {% endif %}
 
-          {% if group.preview %}
-            <div class="preview-section">
-              <div class="preview-heading">
-                <div>
-                  <span class="taxonomy-label">Live CSV preview</span>
-                  {% if not group.preview.error %}
-                    <span>{{ group.preview.rows }} rows · {{ group.preview.column_count }} columns</span>
-                  {% endif %}
-                </div>
+                {% if group.has_figures %}
+                  <div class="figure-strip" aria-label="Generated figures for {{ group.title }}">
+                    {% for artifact in group.artifacts %}
+                      {% if artifact.is_figure %}
+                        <figure>
+                          <img src="{{ url_for('outputs_file', filename=artifact.relative_path) }}" alt="{{ artifact.label }}">
+                          <figcaption>{{ artifact.label }}</figcaption>
+                        </figure>
+                      {% endif %}
+                    {% endfor %}
+                  </div>
+                {% endif %}
               </div>
-              {% if group.preview.error %}
-                <p class="preview-error">Could not parse the primary CSV: {{ group.preview.error }}</p>
-              {% elif group.preview.records %}
-                <div class="table-scroll" tabindex="0" aria-label="Preview table for {{ group.title }}">
-                  <table class="preview-table">
-                    <thead>
-                      <tr>
-                        {% for column in group.preview.columns %}
-                          <th scope="col">{{ column }}</th>
-                        {% endfor %}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {% for row in group.preview.records %}
-                        <tr>
-                          {% for column in group.preview.columns %}
-                            <td>{{ row[column] }}</td>
-                          {% endfor %}
-                        </tr>
-                      {% endfor %}
-                    </tbody>
-                  </table>
+
+              <aside class="evidence-aside">
+                <div class="field-section">
+                  <span class="taxonomy-label">Tracked fields</span>
+                  <div class="field-list">
+                    {% for column in group.preview_columns %}
+                      <span class="field-chip {{ 'missing' if group.preview and column in group.preview.missing_columns else '' }}">{{ column }}</span>
+                    {% endfor %}
+                  </div>
                 </div>
-              {% else %}
-                <p class="preview-empty">The primary CSV exists but has no rows.</p>
-              {% endif %}
+
+                <div class="artifact-section">
+                  <div class="artifact-heading">
+                    <span class="taxonomy-label">Generated artifacts</span>
+                    <span>{{ group.available_count }} / {{ group.artifact_count }} found</span>
+                  </div>
+                  <ul class="artifact-list">
+                    {% for artifact in group.artifacts %}
+                      <li>
+                        <span class="artifact-state {{ 'available' if artifact.available else 'missing' }}" aria-hidden="true"></span>
+                        <div>
+                          <strong>{{ artifact.label }}</strong>
+                          <code>{{ artifact.relative_path }}</code>
+                        </div>
+                        <span class="artifact-meta">
+                          {% if artifact.available %}
+                            {{ artifact.size_kb }} KB
+                          {% else %}
+                            pending
+                          {% endif %}
+                        </span>
+                      </li>
+                    {% endfor %}
+                  </ul>
+                </div>
+              </aside>
             </div>
-          {% else %}
-            <div class="preview-section preview-placeholder">
-              <span class="taxonomy-label">Result display</span>
-              <p>Run the command above to populate this panel with a live preview of the primary result CSV.</p>
-            </div>
-          {% endif %}
+          </div>
         </article>
       {% endfor %}
     </section>
