@@ -3,6 +3,7 @@ from pathlib import Path
 import pandas as pd
 
 from app import _dataset_summary, _load_results, app
+from src.web.dashboard import _build_results_catalog
 
 
 COLUMNS = [
@@ -19,6 +20,7 @@ COLUMNS = [
 
 
 def _write_results(path: Path) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
     pd.DataFrame(
         [
             ["2A", "A01", 0.50, 12, 16, 4, 6, 1, -5],
@@ -59,6 +61,7 @@ def test_dashboard_renders_current_reproduction_results(tmp_path: Path) -> None:
     assert "B01" in html
     assert "Published CSV mean" in html
     assert "Computed CSV mean" in html
+    assert "Research results" in html
 
 
 def test_dashboard_shows_generation_command_when_results_missing(tmp_path: Path) -> None:
@@ -71,3 +74,38 @@ def test_dashboard_shows_generation_command_when_results_missing(tmp_path: Path)
 
     assert response.status_code == 200
     assert "run_bci_table1_reproduction.py" in response.get_data(as_text=True)
+
+
+def test_results_catalog_detects_available_primary_result(tmp_path: Path) -> None:
+    comparison_path = tmp_path / "metrics" / "bci_table1_comparison.csv"
+    _write_results(comparison_path)
+
+    catalog = _build_results_catalog(tmp_path)
+    table1 = next(item for item in catalog if item["id"] == "bci-table1")
+
+    assert table1["status"] == "available"
+    assert table1["available_count"] == 1
+    assert table1["preview"]["rows"] == 4
+    assert table1["preview"]["records"][0]["subject"] == "A01"
+
+
+def test_results_catalog_page_renders_domains_methods_and_theme_controls(
+    tmp_path: Path,
+) -> None:
+    comparison_path = tmp_path / "metrics" / "bci_table1_comparison.csv"
+    _write_results(comparison_path)
+    app.config.update(TESTING=True, RESULTS_ROOT=str(tmp_path))
+
+    response = app.test_client().get("/results")
+
+    assert response.status_code == 200
+    html = response.get_data(as_text=True)
+    assert "Research results catalogue" in html
+    assert "BCI Table 1 reproduction" in html
+    assert "Raza 2015 D2 / Table III reproduction" in html
+    assert "Datasets" in html
+    assert "Methods" in html
+    assert "Light" in html
+    assert "Dark" in html
+    assert "A01" in html
+    assert "Not generated" in html
