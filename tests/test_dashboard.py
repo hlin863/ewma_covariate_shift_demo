@@ -79,14 +79,19 @@ def test_dashboard_shows_generation_command_when_results_missing(tmp_path: Path)
 def test_results_catalog_detects_available_primary_result(tmp_path: Path) -> None:
     comparison_path = tmp_path / "metrics" / "bci_table1_comparison.csv"
     _write_results(comparison_path)
+    figure_path = tmp_path / "figures" / "cse_lambda_stage1_warnings.png"
+    figure_path.parent.mkdir(parents=True, exist_ok=True)
+    figure_path.write_bytes(b"png")
 
     catalog = _build_results_catalog(tmp_path)
     table1 = next(item for item in catalog if item["id"] == "bci-table1")
+    lambda_sweep = next(item for item in catalog if item["id"] == "lambda-sweep")
 
     assert table1["status"] == "available"
     assert table1["available_count"] == 1
     assert table1["preview"]["rows"] == 4
     assert table1["preview"]["records"][0]["subject"] == "A01"
+    assert any(artifact["is_figure"] for artifact in lambda_sweep["artifacts"])
 
 
 def test_results_catalog_page_renders_domains_methods_and_theme_controls(
@@ -94,6 +99,9 @@ def test_results_catalog_page_renders_domains_methods_and_theme_controls(
 ) -> None:
     comparison_path = tmp_path / "metrics" / "bci_table1_comparison.csv"
     _write_results(comparison_path)
+    figure_path = tmp_path / "figures" / "cse_lambda_stage1_warnings.png"
+    figure_path.parent.mkdir(parents=True, exist_ok=True)
+    figure_path.write_bytes(b"png")
     app.config.update(TESTING=True, RESULTS_ROOT=str(tmp_path))
 
     response = app.test_client().get("/results")
@@ -105,7 +113,22 @@ def test_results_catalog_page_renders_domains_methods_and_theme_controls(
     assert "Raza 2015 D2 / Table III reproduction" in html
     assert "Datasets" in html
     assert "Methods" in html
+    assert "Tracked fields" in html
+    assert "computed_csw" in html
+    assert "figures/cse_lambda_stage1_warnings.png" in html
     assert "Light" in html
     assert "Dark" in html
     assert "A01" in html
     assert "Not generated" in html
+
+
+def test_results_catalog_serves_generated_output_files(tmp_path: Path) -> None:
+    figure_path = tmp_path / "figures" / "cse_lambda_stage1_warnings.png"
+    figure_path.parent.mkdir(parents=True, exist_ok=True)
+    figure_path.write_bytes(b"png")
+    app.config.update(TESTING=True, RESULTS_ROOT=str(tmp_path))
+
+    response = app.test_client().get("/outputs/figures/cse_lambda_stage1_warnings.png")
+
+    assert response.status_code == 200
+    assert response.data == b"png"

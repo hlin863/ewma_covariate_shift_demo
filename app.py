@@ -10,6 +10,7 @@ from src.web.dashboard import (  # noqa: F401
     _load_results,
     app,
     dashboard,
+    outputs_file,
     results_catalog,
 )
 

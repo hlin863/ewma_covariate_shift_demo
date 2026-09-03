@@ -6,7 +6,7 @@ from copy import deepcopy
 from pathlib import Path
 
 import pandas as pd
-from flask import Flask, render_template
+from flask import Flask, abort, render_template, send_from_directory
 
 from src.web.figure1 import build_dataset_2a_figure1, serialise_figure1
 
@@ -268,7 +268,7 @@ def _chart_rows(frame: pd.DataFrame, dataset: str) -> list[dict[str, object]]:
 
 def _normalise_preview_value(value: object) -> object:
     if pd.isna(value):
-        return "—"
+        return "n/a"
     if isinstance(value, float):
         return round(value, 6)
     if hasattr(value, "item"):
@@ -287,6 +287,7 @@ def _csv_preview(path: Path, preferred_columns: list[str]) -> dict[str, object] 
             "error": str(error),
             "rows": 0,
             "columns": [],
+            "missing_columns": preferred_columns,
             "records": [],
         }
 
@@ -303,6 +304,9 @@ def _csv_preview(path: Path, preferred_columns: list[str]) -> dict[str, object] 
         "error": None,
         "rows": int(frame.shape[0]),
         "column_count": int(frame.shape[1]),
+        "missing_columns": [
+            column for column in preferred_columns if column not in frame.columns
+        ],
         "columns": columns,
         "records": records,
     }
@@ -321,6 +325,10 @@ def _build_results_catalog(outputs_root: str | Path) -> list[dict[str, object]]:
                 "relative_path": relative_path,
                 "label": label,
                 "available": absolute_path.is_file(),
+                "is_figure": (
+                    absolute_path.is_file()
+                    and absolute_path.suffix.lower() in {".png", ".jpg", ".jpeg", ".webp"}
+                ),
                 "size_kb": (
                     round(absolute_path.stat().st_size / 1024.0, 1)
                     if absolute_path.is_file()
@@ -332,6 +340,7 @@ def _build_results_catalog(outputs_root: str | Path) -> list[dict[str, object]]:
         item["artifacts"] = artifacts
         item["available_count"] = sum(artifact["available"] for artifact in artifacts)
         item["artifact_count"] = len(artifacts)
+        item["has_figures"] = any(artifact["is_figure"] for artifact in artifacts)
         item["status"] = "available" if primary_path.is_file() else "not-generated"
         item["preview"] = _csv_preview(
             primary_path,
@@ -340,6 +349,17 @@ def _build_results_catalog(outputs_root: str | Path) -> list[dict[str, object]]:
         catalog.append(item)
 
     return catalog
+
+
+@app.get("/outputs/<path:filename>")
+def outputs_file(filename: str):
+    outputs_root = Path(app.config["RESULTS_ROOT"]).resolve()
+    requested = (outputs_root / filename).resolve()
+    if requested != outputs_root and outputs_root not in requested.parents:
+        abort(404)
+    if not requested.is_file():
+        abort(404)
+    return send_from_directory(outputs_root, filename)
 
 
 @app.get("/")

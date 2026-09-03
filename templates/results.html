@@ -102,6 +102,15 @@
             <code>{{ group.command }}</code>
           </div>
 
+          <div class="field-section">
+            <span class="taxonomy-label">Tracked fields</span>
+            <div class="field-list">
+              {% for column in group.preview_columns %}
+                <span class="field-chip {{ 'missing' if group.preview and column in group.preview.missing_columns else '' }}">{{ column }}</span>
+              {% endfor %}
+            </div>
+          </div>
+
           <div class="artifact-section">
             <div class="artifact-heading">
               <span class="taxonomy-label">Generated artifacts</span>
@@ -126,6 +135,19 @@
               {% endfor %}
             </ul>
           </div>
+
+          {% if group.has_figures %}
+            <div class="figure-strip" aria-label="Generated figures for {{ group.title }}">
+              {% for artifact in group.artifacts %}
+                {% if artifact.is_figure %}
+                  <figure>
+                    <img src="{{ url_for('outputs_file', filename=artifact.relative_path) }}" alt="{{ artifact.label }}">
+                    <figcaption>{{ artifact.label }}</figcaption>
+                  </figure>
+                {% endif %}
+              {% endfor %}
+            </div>
+          {% endif %}
 
           {% if group.preview %}
             <div class="preview-section">
