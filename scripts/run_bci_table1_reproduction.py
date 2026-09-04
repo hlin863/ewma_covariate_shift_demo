@@ -81,6 +81,16 @@ def _parse_args():
         "--data-2a", type=Path, default=Path("data/raw/bci_competition_iv_2a")
     )
     parser.add_argument(
+        "--dataset2a-evaluation-mode",
+        choices=("paper", "gdf-only"),
+        default="paper",
+        help=(
+            "Dataset 2A Session-II evaluation mode. "
+            "'paper' requires the released true labels and keeps only "
+            "left/right trials. 'gdf-only' retains all 783 cues unlabelled."
+        ),
+    )
+    parser.add_argument(
         "--labels-2a",
         type=Path,
         default=None,
@@ -173,19 +183,29 @@ def _parse_args():
 
 
 def _run_2a(args, subject: int) -> Table1Row:
+    if args.dataset2a_evaluation_mode == "paper" and args.labels_2a is None:
+        raise RuntimeError(
+            "Dataset 2A Table 1 reproduction requires the "
+            "official Session-II evaluation labels. "
+            "Provide --labels-2a PATH, or explicitly use "
+            "--dataset2a-evaluation-mode gdf-only "
+            "for the diagnostic 288-trial experiment."
+        )
     session1 = load_bci_competition_iv_2a_session(args.data_2a, subject, "T")
     session2 = load_bci_competition_iv_2a_session(args.data_2a, subject, "E")
 
-    evaluation_labels = None
-    evaluation_mode = "GDF-only"
-    if args.labels_2a is not None:
+    if args.dataset2a_evaluation_mode == "paper":
         label_path = resolve_dataset_2a_evaluation_label_path(
             subject,
             data_directory=args.data_2a,
             labels_directory=args.labels_2a,
         )
         evaluation_labels = load_dataset_2a_evaluation_labels(label_path)
-        evaluation_mode = "released-label left/right"
+        evaluation_mode = "paper-left-right"
+
+    else:
+        evaluation_labels = None
+        evaluation_mode = "gdf-only-diagnostic"
 
     session1_trials = extract_dataset_2a_trials(session1)
     testing_trials = extract_dataset_2a_trials(
@@ -193,11 +213,14 @@ def _run_2a(args, subject: int) -> Table1Row:
         evaluation_labels=evaluation_labels,
     )
 
-    if evaluation_labels is not None and testing_trials.signals.shape[0] != 144:
-        raise RuntimeError(
-            "Dataset 2A released-label reproduction expects 144 left/right Session-II "
-            f"trials; {testing_trials.signals.shape[0]} were extracted for A{subject:02d}."
-        )
+    if args.dataset2a_evaluation_mode == "paper":
+        if testing_trials.signals.shape[0] != 144:
+            raise RuntimeError(
+                "Dataset 2A paper reproduction must contain exactly "
+                "144 left/right Session-II trials; "
+                f"got {testing_trials.signals.shape[0]} "
+                f"for A{subject:02d}."
+            )
 
     development_split = split_dataset_2a_session1(
         session1_trials,

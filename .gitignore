@@ -1,6 +1,7 @@
 # Raw BCI datasets
 data/raw/bci_competition_iv_2a/
 data/raw/bci_competition_iv_2b/
+data/raw/bci_competition_iv_2a_labels/
 
 # Generated and processed experiment data
 data/processed/
