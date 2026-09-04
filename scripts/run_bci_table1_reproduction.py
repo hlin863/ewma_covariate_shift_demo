@@ -37,6 +37,39 @@ from src.reporting.table1 import (
 )
 
 
+def _print_stage2_diagnostics(subject_id: str, validation_results) -> None:
+    if validation_results.empty:
+        print(f"{subject_id} Stage-II: no validation records")
+        return
+
+    print(f"\n{subject_id} Stage-II diagnostics:")
+    print(validation_results["status"].value_counts(dropna=False).to_string())
+
+    tested = validation_results[
+        validation_results["status"].isin(["confirmed", "rejected"])
+    ]
+
+    print(
+        f"warnings sent to Stage-II = {len(validation_results)}, "
+        f"actually tested = {len(tested)}, "
+        f"confirmed = {int(validation_results['confirmed_shift'].sum())}"
+    )
+
+    if not tested.empty:
+        print(
+            f"p-value: min={tested['p_value'].min():.4f}, "
+            f"median={tested['p_value'].median():.4f}, "
+            f"max={tested['p_value'].max():.4f}"
+        )
+
+        print(
+            f"features={int(tested['n_features'].iloc[0])}, "
+            f"df2 range="
+            f"{tested['degrees_of_freedom_2'].min():.0f}-"
+            f"{tested['degrees_of_freedom_2'].max():.0f}"
+        )
+
+
 def _parse_pca_components(value: str) -> int | float | None:
     """Parse PCA retention from CLI."""
 
@@ -249,6 +282,11 @@ def _run_2a(args, subject: int) -> Table1Row:
         ),
         validation_false_alarm_rate=args.validation_false_alarm_rate,
     )
+    # Stage-II diagnostics for Dataset 2A
+    _print_stage2_diagnostics(
+        result.subject,
+        result.cse_result.validation_results,
+    )
     calibration_text = ""
     if result.validation_calibration is not None:
         calibration = result.validation_calibration
@@ -319,6 +357,13 @@ def _run_2b(args, subject: int) -> Table1Row:
             covariance_method=covariance_method,
         ),
     )
+
+    # Stage-II diagnostics for Dataset 2B
+    _print_stage2_diagnostics(
+        subject_id,
+        cse_result.validation_results,
+    )
+
     computed_csw = int(cse_result.warning_results["stage_1_alarm"].astype(bool).sum())
     computed_csv = int(
         cse_result.validation_results["confirmed_shift"].astype(bool).sum()
