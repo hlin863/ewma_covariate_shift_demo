@@ -147,6 +147,16 @@ def _parse_args():
         default="paper_two_sample",
     )
     parser.add_argument("--validation-window-size", type=int, default=10)
+    parser.add_argument(
+        "--minimum-alarm-gap",
+        type=int,
+        default=None,
+        help=(
+            "Minimum number of observations between Stage-II evaluations. "
+            "None uses the validator default; 0 evaluates every eligible "
+            "Stage-I warning."
+        ),
+    )
     parser.add_argument("--alpha", type=float, default=0.05)
     parser.add_argument("--control-limit-multiplier", type=float, default=1.96)
     parser.add_argument("--variance-smoothing", type=float, default=0.05)
@@ -273,6 +283,7 @@ def _run_2a(args, subject: int) -> Table1Row:
         pca_components=args.pca_components,
         validation_mode=args.validation_mode,
         validation_window_size=args.validation_window_size,
+        minimum_alarm_gap=args.minimum_alarm_gap,
         validation_alpha=args.alpha,
         control_limit_multiplier=args.control_limit_multiplier,
         variance_smoothing=args.variance_smoothing,
@@ -355,6 +366,7 @@ def _run_2b(args, subject: int) -> Table1Row:
             validation_after_size=args.validation_window_size,
             validation_alpha=args.alpha,
             covariance_method=covariance_method,
+            minimum_alarm_gap=args.minimum_alarm_gap,
         ),
     )
 

@@ -417,6 +417,7 @@ def run_dataset_2a_subject(
     pca_components: int | float | None = None,
     validation_mode: str = "algorithm1_training_reference",
     validation_window_size: int = 10,
+    minimum_alarm_gap: int | None = None,
     validation_alpha: float = 0.05,
     control_limit_multiplier: float = 1.96,
     variance_smoothing: float = 0.05,
