@@ -40,9 +40,9 @@ def test_first_limits_use_initial_state_and_variance():
     ("observation", "expected_alarm"),
     [
         (-2.1, 1),
-        (-2.0, 0),
+        (-2.0, 1),
         (0.0, 0),
-        (4.0, 0),
+        (4.0, 1),
         (4.1, 1),
     ],
 )
@@ -62,10 +62,7 @@ def test_alarm_boundary_rule(
         ),
     )
 
-    assert (
-        results.loc[0, "stage_1_alarm"]
-        == expected_alarm
-    )
+    assert results.loc[0, "stage_1_alarm"] == expected_alarm
 
 
 def test_constant_stationary_stream_has_no_alarms(
@@ -96,8 +93,7 @@ def test_clear_abrupt_shift_is_detected(
     )
 
     post_shift_alarms = results.loc[
-        (results["time"] >= 30)
-        & (results["stage_1_alarm"] == 1)
+        (results["time"] >= 30) & (results["stage_1_alarm"] == 1)
     ]
 
     assert not post_shift_alarms.empty
