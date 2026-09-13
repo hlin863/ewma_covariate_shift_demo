@@ -141,8 +141,6 @@ def run_sd_ewma(
         raise ValueError("times must contain integer observation indices.")
     if np.any(np.diff(time_values) <= 0):
         raise ValueError("times must be strictly increasing.")
-    if observations.size != time_values.size:
-        raise ValueError("values and times must have equal length.")
     if initial_error_variance <= 0.0 or not np.isfinite(initial_error_variance):
         raise ValueError("initial_error_variance must be positive and finite.")
     if not np.isfinite(initial_z):
@@ -171,12 +169,6 @@ def run_sd_ewma(
         current_variance = (
             float(updated_variance) if variance_updated else previous_variance
         )
-        if config.variance_update_mode == "frozen":
-            current_variance = previous_variance
-        elif config.variance_update_mode == "non_alarm" and stage_1_alarm:
-            current_variance = previous_variance
-        else:
-            current_variance = float(updated_variance)
         records.append(
             {
                 "time": int(time),
