@@ -129,13 +129,24 @@ def run_sd_ewma(
     config: SD_EWMA_Config,
 ) -> pd.DataFrame:
     observations = _validate_univariate_values(values)
-    time_values = np.asarray(times)
+    time_values = np.asarray(times, dtype=float)
+
     if time_values.ndim != 1:
         raise ValueError("times must be one-dimensional.")
     if observations.size != time_values.size:
         raise ValueError("values and times must have equal length.")
+    if not np.isfinite(time_values).all():
+        raise ValueError("times must be finite.")
+    if not np.equal(time_values, np.floor(time_values)).all():
+        raise ValueError("times must contain integer observation indices.")
+    if np.any(np.diff(time_values) <= 0):
+        raise ValueError("times must be strictly increasing.")
+    if observations.size != time_values.size:
+        raise ValueError("values and times must have equal length.")
     if initial_error_variance <= 0.0 or not np.isfinite(initial_error_variance):
         raise ValueError("initial_error_variance must be positive and finite.")
+    if not np.isfinite(initial_z):
+        raise ValueError("initial_z must be finite.")
 
     previous_z = float(initial_z)
     previous_variance = float(initial_error_variance)
@@ -146,11 +157,19 @@ def run_sd_ewma(
         lcl = previous_z - half_width
         ucl = previous_z + half_width
         prediction_error = float(observation - previous_z)
-        stage_1_alarm = bool(observation < lcl or observation > ucl)
-        current_z = config.lambda_value * observation + (1.0 - config.lambda_value) * previous_z
+        stage_1_alarm = bool(observation <= lcl or observation >= ucl)
+        current_z = (
+            config.lambda_value * observation + (1.0 - config.lambda_value) * previous_z
+        )
         updated_variance = (
             config.variance_smoothing * prediction_error**2
             + (1.0 - config.variance_smoothing) * previous_variance
+        )
+        variance_updated = config.variance_update_mode == "always" or (
+            config.variance_update_mode == "non_alarm" and not stage_1_alarm
+        )
+        current_variance = (
+            float(updated_variance) if variance_updated else previous_variance
         )
         if config.variance_update_mode == "frozen":
             current_variance = previous_variance
@@ -158,22 +177,27 @@ def run_sd_ewma(
             current_variance = previous_variance
         else:
             current_variance = float(updated_variance)
-        records.append({
-            "time": int(time),
-            "x": float(observation),
-            "prediction": float(previous_z),
-            "ewma": float(current_z),
-            "error": prediction_error,
-            "error_variance_before": float(previous_variance),
-            "error_std_before": previous_std,
-            "control_limit_multiplier": float(config.control_limit_multiplier),
-            "control_limit_half_width": float(half_width),
-            "lcl": float(lcl),
-            "ucl": float(ucl),
-            "stage_1_alarm": int(stage_1_alarm),
-            "error_variance_after": float(current_variance),
-            "variance_update_mode": config.variance_update_mode,
-        })
+        records.append(
+            {
+                "time": int(time),
+                "x": float(observation),
+                "prediction": float(previous_z),
+                "ewma": float(current_z),
+                "error": prediction_error,
+                "error_variance_before": float(previous_variance),
+                "error_std_before": previous_std,
+                "control_limit_multiplier": float(config.control_limit_multiplier),
+                "control_limit_half_width": float(half_width),
+                "lcl": float(lcl),
+                "ucl": float(ucl),
+                "stage_1_alarm": int(stage_1_alarm),
+                "error_variance_after": float(current_variance),
+                "variance_update_mode": config.variance_update_mode,
+                "lambda": float(config.lambda_value),
+                "variance_smoothing": float(config.variance_smoothing),
+                "variance_updated": int(variance_updated),
+            }
+        )
         previous_z = float(current_z)
         previous_variance = float(current_variance)
     return pd.DataFrame(records)
