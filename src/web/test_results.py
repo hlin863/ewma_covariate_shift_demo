@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ast
 from datetime import datetime, timezone
 from pathlib import Path
 import subprocess
@@ -9,7 +10,7 @@ import sys
 import time
 import xml.etree.ElementTree as ET
 
-from flask import Blueprint, current_app, jsonify, render_template, request
+from flask import Blueprint, abort, current_app, jsonify, render_template, request
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -42,6 +43,159 @@ def _group_from_classname(classname: str) -> str:
             if not candidate.startswith("test_"):
                 return candidate
     return "other"
+
+
+def _source_path_from_classname(classname: str) -> Path | None:
+    """Map a pytest JUnit classname back to its repository Python file."""
+    if not classname:
+        return None
+    module_parts = [part for part in classname.split(".") if part]
+    if not module_parts or module_parts[0] != "tests":
+        return None
+    candidate = PROJECT_ROOT.joinpath(*module_parts).with_suffix(".py")
+    try:
+        candidate.resolve().relative_to(PROJECT_ROOT.resolve())
+    except ValueError:
+        return None
+    return candidate if candidate.is_file() else None
+
+
+def _normalise_test_function_name(name: str) -> str:
+    """Strip pytest parameter IDs from a JUnit testcase name."""
+    return name.split("[", 1)[0]
+
+
+def _call_name(node: ast.AST) -> str:
+    if isinstance(node, ast.Name):
+        return node.id
+    if isinstance(node, ast.Attribute):
+        prefix = _call_name(node.value)
+        return f"{prefix}.{node.attr}" if prefix else node.attr
+    return ""
+
+
+def _comparison_contract(node: ast.AST, source: str) -> dict[str, str]:
+    expression = ast.get_source_segment(source, node) or "assertion"
+    actual = expression
+    expected = "Assertion condition evaluates to true"
+
+    if isinstance(node, ast.Compare) and len(node.ops) == 1 and len(node.comparators) == 1:
+        left = ast.get_source_segment(source, node.left) or "left expression"
+        right = ast.get_source_segment(source, node.comparators[0]) or "right expression"
+        operator = node.ops[0]
+        operator_text = {
+            ast.Eq: "==",
+            ast.NotEq: "!=",
+            ast.Lt: "<",
+            ast.LtE: "<=",
+            ast.Gt: ">",
+            ast.GtE: ">=",
+            ast.Is: "is",
+            ast.IsNot: "is not",
+            ast.In: "in",
+            ast.NotIn: "not in",
+        }.get(type(operator), operator.__class__.__name__)
+        actual = left
+        expected = f"{operator_text} {right}"
+    elif isinstance(node, ast.UnaryOp) and isinstance(node.op, ast.Not):
+        actual = ast.get_source_segment(source, node.operand) or expression
+        expected = "is false / empty"
+    elif isinstance(node, ast.Call):
+        name = _call_name(node.func)
+        actual = expression
+        if name == "isinstance" and len(node.args) >= 2:
+            subject = ast.get_source_segment(source, node.args[0]) or "value"
+            type_expr = ast.get_source_segment(source, node.args[1]) or "type"
+            actual = subject
+            expected = f"is instance of {type_expr}"
+
+    return {
+        "kind": "assert",
+        "expression": expression,
+        "actual_expression": actual,
+        "expected": expected,
+    }
+
+
+def _extract_test_source_analysis(classname: str, case_name: str) -> dict[str, object]:
+    """Extract the selected test's source and expectation contracts using Python AST."""
+    path = _source_path_from_classname(classname)
+    if path is None:
+        return {
+            "available": False,
+            "source_path": None,
+            "source": "",
+            "assertions": [],
+        }
+
+    source = path.read_text(encoding="utf-8")
+    try:
+        tree = ast.parse(source)
+    except SyntaxError:
+        return {
+            "available": False,
+            "source_path": str(path.relative_to(PROJECT_ROOT)),
+            "source": "",
+            "assertions": [],
+        }
+
+    function_name = _normalise_test_function_name(case_name)
+    function: ast.FunctionDef | ast.AsyncFunctionDef | None = None
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name == function_name:
+            function = node
+            break
+
+    if function is None:
+        return {
+            "available": False,
+            "source_path": str(path.relative_to(PROJECT_ROOT)),
+            "source": "",
+            "assertions": [],
+        }
+
+    function_source = ast.get_source_segment(source, function) or ""
+    contracts: list[dict[str, str]] = []
+    for node in ast.walk(function):
+        if isinstance(node, ast.Assert):
+            contracts.append(_comparison_contract(node.test, source))
+            continue
+
+        if isinstance(node, ast.Call):
+            name = _call_name(node.func)
+            if name.startswith("np.testing.assert_") or name.startswith("numpy.testing.assert_"):
+                expression = ast.get_source_segment(source, node) or name
+                actual = ast.get_source_segment(source, node.args[0]) if node.args else "actual value"
+                expected = ast.get_source_segment(source, node.args[1]) if len(node.args) > 1 else "assertion succeeds"
+                contracts.append({
+                    "kind": "numeric_assertion",
+                    "expression": expression,
+                    "actual_expression": actual or "actual value",
+                    "expected": expected or "expected value",
+                })
+            elif name == "pytest.raises":
+                expression = ast.get_source_segment(source, node) or name
+                exception_type = ast.get_source_segment(source, node.args[0]) if node.args else "exception"
+                match_value = None
+                for keyword in node.keywords:
+                    if keyword.arg == "match":
+                        match_value = ast.get_source_segment(source, keyword.value)
+                expected = f"raises {exception_type or 'exception'}"
+                if match_value:
+                    expected += f" matching {match_value}"
+                contracts.append({
+                    "kind": "exception_contract",
+                    "expression": expression,
+                    "actual_expression": "call inside pytest.raises block",
+                    "expected": expected,
+                })
+
+    return {
+        "available": True,
+        "source_path": str(path.relative_to(PROJECT_ROOT)),
+        "source": function_source,
+        "assertions": contracts,
+    }
 
 
 def load_test_report(path: str | Path) -> dict[str, object]:
@@ -84,12 +238,15 @@ def load_test_report(path: str | Path) -> dict[str, object]:
             group_entry["total"] += 1
             cases.append(
                 {
+                    "index": len(cases),
                     "group": group,
                     "classname": classname,
                     "name": case.get("name", "unnamed test"),
                     "status": status,
                     "time": float(case.get("time", "0") or 0),
-                    "detail": detail[:800],
+                    "detail": detail[:6000],
+                    "file": case.get("file"),
+                    "line": case.get("line"),
                 }
             )
 
@@ -186,6 +343,27 @@ def test_results():
         report=report,
         run_info=run_info,
         refresh_seconds=int(current_app.config["TEST_RESULTS_REFRESH_SECONDS"]),
+    )
+
+
+@test_results_bp.get("/tests/case/<int:case_index>")
+def test_case_detail(case_index: int):
+    """Show one test case with its source-defined expectations and observed outcome."""
+    report, _ = _ensure_current_report(force=False)
+    cases = report.get("cases", [])
+    if case_index < 0 or case_index >= len(cases):
+        abort(404)
+
+    case = cases[case_index]
+    analysis = _extract_test_source_analysis(
+        str(case.get("classname", "")),
+        str(case.get("name", "")),
+    )
+    return render_template(
+        "test_case_detail.html",
+        case=case,
+        analysis=analysis,
+        generated_at=report.get("generated_at"),
     )
 
 
