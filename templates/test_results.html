@@ -21,7 +21,7 @@
       <div>
         <p class="eyebrow">EWMA Covariate Shift Demo</p>
         <h1>Automated test case results</h1>
-        <p class="lede">The page reads the current pytest JUnit report and refreshes it automatically from the repository test suite.</p>
+        <p class="lede">The page reads the current pytest JUnit report and refreshes it automatically from the repository test suite. Select an individual case to inspect its source-defined expectations and observed pytest outcome.</p>
       </div>
       <div class="hero-actions">
         <details class="nav-menu">
@@ -132,8 +132,11 @@
                   <td><span class="test-status {{ case.status }}">{{ case.status }}</span></td>
                   <td>{{ case.group }}</td>
                   <td>
-                    <strong>{{ case.name }}</strong>
-                    {% if case.detail %}<details class="failure-detail"><summary>details</summary><pre>{{ case.detail }}</pre></details>{% endif %}
+                    <a class="test-case-link" href="{{ url_for('test_results.test_case_detail', case_index=case.index) }}">
+                      <strong>{{ case.name }}</strong>
+                      <span>Inspect expected vs observed →</span>
+                    </a>
+                    {% if case.detail %}<details class="failure-detail"><summary>quick failure detail</summary><pre>{{ case.detail }}</pre></details>{% endif %}
                   </td>
                   <td><code>{{ case.classname }}</code></td>
                   <td>{{ '%.3f'|format(case.time) }}s</td>
