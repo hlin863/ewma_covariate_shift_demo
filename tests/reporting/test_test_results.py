@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from app import app, load_test_report
+from src.web.test_results import _extract_test_source_analysis
 
 
 JUNIT_XML = """<?xml version="1.0" encoding="utf-8"?>
@@ -31,6 +32,7 @@ def test_load_test_report_calculates_distribution(tmp_path: Path) -> None:
     assert report["failed"] == 1
     assert report["skipped"] == 1
     assert report["pass_percent"] == 50.0
+    assert [case["index"] for case in report["cases"]] == [0, 1, 2, 3]
     assert {group["name"] for group in report["groups"]} == {
         "bci",
         "detection",
@@ -59,6 +61,8 @@ def test_test_results_page_renders_pie_and_cases(tmp_path: Path) -> None:
     assert "test_dashboard" in html
     assert "50.0%" in html
     assert "Research results" in html
+    assert "Inspect expected vs observed" in html
+    assert "/tests/case/0" in html
 
 
 def test_test_results_api_returns_current_counts(tmp_path: Path) -> None:
@@ -79,3 +83,60 @@ def test_test_results_api_returns_current_counts(tmp_path: Path) -> None:
     assert payload["passed"] == 2
     assert payload["failed"] == 1
     assert payload["skipped"] == 1
+
+
+def test_source_analysis_extracts_expected_contracts() -> None:
+    analysis = _extract_test_source_analysis(
+        "tests.detection.test_cse",
+        "test_run_cse_returns_complete_result",
+    )
+
+    assert analysis["available"] is True
+    assert analysis["source_path"] == "tests/detection/test_cse.py"
+    assert "test_run_cse_returns_complete_result" in analysis["source"]
+    assert len(analysis["assertions"]) >= 5
+    assert any(
+        "is instance of CSEResult" in assertion["expected"]
+        for assertion in analysis["assertions"]
+    )
+    assert any(
+        "training_signal.shape" in assertion["actual_expression"]
+        for assertion in analysis["assertions"]
+    )
+
+
+def test_test_case_detail_renders_expected_and_observed_analysis(tmp_path: Path) -> None:
+    report_path = tmp_path / "pytest_results.xml"
+    report_path.write_text(JUNIT_XML, encoding="utf-8")
+    app.config.update(
+        TESTING=True,
+        TEST_RESULTS_PATH=str(report_path),
+        TEST_RESULTS_AUTO_RUN=False,
+        TEST_RESULTS_REFRESH_SECONDS=60,
+    )
+
+    # Case index 1 resolves to tests.detection.test_cse::test_cse in this fixture.
+    # The source function is intentionally unresolved, so the page must still
+    # render the JUnit-level observed data cleanly.
+    response = app.test_client().get("/tests/case/1")
+
+    assert response.status_code == 200
+    html = response.get_data(as_text=True)
+    assert "Test case analysis" in html
+    assert "test_cse" in html
+    assert "Observed status" in html
+    assert "Expected result" in html
+
+
+def test_test_case_detail_returns_404_for_unknown_index(tmp_path: Path) -> None:
+    report_path = tmp_path / "pytest_results.xml"
+    report_path.write_text(JUNIT_XML, encoding="utf-8")
+    app.config.update(
+        TESTING=True,
+        TEST_RESULTS_PATH=str(report_path),
+        TEST_RESULTS_AUTO_RUN=False,
+    )
+
+    response = app.test_client().get("/tests/case/99")
+
+    assert response.status_code == 404
