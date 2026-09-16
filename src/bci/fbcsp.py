@@ -16,6 +16,11 @@ PAPER_FILTER_BANK: tuple[tuple[float, float], ...] = tuple(
     (float(low), float(low + 4)) for low in range(8, 28, 2)
 )
 
+ONLINE_BCI_2018_FILTER_BANK = (
+    (8.0, 12.0),
+    (16.0, 24.0),
+)
+
 
 @dataclass(frozen=True)
 class CSPModel:
