@@ -1,0 +1,60 @@
+.nav-menu {
+  position: relative;
+}
+
+.nav-menu > summary {
+  list-style: none;
+  user-select: none;
+}
+
+.nav-menu > summary::-webkit-details-marker {
+  display: none;
+}
+
+.nav-menu[open] > summary {
+  background: var(--panel);
+  color: var(--text);
+  box-shadow: 0 2px 10px var(--shadow);
+}
+
+.nav-menu-panel {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 190px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel);
+  box-shadow: 0 18px 45px var(--shadow);
+}
+
+.nav-menu-panel a {
+  display: block;
+  padding: 10px 12px;
+  border-radius: 10px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 750;
+  text-decoration: none;
+}
+
+.nav-menu-panel a:hover,
+.nav-menu-panel a:focus-visible,
+.nav-menu-panel a.active {
+  background: var(--panel-2);
+  color: var(--text);
+}
+
+.nav-menu-panel a:focus-visible {
+  outline: 2px solid var(--computed);
+  outline-offset: 2px;
+}
+
+@media (max-width: 720px) {
+  .nav-menu-panel {
+    left: 0;
+    right: auto;
+  }
+}
