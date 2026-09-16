@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Figure 1 · A07 Covariate Shift</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='navigation.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='figure1.css') }}">
 </head>
 <body>
@@ -17,7 +18,13 @@
       </div>
       <div class="hero-actions">
         <a class="nav-button" href="{{ url_for('dashboard') }}">Table 1</a>
-        <a class="nav-button" href="{{ url_for('results_catalog') }}">Research results</a>
+        <details class="nav-menu">
+          <summary class="nav-button">Research ▾</summary>
+          <div class="nav-menu-panel">
+            <a href="{{ url_for('results_catalog') }}">Research results</a>
+            <a href="{{ url_for('test_results.test_results') }}">Test cases</a>
+          </div>
+        </details>
         <button class="theme-button" type="button" data-theme-choice="light">Light</button>
         <button class="theme-button" type="button" data-theme-choice="dark">Dark</button>
       </div>
