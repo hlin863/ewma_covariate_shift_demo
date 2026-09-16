@@ -1,60 +1,71 @@
 # Test architecture
 
-The test suite is organised by scientific and software responsibility rather than by one flat list of source-module mirrors.
+The existing working pytest cases are grouped by scientific and software responsibility. This migration preserves the original test contents and changes only their paths.
 
 ```text
 tests/
-├── adaptation/
-│   ├── conftest.py
-│   ├── test_classifier.py
-│   ├── test_policies.py
-│   ├── test_supervised_loop.py
-│   └── test_validation.py
+├── bci/
+│   ├── test_bci_2a_development_pipeline.py
+│   ├── test_bci_2a_development_split.py
+│   ├── test_bci_2a_experiment.py
+│   ├── test_bci_2a_validation_calibration.py
+│   ├── test_bci_2b_experiment.py
+│   ├── test_bci_2b_features.py
+│   ├── test_bci_data.py
+│   └── test_cse_bci_features.py
 ├── detection/
+│   ├── test_cse.py
+│   ├── test_cse_algorithm1.py
+│   ├── test_cse_lambda_override.py
+│   ├── test_cse_paper_stage_2.py
+│   ├── test_cse_preprocessing.py
+│   ├── test_ewma_training.py
+│   ├── test_ewma_variance_modes.py
+│   ├── test_msd_ewma.py
+│   ├── test_sd_ewma_detection.py
+│   ├── test_stage_1_paper_cases.py
+│   ├── test_stage_2.py
+│   ├── test_tssd_ewma_pipeline.py
+│   ├── test_ici_cdt.py
+│   └── test_two_stage_namespace.py
 ├── integration/
-│   ├── test_cse_to_adaptation.py
-│   └── test_2018_online_bci_flow.py
-├── regression/
-│   └── test_adaptation_regression.py
+│   ├── test_d2_reproduction.py
+│   └── test_project_structure.py
 ├── reporting/
-├── simulation/
-└── realdata/
-    └── test_online_bci_dataset2a_smoke.py
+│   ├── test_dashboard.py
+│   ├── test_evaluation.py
+│   ├── test_repeated_shift_metrics.py
+│   ├── test_table1_reproduction.py
+│   └── test_table1_runner_cli.py
+└── simulation/
+    └── test_jumping_mean.py
 ```
 
-## Roles
+The placeholder-only adaptation, regression, real-data, and 2018-flow test files were removed from this migration so that every `test_*.py` file in the grouped suite corresponds to an existing working case.
 
-- **unit**: isolated deterministic behaviour of one class or function.
-- **contract**: schema and interface compatibility between modules.
-- **integration**: sequential behaviour across multiple modules.
-- **regression**: protects deliberately established behaviour and accepted reproducibility outputs.
-- **research**: methodological invariants, including protection against label leakage and invalid experiment construction.
-- **realdata**: checks requiring external BCI Competition files.
-- **slow**: computationally expensive tests that should not be required in the fastest development loop.
+## Commands
 
-## Adaptation test boundaries
-
-`tests/adaptation/test_classifier.py` verifies classifier lifecycle behaviour only. It must not execute EWMA or Stage-II validation.
-
-`tests/adaptation/test_policies.py` treats update policies as pure decision rules. It must not fit classifiers or load EEG data.
-
-`tests/adaptation/test_supervised_loop.py` verifies sequential adaptation semantics with deterministic synthetic features, including the invariant that prediction for trial `t` occurs before an update caused by trial `t`.
-
-`tests/adaptation/test_validation.py` protects input integrity and research-validity constraints.
-
-`tests/integration/test_cse_to_adaptation.py` checks the contract between CSE outputs and adaptation inputs.
-
-`tests/integration/test_2018_online_bci_flow.py` verifies the complete synthetic detect -> validate -> adapt sequence without claiming reproduction of the original clinical experiment.
-
-`tests/regression/test_adaptation_regression.py` should only lock values that have been deliberately established. It must not force uncertain published values to match.
-
-`tests/realdata/test_online_bci_dataset2a_smoke.py` is reserved for a representative external-data smoke run and should not be part of the fastest unit-test loop.
-
-## Suggested commands
+Run the complete suite:
 
 ```bash
-pytest -m unit
-pytest -m "unit or contract or integration"
-pytest -m "not realdata and not slow"
-pytest -m realdata
+python -m pytest -q
+```
+
+Run a group:
+
+```bash
+python -m pytest tests/bci -v
+python -m pytest tests/detection -v
+python -m pytest tests/integration -v
+python -m pytest tests/reporting -v
+python -m pytest tests/simulation -v
+```
+
+Run selected cases:
+
+```bash
+python -m pytest tests/detection/test_cse.py -v
+python -m pytest tests/detection/test_stage_2.py -v
+python -m pytest tests/bci/test_bci_2a_experiment.py -v
+python -m pytest tests/reporting/test_table1_reproduction.py -v
 ```
