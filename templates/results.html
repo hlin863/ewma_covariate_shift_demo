@@ -14,6 +14,7 @@
     })();
   </script>
   <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='navigation.css') }}">
 </head>
 <body class="results-page">
   <main class="page-shell results-shell">
@@ -25,6 +26,13 @@
       </div>
       <div class="hero-actions">
         <a class="theme-button nav-link" href="{{ url_for('dashboard') }}">Table 1 dashboard</a>
+        <details class="nav-menu" open>
+          <summary class="theme-button nav-link">Research ▾</summary>
+          <div class="nav-menu-panel">
+            <a class="active" href="{{ url_for('results_catalog') }}">Research results</a>
+            <a href="{{ url_for('test_results.test_results') }}">Test cases</a>
+          </div>
+        </details>
         <a class="theme-button nav-link" href="{{ url_for('figure_1') }}">Figure 1 · A07</a>
         <div class="theme-switcher" role="group" aria-label="Colour theme">
           <button class="theme-button" type="button" data-theme-option="light" aria-pressed="false">Light</button>
