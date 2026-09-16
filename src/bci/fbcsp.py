@@ -1,9 +1,10 @@
 """Filter-bank common spatial pattern features for the BCI reproduction path.
 
-Implements the feature path described in the CSE-UAEL paper: ten overlapping
-8--30 Hz bands, eighth-order zero-phase Butterworth filtering, a separate
-binary CSP projection per band, and log-normalised variances from the extreme
-CSP components.
+The signal-processing implementation is shared across the reproduction paths:
+each band uses eighth-order zero-phase Butterworth filtering, a separate binary
+CSP projection, and log-normalised variances from the extreme CSP components.
+Two named filter-bank configurations preserve the methodological variants used
+by the CSE-UAEL reproduction and the 2018 online adaptive BCI study.
 """
 
 from dataclasses import dataclass
@@ -12,14 +13,17 @@ import numpy as np
 from scipy.linalg import eigh
 from scipy.signal import butter, sosfiltfilt
 
-PAPER_FILTER_BANK: tuple[tuple[float, float], ...] = tuple(
+CSE_UAEL_FILTER_BANK: tuple[tuple[float, float], ...] = tuple(
     (float(low), float(low + 4)) for low in range(8, 28, 2)
 )
 
-ONLINE_BCI_2018_FILTER_BANK = (
+ONLINE_BCI_2018_FILTER_BANK: tuple[tuple[float, float], ...] = (
     (8.0, 12.0),
     (16.0, 24.0),
 )
+
+# Backward-compatible alias retained for existing Table 1 reproduction callers.
+PAPER_FILTER_BANK = CSE_UAEL_FILTER_BANK
 
 
 @dataclass(frozen=True)
@@ -66,6 +70,7 @@ def bandpass_trials(
     low_hz: float,
     high_hz: float,
 ) -> np.ndarray:
+    """Apply the shared eighth-order zero-phase Butterworth band-pass filter."""
     values = _validate_trials(trials)
     if sampling_frequency <= 0.0:
         raise ValueError("sampling_frequency must be positive.")
@@ -142,7 +147,7 @@ def fit_fbcsp(
     sampling_frequency: float,
     *,
     components_per_side: int = 1,
-    filter_bank: tuple[tuple[float, float], ...] = PAPER_FILTER_BANK,
+    filter_bank: tuple[tuple[float, float], ...] = CSE_UAEL_FILTER_BANK,
 ) -> FBCSPModel:
     trials = _validate_trials(training_trials)
     labels = _validate_binary_labels(training_labels, trials.shape[0])
@@ -194,12 +199,14 @@ def fit_transform_fbcsp(
     sampling_frequency: float,
     *,
     components_per_side: int = 1,
+    filter_bank: tuple[tuple[float, float], ...] = CSE_UAEL_FILTER_BANK,
 ) -> tuple[FBCSPModel, np.ndarray, np.ndarray]:
     model = fit_fbcsp(
         training_trials,
         training_labels,
         sampling_frequency,
         components_per_side=components_per_side,
+        filter_bank=filter_bank,
     )
     return (
         model,
