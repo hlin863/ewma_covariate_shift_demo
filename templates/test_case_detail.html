@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ case.name }} · Test Analysis</title>
+  <script>
+    (function () {
+      const storedTheme = localStorage.getItem("dashboard-theme");
+      const preferredTheme = window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+      document.documentElement.dataset.theme = storedTheme || preferredTheme;
+    })();
+  </script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='navigation.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='test_results.css') }}">
+</head>
+<body class="test-results-page">
+  <main class="page-shell test-results-shell">
+    <header class="hero test-results-hero">
+      <div>
+        <p class="eyebrow">Test case analysis · {{ case.group }}</p>
+        <h1>{{ case.name }}</h1>
+        <p class="lede">Inspect the test's source-defined expectations beside the observed pytest outcome. Passing JUnit reports record the outcome, while exact intermediate runtime values are only available when the test itself reports them or when a failure exposes them.</p>
+      </div>
+      <div class="hero-actions">
+        <a class="theme-button nav-link" href="{{ url_for('test_results.test_results') }}">← All test cases</a>
+        <div class="theme-switcher" role="group" aria-label="Colour theme">
+          <button class="theme-button" type="button" data-theme-option="light" aria-pressed="false">Light</button>
+          <button class="theme-button" type="button" data-theme-option="dark" aria-pressed="false">Dark</button>
+        </div>
+      </div>
+    </header>
+
+    <section class="test-detail-summary">
+      <article class="overview-stat">
+        <span class="metric-label">Observed status</span>
+        <strong><span class="test-status {{ case.status }}">{{ case.status }}</span></strong>
+        <small>Latest JUnit result</small>
+      </article>
+      <article class="overview-stat">
+        <span class="metric-label">Execution time</span>
+        <strong>{{ '%.3f'|format(case.time) }}s</strong>
+        <small>JUnit testcase duration</small>
+      </article>
+      <article class="overview-stat">
+        <span class="metric-label">Test group</span>
+        <strong>{{ case.group }}</strong>
+        <small>{{ case.classname }}</small>
+      </article>
+      <article class="overview-stat">
+        <span class="metric-label">Report updated</span>
+        <strong class="detail-time">{{ generated_at or 'n/a' }}</strong>
+        <small>source: pytest JUnit XML</small>
+      </article>
+    </section>
+
+    {% if case.detail %}
+      <section class="test-detail-panel observed-detail {{ case.status }}">
+        <div class="detail-heading">
+          <div>
+            <p class="eyebrow">Observed data</p>
+            <h2>Pytest diagnostic output</h2>
+          </div>
+          <span class="test-status {{ case.status }}">{{ case.status }}</span>
+        </div>
+        <pre>{{ case.detail }}</pre>
+      </section>
+    {% endif %}
+
+    <section class="test-detail-panel">
+      <div class="detail-heading">
+        <div>
+          <p class="eyebrow">Expected result</p>
+          <h2>Assertion contracts in this test</h2>
+        </div>
+        {% if analysis.source_path %}<code>{{ analysis.source_path }}</code>{% endif %}
+      </div>
+
+      {% if analysis.available and analysis.assertions %}
+        <div class="assertion-grid">
+          {% for assertion in analysis.assertions %}
+            <article class="assertion-card">
+              <div class="assertion-index">{{ "%02d"|format(loop.index) }}</div>
+              <div class="assertion-body">
+                <span class="taxonomy-label">{{ assertion.kind|replace('_', ' ') }}</span>
+                <code class="assertion-expression">{{ assertion.expression }}</code>
+                <div class="comparison-grid">
+                  <div>
+                    <span class="metric-label">Observed expression / data source</span>
+                    <code>{{ assertion.actual_expression }}</code>
+                  </div>
+                  <div>
+                    <span class="metric-label">Expected condition</span>
+                    <strong>{{ assertion.expected }}</strong>
+                  </div>
+                </div>
+                <p class="assertion-outcome">
+                  {% if case.status == 'passed' %}
+                    Latest run: the contract completed successfully.
+                  {% elif case.status == 'failed' %}
+                    Latest run: one or more contracts failed; compare with the diagnostic output above.
+                  {% else %}
+                    Latest run: this test was skipped, so the contract was not evaluated.
+                  {% endif %}
+                </p>
+              </div>
+            </article>
+          {% endfor %}
+        </div>
+      {% elif analysis.available %}
+        <div class="preview-placeholder">
+          <p>No direct <code>assert</code>, <code>numpy.testing.assert_*</code>, or <code>pytest.raises</code> contract was detected in this function. Inspect the source below for helper-based validation.</p>
+        </div>
+      {% else %}
+        <div class="preview-placeholder">
+          <p>The source function could not be resolved from the JUnit classname. The observed pytest result remains available above.</p>
+        </div>
+      {% endif %}
+    </section>
+
+    {% if analysis.available %}
+      <section class="test-detail-panel">
+        <div class="detail-heading">
+          <div>
+            <p class="eyebrow">Test data and setup</p>
+            <h2>Exact test function source</h2>
+          </div>
+          <span class="status-pill">read-only source view</span>
+        </div>
+        <pre class="test-source">{{ analysis.source }}</pre>
+      </section>
+    {% endif %}
+  </main>
+
+  <script>
+    (function () {
+      const root = document.documentElement;
+      const themeButtons = document.querySelectorAll("[data-theme-option]");
+
+      function applyTheme(theme) {
+        root.dataset.theme = theme;
+        localStorage.setItem("dashboard-theme", theme);
+        themeButtons.forEach((button) => {
+          const active = button.dataset.themeOption === theme;
+          button.setAttribute("aria-pressed", active ? "true" : "false");
+          button.classList.toggle("active", active);
+        });
+      }
+
+      themeButtons.forEach((button) => button.addEventListener("click", () => applyTheme(button.dataset.themeOption)));
+      applyTheme(root.dataset.theme || "dark");
+    })();
+  </script>
+</body>
+</html>
