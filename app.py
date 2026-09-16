@@ -13,7 +13,13 @@ from src.web.dashboard import (  # noqa: F401
     outputs_file,
     results_catalog,
 )
-from src.web.test_results import load_test_report
+from src.web.test_results import load_test_report, test_results_bp
+
+
+# Keep blueprint registration idempotent so app.py remains safe even if
+# src.web.__init__ has already registered the test-results blueprint.
+if "test_results" not in app.blueprints:
+    app.register_blueprint(test_results_bp)
 
 
 if __name__ == "__main__":
