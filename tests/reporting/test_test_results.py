@@ -1,13 +1,19 @@
 from pathlib import Path
 
 from app import app, load_test_report
-from src.web.test_results import _extract_test_source_analysis
+from src.web.test_results import _comparison_rows, _extract_test_source_analysis
 
 
 JUNIT_XML = """<?xml version="1.0" encoding="utf-8"?>
 <testsuites>
   <testsuite name="pytest" tests="4" failures="1" errors="0" skipped="1" time="1.25">
-    <testcase classname="tests.bci.test_bci_data" name="test_loader" time="0.10" />
+    <testcase classname="tests.bci.test_bci_data" name="test_loader" time="0.10">
+      <properties>
+        <property name="actual.n_samples" value="3" />
+        <property name="expected.n_samples" value="3" />
+      </properties>
+      <system-out>loader completed</system-out>
+    </testcase>
     <testcase classname="tests.detection.test_cse" name="test_cse" time="0.20" />
     <testcase classname="tests.reporting.test_dashboard" name="test_dashboard" time="0.30">
       <failure message="assert 1 == 2">assert 1 == 2</failure>
@@ -33,12 +39,30 @@ def test_load_test_report_calculates_distribution(tmp_path: Path) -> None:
     assert report["skipped"] == 1
     assert report["pass_percent"] == 50.0
     assert [case["index"] for case in report["cases"]] == [0, 1, 2, 3]
+    assert report["cases"][0]["properties"]["actual.n_samples"] == "3"
+    assert report["cases"][0]["system_out"] == "loader completed"
     assert {group["name"] for group in report["groups"]} == {
         "bci",
         "detection",
         "integration",
         "reporting",
     }
+
+
+def test_comparison_rows_pairs_numeric_actual_and_expected_values(tmp_path: Path) -> None:
+    report_path = tmp_path / "pytest_results.xml"
+    report_path.write_text(JUNIT_XML, encoding="utf-8")
+    case = load_test_report(report_path)["cases"][0]
+
+    rows, numeric = _comparison_rows(case, {"assertions": []})
+
+    assert rows[0]["label"] == "n samples"
+    assert rows[0]["actual"] == "3"
+    assert rows[0]["expected"] == "3"
+    assert numeric[0]["actual"] == 3.0
+    assert numeric[0]["expected"] == 3.0
+    assert numeric[0]["actual_width"] == 100.0
+    assert numeric[0]["expected_width"] == 100.0
 
 
 def test_test_results_page_renders_pie_and_cases(tmp_path: Path) -> None:
@@ -115,17 +139,16 @@ def test_test_case_detail_renders_expected_and_observed_analysis(tmp_path: Path)
         TEST_RESULTS_REFRESH_SECONDS=60,
     )
 
-    # Case index 1 resolves to tests.detection.test_cse::test_cse in this fixture.
-    # The source function is intentionally unresolved, so the page must still
-    # render the JUnit-level observed data cleanly.
-    response = app.test_client().get("/tests/case/1")
+    response = app.test_client().get("/tests/case/0")
 
     assert response.status_code == 200
     html = response.get_data(as_text=True)
     assert "Test case analysis" in html
-    assert "test_cse" in html
-    assert "Observed status" in html
-    assert "Expected result" in html
+    assert "Generated output against expectation" in html
+    assert "Observed vs expected" in html
+    assert "n samples" in html
+    assert "Actual vs expected values" in html
+    assert "loader completed" in html
 
 
 def test_test_case_detail_returns_404_for_unknown_index(tmp_path: Path) -> None:
