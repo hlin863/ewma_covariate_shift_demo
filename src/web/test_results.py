@@ -121,12 +121,7 @@ def _extract_test_source_analysis(classname: str, case_name: str) -> dict[str, o
     """Extract the selected test's source and expectation contracts using Python AST."""
     path = _source_path_from_classname(classname)
     if path is None:
-        return {
-            "available": False,
-            "source_path": None,
-            "source": "",
-            "assertions": [],
-        }
+        return {"available": False, "source_path": None, "source": "", "assertions": []}
 
     source = path.read_text(encoding="utf-8")
     try:
@@ -198,23 +193,93 @@ def _extract_test_source_analysis(classname: str, case_name: str) -> dict[str, o
     }
 
 
+def _parse_properties(case: ET.Element) -> dict[str, str]:
+    properties: dict[str, str] = {}
+    container = case.find("properties")
+    if container is None:
+        return properties
+    for item in container.findall("property"):
+        name = item.get("name")
+        if not name:
+            continue
+        properties[name] = item.get("value", item.text or "")
+    return properties
+
+
+def _try_float(value: object) -> float | None:
+    try:
+        return float(str(value).strip())
+    except (TypeError, ValueError):
+        return None
+
+
+def _comparison_rows(case: dict[str, object], analysis: dict[str, object]) -> tuple[list[dict[str, object]], list[dict[str, object]]]:
+    """Pair JUnit-recorded actual/expected properties and prepare numeric plots."""
+    properties = {str(k): str(v) for k, v in dict(case.get("properties", {})).items()}
+    actuals = {key[7:]: value for key, value in properties.items() if key.startswith("actual.")}
+    expected = {key[9:]: value for key, value in properties.items() if key.startswith("expected.")}
+
+    keys: list[str] = []
+    for key in (*actuals.keys(), *expected.keys()):
+        if key not in keys:
+            keys.append(key)
+
+    rows: list[dict[str, object]] = []
+    numeric: list[dict[str, object]] = []
+    for key in keys:
+        actual_value = actuals.get(key)
+        expected_value = expected.get(key)
+        actual_number = _try_float(actual_value) if actual_value is not None else None
+        expected_number = _try_float(expected_value) if expected_value is not None else None
+        row = {
+            "label": key.replace("_", " ").replace(".", " · "),
+            "actual": actual_value if actual_value is not None else "not recorded",
+            "expected": expected_value if expected_value is not None else "not recorded",
+            "numeric": actual_number is not None and expected_number is not None,
+        }
+        rows.append(row)
+        if row["numeric"]:
+            scale = max(abs(actual_number), abs(expected_number), 1e-12)
+            numeric.append({
+                "label": row["label"],
+                "actual": actual_number,
+                "expected": expected_number,
+                "actual_width": 100.0 * abs(actual_number) / scale,
+                "expected_width": 100.0 * abs(expected_number) / scale,
+            })
+
+    if not rows:
+        rows.append({
+            "label": "pytest outcome",
+            "actual": str(case.get("status", "unknown")),
+            "expected": "passed",
+            "numeric": False,
+        })
+        for assertion in analysis.get("assertions", []):
+            if assertion.get("kind") == "exception_contract":
+                rows.append({
+                    "label": "exception contract",
+                    "actual": (
+                        "contract completed successfully"
+                        if case.get("status") == "passed"
+                        else str(case.get("detail", "failure recorded"))
+                    ),
+                    "expected": str(assertion.get("expected", "exception expected")),
+                    "numeric": False,
+                })
+                break
+
+    return rows, numeric
+
+
 def load_test_report(path: str | Path) -> dict[str, object]:
     """Parse pytest's built-in JUnit XML output into dashboard-ready data."""
     report_path = Path(path)
     if not report_path.is_file():
         return {
-            "available": False,
-            "total": 0,
-            "passed": 0,
-            "failed": 0,
-            "skipped": 0,
-            "pass_percent": 0.0,
-            "fail_percent": 0.0,
-            "skip_percent": 0.0,
-            "duration_seconds": 0.0,
-            "generated_at": None,
-            "cases": [],
-            "groups": [],
+            "available": False, "total": 0, "passed": 0, "failed": 0, "skipped": 0,
+            "pass_percent": 0.0, "fail_percent": 0.0, "skip_percent": 0.0,
+            "duration_seconds": 0.0, "generated_at": None, "cases": [], "groups": [],
         }
 
     root = ET.parse(report_path).getroot()
@@ -230,35 +295,32 @@ def load_test_report(path: str | Path) -> dict[str, object]:
             status, detail = _status_for_case(case)
             classname = case.get("classname", "")
             group = _group_from_classname(classname)
-            group_entry = group_counts.setdefault(
-                group,
-                {"passed": 0, "failed": 0, "skipped": 0, "total": 0},
-            )
+            group_entry = group_counts.setdefault(group, {"passed": 0, "failed": 0, "skipped": 0, "total": 0})
             group_entry[status] += 1
             group_entry["total"] += 1
-            cases.append(
-                {
-                    "index": len(cases),
-                    "group": group,
-                    "classname": classname,
-                    "name": case.get("name", "unnamed test"),
-                    "status": status,
-                    "time": float(case.get("time", "0") or 0),
-                    "detail": detail[:6000],
-                    "file": case.get("file"),
-                    "line": case.get("line"),
-                }
-            )
+            system_out = case.findtext("system-out", default="").strip()
+            system_err = case.findtext("system-err", default="").strip()
+            cases.append({
+                "index": len(cases),
+                "group": group,
+                "classname": classname,
+                "name": case.get("name", "unnamed test"),
+                "status": status,
+                "time": float(case.get("time", "0") or 0),
+                "detail": detail[:6000],
+                "file": case.get("file"),
+                "line": case.get("line"),
+                "properties": _parse_properties(case),
+                "system_out": system_out[-6000:],
+                "system_err": system_err[-6000:],
+            })
 
     total = len(cases)
     passed = sum(case["status"] == "passed" for case in cases)
     failed = sum(case["status"] == "failed" for case in cases)
     skipped = sum(case["status"] == "skipped" for case in cases)
     divisor = max(total, 1)
-    groups = [
-        {"name": name, **counts}
-        for name, counts in sorted(group_counts.items())
-    ]
+    groups = [{"name": name, **counts} for name, counts in sorted(group_counts.items())]
 
     return {
         "available": True,
@@ -270,9 +332,7 @@ def load_test_report(path: str | Path) -> dict[str, object]:
         "fail_percent": 100.0 * failed / divisor,
         "skip_percent": 100.0 * skipped / divisor,
         "duration_seconds": duration,
-        "generated_at": datetime.fromtimestamp(
-            report_path.stat().st_mtime, tz=timezone.utc
-        ).isoformat(timespec="seconds"),
+        "generated_at": datetime.fromtimestamp(report_path.stat().st_mtime, tz=timezone.utc).isoformat(timespec="seconds"),
         "cases": cases,
         "groups": groups,
     }
@@ -282,31 +342,14 @@ def run_test_suite(report_path: str | Path) -> dict[str, object]:
     """Run the repository test suite and write a JUnit XML report."""
     path = Path(report_path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    command = [
-        sys.executable,
-        "-m",
-        "pytest",
-        "tests",
-        "-q",
-        "--disable-warnings",
-        f"--junitxml={path}",
-    ]
+    command = [sys.executable, "-m", "pytest", "tests", "-q", "--disable-warnings", f"--junitxml={path}"]
     started = time.perf_counter()
     try:
-        process = subprocess.run(
-            command,
-            cwd=PROJECT_ROOT,
-            capture_output=True,
-            text=True,
-            timeout=300,
-            check=False,
-        )
+        process = subprocess.run(command, cwd=PROJECT_ROOT, capture_output=True, text=True, timeout=300, check=False)
         return {
             "returncode": process.returncode,
             "duration_seconds": time.perf_counter() - started,
-            "output": "\n".join(
-                part for part in (process.stdout.strip(), process.stderr.strip()) if part
-            )[-6000:],
+            "output": "\n".join(part for part in (process.stdout.strip(), process.stderr.strip()) if part)[-6000:],
             "command": " ".join(command),
         }
     except subprocess.TimeoutExpired as error:
@@ -321,10 +364,7 @@ def run_test_suite(report_path: str | Path) -> dict[str, object]:
 def _ensure_current_report(force: bool = False) -> tuple[dict[str, object], dict[str, object] | None]:
     path = Path(current_app.config["TEST_RESULTS_PATH"])
     refresh_seconds = int(current_app.config["TEST_RESULTS_REFRESH_SECONDS"])
-    stale = (
-        not path.is_file()
-        or (time.time() - path.stat().st_mtime) >= refresh_seconds
-    )
+    stale = not path.is_file() or (time.time() - path.stat().st_mtime) >= refresh_seconds
 
     run_info = None
     auto_run = bool(current_app.config.get("TEST_RESULTS_AUTO_RUN", True))
@@ -348,21 +388,21 @@ def test_results():
 
 @test_results_bp.get("/tests/case/<int:case_index>")
 def test_case_detail(case_index: int):
-    """Show one test case with its source-defined expectations and observed outcome."""
+    """Show one test case with source expectations and recorded runtime outputs."""
     report, _ = _ensure_current_report(force=False)
     cases = report.get("cases", [])
     if case_index < 0 or case_index >= len(cases):
         abort(404)
 
     case = cases[case_index]
-    analysis = _extract_test_source_analysis(
-        str(case.get("classname", "")),
-        str(case.get("name", "")),
-    )
+    analysis = _extract_test_source_analysis(str(case.get("classname", "")), str(case.get("name", "")))
+    comparisons, numeric_comparisons = _comparison_rows(case, analysis)
     return render_template(
         "test_case_detail.html",
         case=case,
         analysis=analysis,
+        comparisons=comparisons,
+        numeric_comparisons=numeric_comparisons,
         generated_at=report.get("generated_at"),
     )
 
@@ -370,14 +410,12 @@ def test_case_detail(case_index: int):
 @test_results_bp.get("/api/test-results")
 def test_results_api():
     report, run_info = _ensure_current_report(force=False)
-    return jsonify(
-        {
-            "generated_at": report["generated_at"],
-            "available": report["available"],
-            "total": report["total"],
-            "passed": report["passed"],
-            "failed": report["failed"],
-            "skipped": report["skipped"],
-            "run_returncode": None if run_info is None else run_info["returncode"],
-        }
-    )
+    return jsonify({
+        "generated_at": report["generated_at"],
+        "available": report["available"],
+        "total": report["total"],
+        "passed": report["passed"],
+        "failed": report["failed"],
+        "skipped": report["skipped"],
+        "run_returncode": None if run_info is None else run_info["returncode"],
+    })
