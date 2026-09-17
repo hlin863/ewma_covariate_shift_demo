@@ -14,6 +14,7 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='navigation.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='test_results.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='test_case_analysis.css') }}">
 </head>
 <body class="test-results-page">
   <main class="page-shell test-results-shell">
@@ -41,47 +42,26 @@
 
     <section class="test-detail-panel comparison-panel">
       <div class="detail-heading">
-        <div>
-          <p class="eyebrow">Generated output against expectation</p>
-          <h2>Observed vs expected</h2>
-        </div>
+        <div><p class="eyebrow">Generated output against expectation</p><h2>Observed vs expected</h2></div>
         <span class="test-status {{ case.status }}">{{ case.status }}</span>
       </div>
       <div class="runtime-comparison-table" role="table" aria-label="Observed and expected test values">
-        <div class="runtime-comparison-row runtime-comparison-header" role="row">
-          <strong>Measurement</strong><strong>Generated / observed</strong><strong>Expected</strong>
-        </div>
+        <div class="runtime-comparison-row runtime-comparison-header" role="row"><strong>Measurement</strong><strong>Generated / observed</strong><strong>Expected</strong></div>
         {% for item in comparisons %}
-          <div class="runtime-comparison-row" role="row">
-            <span>{{ item.label }}</span>
-            <code>{{ item.actual }}</code>
-            <code>{{ item.expected }}</code>
-          </div>
+          <div class="runtime-comparison-row" role="row"><span>{{ item.label }}</span><code>{{ item.actual }}</code><code>{{ item.expected }}</code></div>
         {% endfor %}
       </div>
     </section>
 
     {% if numeric_comparisons %}
       <section class="test-detail-panel">
-        <div class="detail-heading">
-          <div>
-            <p class="eyebrow">Numerical output</p>
-            <h2>Actual vs expected values</h2>
-          </div>
-          <span class="status-pill">auto-generated visualisation</span>
-        </div>
+        <div class="detail-heading"><div><p class="eyebrow">Numerical output</p><h2>Actual vs expected values</h2></div><span class="status-pill">auto-generated visualisation</span></div>
         <div class="numeric-comparison-grid">
           {% for item in numeric_comparisons %}
             <article class="numeric-comparison-card">
               <h3>{{ item.label }}</h3>
-              <div class="numeric-row">
-                <span>Observed <strong>{{ item.actual }}</strong></span>
-                <div class="numeric-track"><i class="numeric-bar actual" style="width: {{ '%.2f'|format(item.actual_width) }}%"></i></div>
-              </div>
-              <div class="numeric-row">
-                <span>Expected <strong>{{ item.expected }}</strong></span>
-                <div class="numeric-track"><i class="numeric-bar expected" style="width: {{ '%.2f'|format(item.expected_width) }}%"></i></div>
-              </div>
+              <div class="numeric-row"><span>Observed <strong>{{ item.actual }}</strong></span><div class="numeric-track"><i class="numeric-bar actual" style="width: {{ '%.2f'|format(item.actual_width) }}%"></i></div></div>
+              <div class="numeric-row"><span>Expected <strong>{{ item.expected }}</strong></span><div class="numeric-track"><i class="numeric-bar expected" style="width: {{ '%.2f'|format(item.expected_width) }}%"></i></div></div>
               <small>Bars are normalised to the larger absolute value for this measurement.</small>
             </article>
           {% endfor %}
@@ -99,10 +79,7 @@
     {% endif %}
 
     <section class="test-detail-panel">
-      <div class="detail-heading">
-        <div><p class="eyebrow">Expected result</p><h2>Assertion contracts in this test</h2></div>
-        {% if analysis.source_path %}<code>{{ analysis.source_path }}</code>{% endif %}
-      </div>
+      <div class="detail-heading"><div><p class="eyebrow">Expected result</p><h2>Assertion contracts in this test</h2></div>{% if analysis.source_path %}<code>{{ analysis.source_path }}</code>{% endif %}</div>
       {% if analysis.available and analysis.assertions %}
         <div class="assertion-grid">
           {% for assertion in analysis.assertions %}
@@ -115,11 +92,7 @@
                   <div><span class="metric-label">Observed expression / data source</span><code>{{ assertion.actual_expression }}</code></div>
                   <div><span class="metric-label">Expected condition</span><strong>{{ assertion.expected }}</strong></div>
                 </div>
-                <p class="assertion-outcome">
-                  {% if case.status == 'passed' %}Latest run: the contract completed successfully.
-                  {% elif case.status == 'failed' %}Latest run: one or more contracts failed; compare with the runtime output above.
-                  {% else %}Latest run: this test was skipped, so the contract was not evaluated.{% endif %}
-                </p>
+                <p class="assertion-outcome">{% if case.status == 'passed' %}Latest run: the contract completed successfully.{% elif case.status == 'failed' %}Latest run: one or more contracts failed; compare with the runtime output above.{% else %}Latest run: this test was skipped, so the contract was not evaluated.{% endif %}</p>
               </div>
             </article>
           {% endfor %}
@@ -132,10 +105,7 @@
     </section>
 
     {% if analysis.available %}
-      <section class="test-detail-panel">
-        <div class="detail-heading"><div><p class="eyebrow">Test data and setup</p><h2>Exact test function source</h2></div><span class="status-pill">read-only source view</span></div>
-        <pre class="test-source">{{ analysis.source }}</pre>
-      </section>
+      <section class="test-detail-panel"><div class="detail-heading"><div><p class="eyebrow">Test data and setup</p><h2>Exact test function source</h2></div><span class="status-pill">read-only source view</span></div><pre class="test-source">{{ analysis.source }}</pre></section>
     {% endif %}
   </main>
 
