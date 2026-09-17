@@ -3,11 +3,18 @@
 
 def test_canonical_bci_namespace_exposes_core_components() -> None:
     from src.bci.data import BCISessionData
-    from src.bci.fbcsp import FBCSPModel, PAPER_FILTER_BANK
+    from src.bci.fbcsp import (
+        CSE_UAEL_FILTER_BANK,
+        ONLINE_BCI_2018_FILTER_BANK,
+        FBCSPModel,
+        PAPER_FILTER_BANK,
+    )
 
     assert BCISessionData.__name__ == "BCISessionData"
     assert FBCSPModel.__name__ == "FBCSPModel"
-    assert len(PAPER_FILTER_BANK) == 10
+    assert len(CSE_UAEL_FILTER_BANK) == 10
+    assert ONLINE_BCI_2018_FILTER_BANK == ((8.0, 12.0), (16.0, 24.0))
+    assert PAPER_FILTER_BANK is CSE_UAEL_FILTER_BANK
 
 
 def test_dataset_namespaces_expose_reproduction_entry_points() -> None:

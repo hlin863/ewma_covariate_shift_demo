@@ -39,9 +39,15 @@ def test_resolve_dataset_2a_path_finds_expected_file(
 
 def test_resolve_dataset_2a_path_reports_missing_file(
     tmp_path: Path,
+    record_property: pytest.FixtureRequest,
 ) -> None:
-    with pytest.raises(FileNotFoundError, match="A02E.gdf"):
+    with pytest.raises(FileNotFoundError, match="A02E.gdf") as exc_info:
         resolve_dataset_2a_path(tmp_path, subject=2, session="E")
+
+    record_property("actual.exception_type", type(exc_info.value).__name__)
+    record_property("expected.exception_type", "FileNotFoundError")
+    record_property("actual.exception_message", str(exc_info.value))
+    record_property("expected.exception_message", "contains A02E.gdf")
 
 
 def test_load_cse_feature_file_returns_features_times_and_labels(
@@ -56,16 +62,9 @@ def test_load_cse_feature_file_returns_features_times_and_labels(
     times = np.array([10, 11, 12])
     labels = np.array([1, 2, 1])
 
-    np.savez(
-        path,
-        features=features,
-        times=times,
-        labels=labels,
-    )
+    np.savez(path, features=features, times=times, labels=labels)
 
-    loaded_features, loaded_times, loaded_labels = (
-        load_cse_feature_file(path)
-    )
+    loaded_features, loaded_times, loaded_labels = load_cse_feature_file(path)
 
     np.testing.assert_allclose(loaded_features, features)
     np.testing.assert_array_equal(loaded_times, times)
@@ -76,11 +75,7 @@ def test_load_cse_feature_file_allows_missing_labels(
     tmp_path: Path,
 ) -> None:
     path = tmp_path / "unlabelled_features.npz"
-    np.savez(
-        path,
-        features=np.ones((4, 3)),
-        times=np.arange(4),
-    )
+    np.savez(path, features=np.ones((4, 3)), times=np.arange(4))
 
     features, times, labels = load_cse_feature_file(path)
 
@@ -93,11 +88,7 @@ def test_load_cse_feature_file_rejects_length_mismatch(
     tmp_path: Path,
 ) -> None:
     path = tmp_path / "bad_features.npz"
-    np.savez(
-        path,
-        features=np.ones((4, 2)),
-        times=np.arange(3),
-    )
+    np.savez(path, features=np.ones((4, 2)), times=np.arange(3))
 
     with pytest.raises(ValueError, match="equal length"):
         load_cse_feature_file(path)
@@ -106,6 +97,7 @@ def test_load_cse_feature_file_rejects_length_mismatch(
 def test_load_bci_session_uses_mne_and_returns_samples_by_channels(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
+    record_property: pytest.FixtureRequest,
 ) -> None:
     path = tmp_path / "A01T.gdf"
     path.write_bytes(b"placeholder")
@@ -141,12 +133,7 @@ def test_load_bci_session_uses_mne_and_returns_samples_by_channels(
 
     class FakeIO:
         @staticmethod
-        def read_raw_gdf(
-            file_path: Path,
-            *,
-            preload: bool,
-            verbose: str,
-        ) -> FakeRaw:
+        def read_raw_gdf(file_path: Path, *, preload: bool, verbose: str) -> FakeRaw:
             assert file_path == path
             assert preload is True
             assert verbose == "ERROR"
@@ -155,17 +142,20 @@ def test_load_bci_session_uses_mne_and_returns_samples_by_channels(
     class FakeMNE:
         io = FakeIO()
 
-    # Patch the canonical implementation, not the deprecated compatibility shim.
-    monkeypatch.setattr(
-        "src.bci.data._import_mne",
-        lambda: FakeMNE(),
-    )
+    monkeypatch.setattr("src.bci.data._import_mne", lambda: FakeMNE())
 
     result = load_bci_competition_iv_2a_session(
         data_directory=tmp_path,
         subject=1,
         session="T",
     )
+
+    record_property("actual.n_samples", result.n_samples)
+    record_property("expected.n_samples", 3)
+    record_property("actual.n_channels", result.n_channels)
+    record_property("expected.n_channels", 2)
+    record_property("actual.sampling_frequency", result.sampling_frequency)
+    record_property("expected.sampling_frequency", 250.0)
 
     assert fake_raw.picked is True
     assert result.subject == 1

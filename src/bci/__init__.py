@@ -15,6 +15,8 @@ from src.bci.data import (
     load_cse_feature_file,
 )
 from src.bci.fbcsp import (
+    CSE_UAEL_FILTER_BANK,
+    ONLINE_BCI_2018_FILTER_BANK,
     CSPModel,
     FBCSPModel,
     PAPER_FILTER_BANK,
@@ -28,6 +30,8 @@ from src.bci.fbcsp import (
 
 __all__ = [
     "BCISessionData",
+    "CSE_UAEL_FILTER_BANK",
+    "ONLINE_BCI_2018_FILTER_BANK",
     "CSPModel",
     "FBCSPModel",
     "PAPER_FILTER_BANK",
