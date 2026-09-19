@@ -22,7 +22,11 @@ from src.bci.datasets.dataset2a import extract_dataset_2a_trials
 from src.bci.datasets.dataset2a.evaluation_labels import (
     load_dataset_2a_evaluation_labels,
 )
-from src.bci.fbcsp import bandpass_trials, fit_binary_csp
+from src.bci.fbcsp import (
+    ONLINE_BCI_2018_FILTER_BANK,
+    bandpass_trials,
+    fit_binary_csp,
+)
 
 
 @dataclass(frozen=True)
@@ -73,7 +77,9 @@ def _fisher_scores(features: np.ndarray, labels: np.ndarray) -> np.ndarray:
     return numerator / denominator
 
 
-def _ellipse_points(points: np.ndarray, *, scale: float = 2.0, count: int = 120) -> np.ndarray:
+def _ellipse_points(
+    points: np.ndarray, *, scale: float = 2.0, count: int = 120
+) -> np.ndarray:
     values = np.asarray(points, dtype=float)
     if values.ndim != 2 or values.shape[1] != 2 or values.shape[0] < 2:
         return np.empty((0, 2), dtype=float)
@@ -118,7 +124,9 @@ def _linear_boundary(points: np.ndarray, labels: np.ndarray) -> np.ndarray | Non
     return np.column_stack((x_values, y_values))
 
 
-def _class_ellipses(points: np.ndarray, labels: np.ndarray | None) -> tuple[np.ndarray, ...]:
+def _class_ellipses(
+    points: np.ndarray, labels: np.ndarray | None
+) -> tuple[np.ndarray, ...]:
     if labels is None:
         return ()
     y = np.asarray(labels, dtype=int)
@@ -188,7 +196,7 @@ def build_dataset_2a_figure1(
         testing_trials = extract_dataset_2a_trials(testing_session)
 
     bands: list[Figure1BandData] = []
-    for name, low_hz, high_hz in (("μ", 8.0, 12.0), ("β", 14.0, 30.0)):
+    for name, (low_hz, high_hz) in zip(("μ", "β"), ONLINE_BCI_2018_FILTER_BANK):
         train_points, test_points, feature_indices = _band_features(
             training_trials.signals,
             training_trials.labels,
@@ -211,9 +219,7 @@ def build_dataset_2a_figure1(
                 training_class_ellipses=_class_ellipses(
                     train_points, training_trials.labels
                 ),
-                testing_class_ellipses=_class_ellipses(
-                    test_points, testing_labels
-                ),
+                testing_class_ellipses=_class_ellipses(test_points, testing_labels),
                 training_boundary=_linear_boundary(
                     train_points, training_trials.labels
                 ),
@@ -255,8 +261,12 @@ def serialise_figure1(data: Figure1Data) -> dict[str, object]:
                 "testing_points": array(band.testing_points),
                 "training_ellipse": array(band.training_ellipse),
                 "testing_ellipse": array(band.testing_ellipse),
-                "training_class_ellipses": [array(item) for item in band.training_class_ellipses],
-                "testing_class_ellipses": [array(item) for item in band.testing_class_ellipses],
+                "training_class_ellipses": [
+                    array(item) for item in band.training_class_ellipses
+                ],
+                "testing_class_ellipses": [
+                    array(item) for item in band.testing_class_ellipses
+                ],
                 "training_boundary": array(band.training_boundary),
                 "testing_boundary": array(band.testing_boundary),
                 "feature_indices": list(band.feature_indices),
