@@ -17,6 +17,7 @@ from src.web.home import build_home_page_model
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_RESULTS_PATH = PROJECT_ROOT / "outputs" / "metrics" / "bci_table1_comparison.csv"
 DEFAULT_OUTPUTS_ROOT = PROJECT_ROOT / "outputs"
+PAPERS_ROOT = PROJECT_ROOT / "papers"
 DEFAULT_DATASET_2A_PATH = PROJECT_ROOT / "data" / "raw" / "bci_competition_iv_2a"
 DEFAULT_DATASET_2A_LABELS_PATH = PROJECT_ROOT / "data" / "raw" / "bci_competition_iv_2a_labels"
 DEFAULT_CHOWDHURY_DATA_PATH = PROJECT_ROOT / "data" / "raw" / "chowdhury_cse_uael"
@@ -365,6 +366,24 @@ def outputs_file(filename: str):
     if not requested.is_file():
         abort(404)
     return send_from_directory(outputs_root, filename)
+
+
+@app.get("/papers/<path:filename>")
+def paper_file(filename: str):
+    papers_root = PAPERS_ROOT.resolve()
+    requested = (papers_root / filename).resolve()
+    if (
+        requested.suffix.lower() != ".pdf"
+        or requested.parent != papers_root
+        or not requested.is_file()
+    ):
+        abort(404)
+    return send_from_directory(
+        papers_root,
+        filename,
+        mimetype="application/pdf",
+        as_attachment=False,
+    )
 
 
 @app.get("/")

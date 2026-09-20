@@ -77,7 +77,29 @@
       </div>
       <div class="lineage-grid">
         {% for item in lineage %}
-          <article class="lineage-card"><span>{{ item.year }}</span><h3>{{ item.title }}</h3><p>{{ item.detail }}</p></article>
+          {% if item.paper_file %}
+            <a
+              class="lineage-card lineage-paper"
+              href="{{ url_for('paper_file', filename=item.paper_file) }}"
+              target="_blank"
+              rel="noopener"
+              aria-label="Preview paper: {{ item.paper_title }}"
+            >
+              <span>{{ item.year }}</span>
+              <h3>{{ item.title }}</h3>
+              <p>{{ item.detail }}</p>
+              <small>{{ item.citation }}</small>
+              <strong>Preview paper PDF <span aria-hidden="true">↗</span></strong>
+            </a>
+          {% else %}
+            <article class="lineage-card lineage-current">
+              <span>{{ item.year }}</span>
+              <h3>{{ item.title }}</h3>
+              <p>{{ item.detail }}</p>
+              <small>{{ item.citation }}</small>
+              <strong>Project implementation</strong>
+            </article>
+          {% endif %}
         {% endfor %}
       </div>
     </section>

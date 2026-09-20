@@ -103,21 +103,44 @@ def build_home_page_model() -> dict[str, object]:
                 "year": "2015",
                 "title": "Detector foundations",
                 "detail": "SD-EWMA/TSSD-EWMA shift detection and D2 synthetic evidence.",
+                "paper_file": "2015-raza-ewma-covariate-shift.pdf",
+                "paper_title": (
+                    "EWMA model based shift-detection methods for detecting "
+                    "covariate shifts in non-stationary environments"
+                ),
+                "citation": "Raza, Prasad & Li · Pattern Recognition",
             },
             {
                 "year": "2018",
                 "title": "Online adaptive BCI",
                 "detail": "Clinical and online-learning context for non-stationary EEG.",
+                "paper_file": "2018-chowdhury-online-adaptive-bci.pdf",
+                "paper_title": (
+                    "Online Covariate Shift Detection-Based Adaptive "
+                    "Brain-Computer Interface to Trigger Hand Exoskeleton "
+                    "Feedback for Neuro-Rehabilitation"
+                ),
+                "citation": "Chowdhury et al. · IEEE TCDS",
             },
             {
                 "year": "2019",
                 "title": "CSE-UAEL",
                 "detail": "Two-stage estimation connected to unsupervised adaptive learning.",
+                "paper_file": "2019-raza-cse-uael.pdf",
+                "paper_title": (
+                    "Covariate shift estimation based adaptive ensemble learning "
+                    "for handling non-stationarity in motor imagery related "
+                    "EEG-based brain-computer interface"
+                ),
+                "citation": "Raza et al. · Neurocomputing",
             },
             {
                 "year": "Current",
                 "title": "Auditable reconstruction",
                 "detail": "Explicit alternatives expose decisions hidden by methodological ambiguity.",
+                "paper_file": None,
+                "paper_title": None,
+                "citation": "Current repository stage",
             },
         ),
         "contributions": (

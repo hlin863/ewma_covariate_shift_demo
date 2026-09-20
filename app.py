@@ -14,6 +14,7 @@ from src.web.dashboard import (  # noqa: F401
     dashboard,
     home,
     outputs_file,
+    paper_file,
     results_catalog,
 )
 from src.web.test_results import load_test_report, test_results_bp

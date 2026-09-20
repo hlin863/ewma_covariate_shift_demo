@@ -148,6 +148,8 @@ python app.py
 
 Open `/` for the research home page. It maps the paper lineage, implementation progress, current evidence boundary and links to every analytical page. The original Table 1 dashboard is preserved at `/table-1` and reads `outputs/metrics/bci_table1_comparison.csv` on each request, so new experiment output updates the visualisation without copying values into the web application.
 
+The three source papers behind the 2015, 2018 and 2019 lineage panels are stored under `papers/`. Selecting a paper panel opens the repository PDF through `/papers/<filename>` for an inline browser preview. Bibliographic details and file mappings are documented in `papers/README.md`.
+
 Open `/results` in the same Flask app to inspect the broader generated-result catalogue. That page groups the BCI Table 1 reproduction, Dataset 2B diagnostics, Dataset 2B control-limit sensitivity, synthetic lambda sensitivity and Raza 2015 D2/Table III outputs, including live CSV previews, tracked result fields and generated figure thumbnails when the corresponding files exist under `outputs/`.
 
 ## Stage-II validation modes
