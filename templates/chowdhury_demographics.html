@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Chowdhury Cohort · EWMA Covariate Shift Demo</title>
+  <script>
+    (function () {
+      const storedTheme = localStorage.getItem("dashboard-theme");
+      const preferredTheme = window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+      document.documentElement.dataset.theme = storedTheme || preferredTheme;
+    })();
+  </script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='navigation.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='chowdhury.css') }}">
+</head>
+<body class="cohort-page">
+  <main class="page-shell cohort-shell">
+    <header class="hero cohort-hero">
+      <div>
+        <p class="eyebrow">CSE-UAEL · Clinical dataset adapter</p>
+        <h1>Chowdhury stroke cohort</h1>
+        <p class="lede">An exploratory view of the participant metadata now connected to the repository's shared covariate-shift experiment boundary.</p>
+      </div>
+      <div class="hero-actions">
+        <a class="theme-button nav-link" href="{{ url_for('dashboard') }}">Table 1 dashboard</a>
+        <details class="nav-menu" open>
+          <summary class="theme-button nav-link">Research ▾</summary>
+          <div class="nav-menu-panel">
+            <a href="{{ url_for('results_catalog') }}">Research results</a>
+            <a class="active" href="{{ url_for('chowdhury_demographics') }}">Chowdhury cohort</a>
+            <a href="{{ url_for('test_results.test_results') }}">Test cases</a>
+          </div>
+        </details>
+        <a class="theme-button nav-link" href="{{ url_for('figure_1') }}">Figure 1 · A07</a>
+        <div class="theme-switcher" role="group" aria-label="Colour theme">
+          <button class="theme-button" type="button" data-theme-option="light" aria-pressed="false">Light</button>
+          <button class="theme-button" type="button" data-theme-option="dark" aria-pressed="false">Dark</button>
+        </div>
+      </div>
+    </header>
+
+    {% if not data_available %}
+      <section class="empty-state">
+        <h2>Cohort metadata could not be loaded</h2>
+        <p>{{ error_message }}</p>
+        <p class="path">Expected dataset directory: {{ data_directory }}</p>
+      </section>
+    {% else %}
+      <section class="cohort-summary" aria-label="Cohort summary">
+        <article class="overview-stat"><span class="metric-label">Participants</span><strong>{{ cohort.summary.participants }}</strong><small>stroke-patient records</small></article>
+        <article class="overview-stat"><span class="metric-label">Mean age</span><strong>{{ "%.1f"|format(cohort.summary.mean_age) }}</strong><small>{{ cohort.summary.minimum_age }}–{{ cohort.summary.maximum_age }} years</small></article>
+        <article class="overview-stat"><span class="metric-label">Median TSS</span><strong>{{ "%.1f"|format(cohort.summary.median_stroke_months) }}</strong><small>{{ cohort.summary.minimum_stroke_months }}–{{ cohort.summary.maximum_stroke_months }} months</small></article>
+        <article class="overview-stat"><span class="metric-label">Dominant side impaired</span><strong>{{ cohort.summary.dominant_side_impaired }}</strong><small>of {{ cohort.summary.participants }} participants</small></article>
+      </section>
+
+      <section class="cohort-distributions">
+        <article class="cohort-panel">
+          <div class="section-title"><div><p class="eyebrow">Composition</p><h2>Gender distribution</h2></div></div>
+          {% for item in cohort.gender_distribution %}
+            <div class="distribution-row">
+              <div><span>{{ item.label }}</span><strong>{{ item.count }} · {{ "%.0f"|format(item.percent) }}%</strong></div>
+              <div class="cohort-track"><i class="cohort-bar gender" style="width: {{ '%.2f'|format(item.percent) }}%"></i></div>
+            </div>
+          {% endfor %}
+        </article>
+        <article class="cohort-panel">
+          <div class="section-title"><div><p class="eyebrow">Clinical profile</p><h2>Impaired side</h2></div></div>
+          {% for item in cohort.impaired_side_distribution %}
+            <div class="distribution-row">
+              <div><span>{{ item.label }}</span><strong>{{ item.count }} · {{ "%.0f"|format(item.percent) }}%</strong></div>
+              <div class="cohort-track"><i class="cohort-bar impairment" style="width: {{ '%.2f'|format(item.percent) }}%"></i></div>
+            </div>
+          {% endfor %}
+        </article>
+      </section>
+
+      <section class="cohort-panel participant-panel">
+        <div class="section-title">
+          <div><p class="eyebrow">Participant-level view</p><h2>Age and time since stroke</h2></div>
+          <div class="cohort-legend"><span><i class="legend-dot age"></i>Age</span><span><i class="legend-dot stroke"></i>Time since stroke</span></div>
+        </div>
+        <div class="participant-bars">
+          {% for participant in cohort.participants %}
+            <article class="participant-row">
+              <div class="participant-label"><strong>{{ participant.participant_id }}</strong><small>{{ participant.gender }} · {{ participant.impaired_side }} impaired</small></div>
+              <div class="participant-measures">
+                <div><span>Age <strong>{{ participant.age_years }} years</strong></span><div class="cohort-track"><i class="cohort-bar age" style="width: {{ '%.2f'|format(participant.age_width) }}%"></i></div></div>
+                <div><span>TSS <strong>{{ participant.time_since_stroke_months }} months</strong></span><div class="cohort-track"><i class="cohort-bar stroke" style="width: {{ '%.2f'|format(participant.stroke_width) }}%"></i></div></div>
+              </div>
+            </article>
+          {% endfor %}
+        </div>
+      </section>
+
+      <section class="cohort-panel">
+        <div class="section-title"><div><p class="eyebrow">Source records</p><h2>Participant metadata table</h2></div><span class="status-pill">descriptive data only</span></div>
+        <div class="table-scroll" tabindex="0">
+          <table class="preview-table cohort-table">
+            <thead><tr><th>ID</th><th>Age</th><th>Gender</th><th>Impaired side</th><th>Dominant side</th><th>TSS</th><th>Dominant side impaired?</th></tr></thead>
+            <tbody>
+              {% for participant in cohort.participants %}
+                <tr><td><strong>{{ participant.participant_id }}</strong></td><td>{{ participant.age_years }}</td><td>{{ participant.gender }}</td><td>{{ participant.impaired_side }}</td><td>{{ participant.dominant_side }}</td><td>{{ participant.time_since_stroke_months }} months</td><td>{{ "Yes" if participant.dominant_side_impaired else "No" }}</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="cohort-note">
+        <div><p class="eyebrow">Interpretation boundary</p><h2>Metadata is connected; raw EEG is not yet decoded.</h2></div>
+        <p>This page describes cohort heterogeneity. It does not yet claim relationships between demographics and CSW/CSV outcomes. Those comparisons become valid after the original recordings, trial protocol and feature pipeline are connected.</p>
+      </section>
+    {% endif %}
+  </main>
+
+  <script>
+    (() => {
+      const buttons = document.querySelectorAll('[data-theme-option]');
+      const applyTheme = (theme) => {
+        document.documentElement.dataset.theme = theme;
+        buttons.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.themeOption === theme)));
+      };
+      applyTheme(document.documentElement.dataset.theme || 'dark');
+      buttons.forEach(button => button.addEventListener('click', () => {
+        applyTheme(button.dataset.themeOption);
+        localStorage.setItem('dashboard-theme', button.dataset.themeOption);
+      }));
+    })();
+  </script>
+</body>
+</html>

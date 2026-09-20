@@ -8,6 +8,8 @@ from pathlib import Path
 import pandas as pd
 from flask import Flask, abort, render_template, send_from_directory
 
+from src.bci.datasets.chowdhury.data import load_patient_demographics
+from src.web.chowdhury import build_chowdhury_cohort_view
 from src.web.figure1 import build_dataset_2a_figure1, serialise_figure1
 
 
@@ -16,6 +18,7 @@ DEFAULT_RESULTS_PATH = PROJECT_ROOT / "outputs" / "metrics" / "bci_table1_compar
 DEFAULT_OUTPUTS_ROOT = PROJECT_ROOT / "outputs"
 DEFAULT_DATASET_2A_PATH = PROJECT_ROOT / "data" / "raw" / "bci_competition_iv_2a"
 DEFAULT_DATASET_2A_LABELS_PATH = PROJECT_ROOT / "data" / "raw" / "bci_competition_iv_2a_labels"
+DEFAULT_CHOWDHURY_DATA_PATH = PROJECT_ROOT / "data" / "raw" / "chowdhury_cse_uael"
 
 
 RESULT_DEFINITIONS = (
@@ -168,6 +171,7 @@ app.config.setdefault("TABLE1_RESULTS_PATH", str(DEFAULT_RESULTS_PATH))
 app.config.setdefault("RESULTS_ROOT", str(DEFAULT_OUTPUTS_ROOT))
 app.config.setdefault("DATASET_2A_PATH", str(DEFAULT_DATASET_2A_PATH))
 app.config.setdefault("DATASET_2A_LABELS_PATH", str(DEFAULT_DATASET_2A_LABELS_PATH))
+app.config.setdefault("CHOWDHURY_DATA_PATH", str(DEFAULT_CHOWDHURY_DATA_PATH))
 
 
 def _load_results(path: str | Path) -> pd.DataFrame:
@@ -408,6 +412,30 @@ def results_catalog():
         experiment_count=len(result_groups),
         available_artifacts=available_artifacts,
         total_artifacts=total_artifacts,
+    )
+
+
+@app.get("/chowdhury-demographics")
+def chowdhury_demographics():
+    data_directory = Path(app.config["CHOWDHURY_DATA_PATH"])
+    try:
+        participants = load_patient_demographics(data_directory)
+        cohort = build_chowdhury_cohort_view(participants)
+    except (FileNotFoundError, OSError, ValueError) as error:
+        return render_template(
+            "chowdhury_demographics.html",
+            data_available=False,
+            data_directory=data_directory,
+            error_message=str(error),
+            cohort=None,
+        )
+
+    return render_template(
+        "chowdhury_demographics.html",
+        data_available=True,
+        data_directory=data_directory,
+        error_message=None,
+        cohort=cohort,
     )
 
 

@@ -2,6 +2,7 @@
 
 from src.web import app
 from src.web.dashboard import (  # noqa: F401
+    DEFAULT_CHOWDHURY_DATA_PATH,
     DEFAULT_OUTPUTS_ROOT,
     DEFAULT_RESULTS_PATH,
     PROJECT_ROOT,
@@ -9,6 +10,7 @@ from src.web.dashboard import (  # noqa: F401
     _chart_rows,
     _dataset_summary,
     _load_results,
+    chowdhury_demographics,
     dashboard,
     outputs_file,
     results_catalog,
