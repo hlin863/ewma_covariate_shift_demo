@@ -104,6 +104,23 @@ def _write_results(path: Path) -> None:
     ).to_csv(path, index=False)
 
 
+def test_home_page_presents_research_scope_and_application_map() -> None:
+    response = app.test_client().get("/")
+
+    assert response.status_code == 200
+    html = response.get_data(as_text=True)
+    assert "EWMA Covariate Shift Research Hub" in html
+    assert "Current project progress" in html
+    assert "CSE warning and validation are implemented and testable" in html
+    assert "The full CSE-UAEL loop" in html
+    assert "Table 1 dashboard" in html
+    assert 'href="/table-1"' in html
+    assert 'href="/results"' in html
+    assert 'href="/figure-1"' in html
+    assert 'href="/chowdhury-demographics"' in html
+    assert 'href="/tests"' in html
+
+
 def test_dashboard_summary_uses_computed_and_published_values(tmp_path: Path) -> None:
     path = tmp_path / "comparison.csv"
     _write_results(path)
@@ -124,7 +141,7 @@ def test_dashboard_renders_current_reproduction_results(tmp_path: Path) -> None:
     _write_results(path)
     app.config.update(TESTING=True, TABLE1_RESULTS_PATH=str(path))
 
-    response = app.test_client().get("/")
+    response = app.test_client().get("/table-1")
 
     assert response.status_code == 200
     html = response.get_data(as_text=True)
@@ -142,7 +159,7 @@ def test_dashboard_shows_generation_command_when_results_missing(tmp_path: Path)
         TABLE1_RESULTS_PATH=str(tmp_path / "missing.csv"),
     )
 
-    response = app.test_client().get("/")
+    response = app.test_client().get("/table-1")
 
     assert response.status_code == 200
     assert "run_bci_table1_reproduction.py" in response.get_data(as_text=True)

@@ -34,7 +34,8 @@ src/
 │   └── paper2015/
 │       └── d2.py                     # paper-specific D2 orchestration
 └── web/
-    └── dashboard.py                  # Flask visualisation layer
+    ├── home.py                       # paper-grounded home-page model
+    └── dashboard.py                  # Flask routes and visualisation layer
 ```
 
 ## Import policy

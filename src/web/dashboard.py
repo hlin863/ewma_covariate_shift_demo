@@ -11,6 +11,7 @@ from flask import Flask, abort, render_template, send_from_directory
 from src.bci.datasets.chowdhury.data import load_patient_demographics
 from src.web.chowdhury import build_chowdhury_cohort_view
 from src.web.figure1 import build_dataset_2a_figure1, serialise_figure1
+from src.web.home import build_home_page_model
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -367,6 +368,11 @@ def outputs_file(filename: str):
 
 
 @app.get("/")
+def home():
+    return render_template("home.html", **build_home_page_model())
+
+
+@app.get("/table-1")
 def dashboard():
     results_path = Path(app.config["TABLE1_RESULTS_PATH"])
     frame = _load_results(results_path)

@@ -38,7 +38,8 @@ src/
 │   └── paper2015/
 │       └── d2.py                     # D2 generation/detection/evaluation
 └── web/
-    └── dashboard.py                  # Flask presentation layer
+    ├── home.py                       # paper-grounded home-page model
+    └── dashboard.py                  # Flask routes and result presentation
 ```
 
 New code should use these structured imports, for example:
@@ -137,7 +138,7 @@ outputs/metrics/bci_table1_comparison.csv
 
 ## Flask visualisation dashboard
 
-The dashboard implementation lives in `src/web/dashboard.py`; root `app.py` remains a stable launch/compatibility entry point.
+The web interface uses `src/web/home.py` for the paper-grounded research overview and `src/web/dashboard.py` for Flask routes and result presentation; root `app.py` remains a stable launch/compatibility entry point.
 
 ```bash
 python -m pip install -r requirements-dashboard.txt
@@ -145,7 +146,7 @@ python scripts/run_bci_table1_reproduction.py --validation-mode paper_two_sample
 python app.py
 ```
 
-The dashboard reads `outputs/metrics/bci_table1_comparison.csv` on each request, so new experiment output updates the visualisation without copying values into the web application.
+Open `/` for the research home page. It maps the paper lineage, implementation progress, current evidence boundary and links to every analytical page. The original Table 1 dashboard is preserved at `/table-1` and reads `outputs/metrics/bci_table1_comparison.csv` on each request, so new experiment output updates the visualisation without copying values into the web application.
 
 Open `/results` in the same Flask app to inspect the broader generated-result catalogue. That page groups the BCI Table 1 reproduction, Dataset 2B diagnostics, Dataset 2B control-limit sensitivity, synthetic lambda sensitivity and Raza 2015 D2/Table III outputs, including live CSV previews, tracked result fields and generated figure thumbnails when the corresponding files exist under `outputs/`.
 

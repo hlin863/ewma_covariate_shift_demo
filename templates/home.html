@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>EWMA Covariate Shift Research Hub</title>
+  <script>
+    (function () {
+      const storedTheme = localStorage.getItem("dashboard-theme");
+      const preferredTheme = window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+      document.documentElement.dataset.theme = storedTheme || preferredTheme;
+    })();
+  </script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='navigation.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='home.css') }}">
+</head>
+<body class="home-page">
+  <main class="page-shell home-shell">
+    <nav class="home-nav" aria-label="Primary navigation">
+      <a class="home-brand" href="{{ url_for('home') }}"><span>CSE</span> Research hub</a>
+      <div class="home-nav-links">
+        <a href="#progress">Progress</a>
+        <a href="#papers">Paper lineage</a>
+        <a href="#pages">Explore pages</a>
+        <div class="theme-switcher" role="group" aria-label="Colour theme">
+          <button class="theme-button" type="button" data-theme-option="light" aria-pressed="false">Light</button>
+          <button class="theme-button" type="button" data-theme-option="dark" aria-pressed="false">Dark</button>
+        </div>
+      </div>
+    </nav>
+
+    <header class="home-hero">
+      <div class="hero-copy">
+        <p class="eyebrow">Reproducibility · non-stationary EEG · BCI</p>
+        <h1>From covariate-shift warnings to auditable evidence.</h1>
+        <p class="home-lede">A research interface for the reconstruction and extension of EWMA-based covariate-shift estimation across BCI Competition IV and clinical EEG data.</p>
+        <div class="hero-cta">
+          <a class="primary-action" href="{{ url_for('dashboard') }}">Open Table 1 dashboard <span aria-hidden="true">→</span></a>
+          <a class="secondary-action" href="{{ url_for('results_catalog') }}">Browse all results</a>
+        </div>
+      </div>
+      <aside class="problem-card" aria-label="Research problem">
+        <p class="eyebrow">Research problem</p>
+        <h2>EEG distributions change while the intended task relationship can remain stable.</h2>
+        <div class="equation"><span>P<sub>train</sub>(X)</span><strong>≠</strong><span>P<sub>test</sub>(X)</span></div>
+        <div class="equation secondary"><span>P<sub>train</sub>(Y|X)</span><strong>=</strong><span>P<sub>test</sub>(Y|X)</span></div>
+        <p>The detector asks when the data have shifted; the longer-term research asks when that evidence justifies adaptation.</p>
+      </aside>
+    </header>
+
+    <section class="scope-banner" aria-label="Current project scope">
+      <div><span class="scope-marker">Current boundary</span><strong>CSE warning and validation are implemented and testable.</strong></div>
+      <p>The full CSE-UAEL loop—pseudo-labelling, dynamic ensembles and adaptation after confirmation—is future work, not a completed claim.</p>
+    </section>
+
+    <section class="home-section" id="progress">
+      <div class="home-section-heading">
+        <div><p class="eyebrow">Current project progress</p><h2>The research pipeline, stage by stage</h2></div>
+        <p>Implemented means code and automated contracts exist. It does not imply exact reproduction of published subject-level values.</p>
+      </div>
+      <div class="pipeline-grid">
+        {% for stage in pipeline %}
+          <article class="pipeline-card status-{{ stage.status|replace(' ', '-') }}">
+            <div class="pipeline-top"><span>{{ stage.number }}</span><span class="progress-status">{{ stage.status }}</span></div>
+            <h3>{{ stage.title }}</h3>
+            <p>{{ stage.detail }}</p>
+          </article>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="home-section lineage-section" id="papers">
+      <div class="home-section-heading">
+        <div><p class="eyebrow">Paper foundations</p><h2>How the current reconstruction fits the research lineage</h2></div>
+        <p>The project separates detector provenance, online-learning context and present implementation evidence.</p>
+      </div>
+      <div class="lineage-grid">
+        {% for item in lineage %}
+          <article class="lineage-card"><span>{{ item.year }}</span><h3>{{ item.title }}</h3><p>{{ item.detail }}</p></article>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="home-section" id="pages">
+      <div class="home-section-heading">
+        <div><p class="eyebrow">Application map</p><h2>Choose the evidence you need</h2></div>
+        <p>Each page has one responsibility: reproduce, inspect, visualise, extend or verify.</p>
+      </div>
+      <div class="page-grid">
+        {% for page in pages %}
+          <a class="page-card" href="{{ url_for(page.endpoint) }}">
+            <span>{{ "%02d"|format(loop.index) }} · {{ page.kind }}</span>
+            <h3>{{ page.label }}</h3>
+            <p>{{ page.description }}</p>
+            <strong>Open page <span aria-hidden="true">↗</span></strong>
+          </a>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="evidence-grid">
+      <article class="evidence-card">
+        <p class="eyebrow">What this work contributes</p>
+        <h2>Reproducibility as an explicit system</h2>
+        <ul>{% for contribution in contributions %}<li>{{ contribution }}</li>{% endfor %}</ul>
+      </article>
+      <article class="evidence-card limitations-card">
+        <p class="eyebrow">What remains unresolved</p>
+        <h2>Limits that affect interpretation</h2>
+        <ul>{% for limitation in limitations %}<li>{{ limitation }}</li>{% endfor %}</ul>
+      </article>
+    </section>
+
+    <footer class="home-footer">
+      <p><strong>Reproducibility and Extension of EWMA-Based Covariate Shift Estimation for Non-Stationary EEG-Based BCI</strong></p>
+      <p>Haocheng Lin · Ulster University</p>
+    </footer>
+  </main>
+
+  <script>
+    (function () {
+      const root = document.documentElement;
+      const buttons = document.querySelectorAll("[data-theme-option]");
+      function applyTheme(theme) {
+        root.dataset.theme = theme;
+        localStorage.setItem("dashboard-theme", theme);
+        buttons.forEach((button) => button.setAttribute("aria-pressed", button.dataset.themeOption === theme ? "true" : "false"));
+      }
+      buttons.forEach((button) => button.addEventListener("click", () => applyTheme(button.dataset.themeOption)));
+      applyTheme(root.dataset.theme || "dark");
+    })();
+  </script>
+</body>
+</html>

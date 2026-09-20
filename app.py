@@ -12,6 +12,7 @@ from src.web.dashboard import (  # noqa: F401
     _load_results,
     chowdhury_demographics,
     dashboard,
+    home,
     outputs_file,
     results_catalog,
 )
