@@ -1,0 +1,11 @@
+participant_id,age_years,gender,impaired_side,dominant_side,time_since_stroke_months
+S01,48,Male,Left,Right,8
+S02,71,Male,Left,Right,20
+S03,63,Male,Right,Right,8
+S04,35,Female,Right,Right,3
+S05,24,Male,Left,Right,8
+S06,45,Female,Left,Right,6
+S07,48,Male,Left,Right,2
+S08,62,Female,Left,Right,6
+S09,28,Male,Left,Right,1
+S10,51,Female,Right,Right,48
