@@ -54,6 +54,8 @@ def test_chowdhury_cohort_view_computes_descriptive_statistics() -> None:
     assert cohort["summary"]["median_stroke_months"] == 8
     assert cohort["summary"]["dominant_side_impaired"] == 1
     assert cohort["impaired_side_distribution"][0]["count"] == 2
+    assert cohort["participants"][1]["age_width"] == 100.0
+    assert cohort["participants"][1]["stroke_width"] == 100.0
 
 
 def test_chowdhury_demographics_page_renders_visualisation(tmp_path: Path) -> None:
@@ -65,6 +67,10 @@ def test_chowdhury_demographics_page_renders_visualisation(tmp_path: Path) -> No
     assert response.status_code == 200
     html = response.get_data(as_text=True)
     assert "Chowdhury stroke cohort" in html
+    assert "Cleveland dot plots" in html
+    assert "Age by participant" in html
+    assert "Time since stroke" in html
+    assert html.count('class="cleveland-dot') == 6
     assert "Age and time since stroke" in html
     assert "S01" in html
     assert "Dominant side impaired" in html

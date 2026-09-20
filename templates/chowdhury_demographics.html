@@ -76,6 +76,49 @@
         </article>
       </section>
 
+      <section class="cohort-panel cleveland-section">
+        <div class="section-title">
+          <div><p class="eyebrow">Cleveland dot plots</p><h2>Participant values on separate quantitative scales</h2></div>
+          <span class="status-pill">compare within each panel</span>
+        </div>
+        <p class="chart-note">Each horizontal position encodes one observed value. Age uses years and time since stroke (TSS) uses months, so the panels intentionally retain separate axes.</p>
+        <div class="cleveland-grid">
+          <article class="cleveland-plot" aria-label="Cleveland dot plot of participant age in years">
+            <div class="cleveland-heading"><h3>Age by participant</h3><span>years</span></div>
+            <div class="cleveland-axis" aria-hidden="true"><span>0</span><i></i><span>{{ cohort.summary.maximum_age }}</span></div>
+            <div class="cleveland-rows">
+              {% for participant in cohort.participants %}
+                <div class="cleveland-row">
+                  <strong>{{ participant.participant_id }}</strong>
+                  <div class="cleveland-track" role="img" aria-label="{{ participant.participant_id }} age {{ participant.age_years }} years">
+                    <i class="cleveland-rule"></i>
+                    <span class="cleveland-dot age" style="left: {{ '%.2f'|format(participant.age_width) }}%"></span>
+                  </div>
+                  <span>{{ participant.age_years }}</span>
+                </div>
+              {% endfor %}
+            </div>
+          </article>
+
+          <article class="cleveland-plot" aria-label="Cleveland dot plot of time since stroke in months">
+            <div class="cleveland-heading"><h3>Time since stroke</h3><span>months</span></div>
+            <div class="cleveland-axis" aria-hidden="true"><span>0</span><i></i><span>{{ cohort.summary.maximum_stroke_months }}</span></div>
+            <div class="cleveland-rows">
+              {% for participant in cohort.participants %}
+                <div class="cleveland-row">
+                  <strong>{{ participant.participant_id }}</strong>
+                  <div class="cleveland-track" role="img" aria-label="{{ participant.participant_id }} time since stroke {{ participant.time_since_stroke_months }} months">
+                    <i class="cleveland-rule"></i>
+                    <span class="cleveland-dot stroke" style="left: {{ '%.2f'|format(participant.stroke_width) }}%"></span>
+                  </div>
+                  <span>{{ participant.time_since_stroke_months }}</span>
+                </div>
+              {% endfor %}
+            </div>
+          </article>
+        </div>
+      </section>
+
       <section class="cohort-panel participant-panel">
         <div class="section-title">
           <div><p class="eyebrow">Participant-level view</p><h2>Age and time since stroke</h2></div>

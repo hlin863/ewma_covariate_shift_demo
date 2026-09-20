@@ -51,6 +51,26 @@
 .cohort-bar.age, .legend-dot.age { background: var(--computed); }
 .cohort-bar.stroke, .legend-dot.stroke { background: var(--warning); }
 
+.chart-note { max-width: 850px; margin: -6px 0 22px; color: var(--muted); line-height: 1.55; }
+.cleveland-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.cleveland-plot { min-width: 0; padding: 19px; border: 1px solid var(--line); border-radius: 13px; background: var(--panel-2); }
+.cleveland-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
+.cleveland-heading h3 { margin: 0; }
+.cleveland-heading span { color: var(--muted); font-size: 0.75rem; font-weight: 750; text-transform: uppercase; letter-spacing: 0.08em; }
+.cleveland-axis, .cleveland-row { display: grid; grid-template-columns: 42px minmax(0, 1fr) 34px; gap: 10px; align-items: center; }
+.cleveland-axis { margin-bottom: 7px; color: var(--muted); font-size: 0.68rem; }
+.cleveland-axis span:last-child, .cleveland-row > span:last-child { text-align: right; }
+.cleveland-axis i { height: 1px; background: var(--line); }
+.cleveland-rows { display: grid; gap: 5px; }
+.cleveland-row { min-height: 30px; font-size: 0.78rem; }
+.cleveland-row > strong { font-size: 0.75rem; }
+.cleveland-row > span:last-child { color: var(--muted); font-variant-numeric: tabular-nums; }
+.cleveland-track { position: relative; height: 24px; }
+.cleveland-rule { position: absolute; left: 0; right: 0; top: 50%; height: 1px; background: color-mix(in srgb, var(--text) 14%, transparent); }
+.cleveland-dot { position: absolute; top: 50%; width: 12px; height: 12px; border: 2px solid var(--panel-2); border-radius: 50%; box-shadow: 0 0 0 1px color-mix(in srgb, var(--text) 18%, transparent); transform: translate(-50%, -50%); }
+.cleveland-dot.age { background: var(--computed); }
+.cleveland-dot.stroke { background: var(--warning); }
+
 .cohort-legend { display: flex; gap: 14px; color: var(--muted); font-size: 0.8rem; }
 .cohort-legend span { display: inline-flex; align-items: center; gap: 7px; }
 .legend-dot { width: 9px; height: 9px; border-radius: 50%; }
@@ -67,6 +87,7 @@
 
 @media (max-width: 980px) {
   .cohort-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .cleveland-grid { grid-template-columns: 1fr; }
   .participant-row { grid-template-columns: 140px minmax(0, 1fr); }
 }
 
