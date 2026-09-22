@@ -51,11 +51,19 @@
         <p class="eyebrow">Raza et al. (2015) · Equation (6)</p>
         <div class="equation-display">
           \[
-          \sqrt{\frac{n_1 n_2}{n_1+n_2}}\,D > K_\alpha
+          \sqrt{\frac{n_1 \cdot n_2}{n_1+n_2}}\,D_{n_1, n_2} > K_\alpha
           \]
         </div>
-        <p>A candidate is confirmed when the scaled K–S statistic exceeds the critical constant. The current D2 display
-          uses α={{ alpha }} and Kα={{ k_alpha }} when the generated CSV does not already persist those fields.</p>
+        <p>
+          A candidate is confirmed when the scaled K–S statistic exceeds the critical constant.
+          The current
+          \(D_2\)
+          display uses
+          <span class="math-inline">α = {{ alpha }}</span>
+          and
+          <span class="math-inline">K<sub>α</sub> = {{ k_alpha }}</span>
+          when the generated CSV does not already persist those fields.
+        </p>
       </div>
       <div class="overview-stat">
         <span class="metric-label">Stage-I candidates</span>
