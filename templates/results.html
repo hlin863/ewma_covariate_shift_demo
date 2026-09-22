@@ -91,9 +91,14 @@
                 <h2>{{ group.title }}</h2>
                 <p class="result-purpose">{{ group.purpose }}</p>
               </div>
-              <span class="availability-badge {{ 'available' if group.status == 'available' else 'missing' }}">
-                {{ 'Available' if group.status == 'available' else 'Not generated' }}
-              </span>
+              <div>
+                <span class="availability-badge {{ 'available' if group.status == 'available' else 'missing' }}">
+                  {{ 'Available' if group.status == 'available' else 'Not generated' }}
+                </span>
+                {% if group.detail_endpoint %}
+                  <a class="theme-button nav-link" href="{{ url_for(group.detail_endpoint) }}">{{ group.detail_label }}</a>
+                {% endif %}
+              </div>
             </div>
 
             <div class="result-taxonomy">
