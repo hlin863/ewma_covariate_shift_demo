@@ -363,21 +363,37 @@ KS_VALIDATION_RELATIVE_PATH = Path("metrics/paper2015/d2/stage2_validations.csv"
 
 
 def _load_ks_validation_results(outputs_root: str | Path) -> dict[str, object]:
-    """Build the Raza 2015 Stage-II K-S validation view from generated output."""
+    """Build a paper-facing Stage-II K-S validation view from generated output."""
 
     results_path = Path(outputs_root) / KS_VALIDATION_RELATIVE_PATH
+    empty_summary = {
+        "total": 0,
+        "evaluated": 0,
+        "confirmed": 0,
+        "rejected": 0,
+        "pending": 0,
+        "skipped": 0,
+        "insufficient": 0,
+        "other": 0,
+        "loss_total": 0,
+    }
+    empty_chart = {
+        "rejected_end": 0.0,
+        "pending_end": 0.0,
+        "skipped_end": 0.0,
+        "insufficient_end": 0.0,
+        "other_end": 0.0,
+        "segments": [],
+    }
     if not results_path.is_file():
         return {
             "available": False,
             "results_path": results_path,
             "rows": [],
-            "summary": {
-                "total": 0,
-                "confirmed": 0,
-                "rejected": 0,
-                "pending": 0,
-                "skipped": 0,
-            },
+            "evaluated_rows": [],
+            "loss_rows": [],
+            "summary": empty_summary,
+            "loss_chart": empty_chart,
             "alpha": 0.05,
             "k_alpha": 1.36,
         }
@@ -405,10 +421,15 @@ def _load_ks_validation_results(outputs_root: str | Path) -> dict[str, object]:
     for _, source in frame.iterrows():
         n1 = float(source["before_size"])
         n2 = float(source["after_size"])
-        ks_statistic = float(source["ks_statistic"]) if pd.notna(source["ks_statistic"]) else float("nan")
+        ks_statistic = (
+            float(source["ks_statistic"])
+            if pd.notna(source["ks_statistic"])
+            else float("nan")
+        )
         scaled = (
             float(source["scaled_statistic"])
-            if "scaled_statistic" in frame.columns and pd.notna(source["scaled_statistic"])
+            if "scaled_statistic" in frame.columns
+            and pd.notna(source["scaled_statistic"])
             else (
                 float((n1 * n2 / (n1 + n2)) ** 0.5 * ks_statistic)
                 if n1 > 0 and n2 > 0 and pd.notna(ks_statistic)
@@ -425,6 +446,7 @@ def _load_ks_validation_results(outputs_root: str | Path) -> dict[str, object]:
             if pd.notna(scaled) and pd.notna(row_k_alpha)
             else float("nan")
         )
+        status = str(source["status"])
         rows.append(
             {
                 "alarm_time": _normalise_preview_value(source["alarm_time"]),
@@ -436,28 +458,86 @@ def _load_ks_validation_results(outputs_root: str | Path) -> dict[str, object]:
                 "k_alpha": _normalise_preview_value(row_k_alpha),
                 "margin": _normalise_preview_value(margin),
                 "p_value": _normalise_preview_value(source["p_value"]),
-                "status": str(source["status"]),
+                "status": status,
                 "confirmed_shift": bool(source["confirmed_shift"]),
             }
         )
 
     statuses = frame["status"].fillna("").astype(str)
+    confirmed = int((statuses == "confirmed").sum())
+    rejected = int((statuses == "rejected").sum())
+    pending = int(statuses.str.startswith("pending").sum())
+    skipped = int(statuses.str.startswith("skipped").sum())
+    insufficient = int(statuses.str.startswith("insufficient").sum())
+    recognised = (
+        (statuses == "confirmed")
+        | (statuses == "rejected")
+        | statuses.str.startswith("pending")
+        | statuses.str.startswith("skipped")
+        | statuses.str.startswith("insufficient")
+    )
+    other = int((~recognised).sum())
+    evaluated = confirmed + rejected
+    loss_total = rejected + pending + skipped + insufficient + other
+
     summary = {
         "total": int(frame.shape[0]),
-        "confirmed": int((statuses == "confirmed").sum()),
-        "rejected": int((statuses == "rejected").sum()),
-        "pending": int(statuses.str.startswith("pending").sum()),
-        "skipped": int(statuses.str.startswith("skipped").sum()),
+        "evaluated": evaluated,
+        "confirmed": confirmed,
+        "rejected": rejected,
+        "pending": pending,
+        "skipped": skipped,
+        "insufficient": insufficient,
+        "other": other,
+        "loss_total": loss_total,
     }
+
+    loss_counts = [
+        ("Rejected by K-S", rejected, "rejected"),
+        ("Pending future window", pending, "pending"),
+        ("Skipped nearby alarm", skipped, "skipped"),
+        ("Insufficient window", insufficient, "insufficient"),
+        ("Other", other, "other"),
+    ]
+    cumulative = 0.0
+    segments = []
+    chart_bounds: dict[str, float] = {}
+    for label, count, key in loss_counts:
+        percent = 100.0 * count / loss_total if loss_total else 0.0
+        cumulative += percent
+        chart_bounds[f"{key}_end"] = round(cumulative, 4)
+        segments.append(
+            {
+                "label": label,
+                "key": key,
+                "count": count,
+                "percent": round(percent, 1),
+            }
+        )
+
+    loss_chart = {
+        **chart_bounds,
+        "segments": segments,
+    }
+
+    evaluated_rows = [
+        row for row in rows if row["status"] in {"confirmed", "rejected"}
+    ]
+    loss_rows = [
+        row for row in rows if row["status"] != "confirmed"
+    ]
+
     return {
         "available": True,
         "results_path": results_path,
         "rows": rows,
+        "evaluated_rows": evaluated_rows,
+        "loss_rows": loss_rows,
         "summary": summary,
+        "loss_chart": loss_chart,
         "alpha": alpha,
         "k_alpha": k_alpha,
     }
-
 
 @app.get("/outputs/<path:filename>")
 def outputs_file(filename: str):
