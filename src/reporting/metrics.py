@@ -192,9 +192,7 @@ def evaluate_repeated_shift_detection(
         false_positive_rate=float(false_positive_rate),
         false_negative_count=false_negative_count,
         false_negative_rate=false_negative_count / int(shifts.size),
-        mean_recognition_capability_index=(
-            float(np.mean(delays)) if delays else None
-        ),
+        mean_recognition_capability_index=(float(np.mean(delays)) if delays else None),
         median_recognition_capability_index=(
             float(np.median(delays)) if delays else None
         ),
