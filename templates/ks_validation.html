@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>K–S Stage-II Validation · EWMA Covariate Shift Demo</title>
+  <script>
+    (function () {
+      const storedTheme = localStorage.getItem("dashboard-theme");
+      const preferredTheme = window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+      document.documentElement.dataset.theme = storedTheme || preferredTheme;
+    })();
+  </script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='navigation.css') }}">
+</head>
+<body class="results-page">
+  <main class="page-shell results-shell">
+    <header class="hero results-hero">
+      <div>
+        <p class="eyebrow">Research results · Raza 2015 D2 reproduction</p>
+        <h1>K–S Stage-II validation</h1>
+        <p class="lede">Per-warning evidence from <code>src/detection/stage2/ks.py</code>, showing how Stage-I EWMA candidates are confirmed or rejected using the paper-aligned two-sample K–S rule.</p>
+      </div>
+      <div class="hero-actions">
+        <a class="theme-button nav-link" href="{{ url_for('home') }}">Home</a>
+        <a class="theme-button nav-link" href="{{ url_for('results_catalog') }}">← Research results</a>
+        <a class="theme-button nav-link" href="{{ url_for('test_results.test_results') }}">Test cases</a>
+        <div class="theme-switcher" role="group" aria-label="Colour theme">
+          <button class="theme-button" type="button" data-theme-option="light" aria-pressed="false">Light</button>
+          <button class="theme-button" type="button" data-theme-option="dark" aria-pressed="false">Dark</button>
+        </div>
+      </div>
+    </header>
+
+    <section class="results-overview" aria-label="K-S validation overview">
+      <div class="overview-copy">
+        <p class="eyebrow">Raza et al. (2015) · Equation (6)</p>
+        <h2>sqrt(n₁n₂ / (n₁+n₂)) · D &gt; Kα</h2>
+        <p>A candidate is confirmed when the scaled K–S statistic exceeds the critical constant. The current D2 display uses α={{ alpha }} and Kα={{ k_alpha }} when the generated CSV does not already persist those fields.</p>
+      </div>
+      <div class="overview-stat">
+        <span class="metric-label">Stage-I candidates</span>
+        <strong>{{ summary.total }}</strong>
+        <small>rows in Stage-II validation output</small>
+      </div>
+      <div class="overview-stat">
+        <span class="metric-label">Confirmed / rejected</span>
+        <strong>{{ summary.confirmed }} / {{ summary.rejected }}</strong>
+        <small>statistically evaluated warnings</small>
+      </div>
+      <div class="overview-stat">
+        <span class="metric-label">Pending / skipped</span>
+        <strong>{{ summary.pending }} / {{ summary.skipped }}</strong>
+        <small>not yet or not directly evaluated</small>
+      </div>
+    </section>
+
+    {% if available %}
+      <section class="result-story">
+        <aside class="result-index">
+          <span class="step-number">06</span>
+          <span class="domain-badge">Stage II</span>
+        </aside>
+        <div class="result-body">
+          <div class="result-title-row">
+            <div>
+              <h2>Warning-level validation evidence</h2>
+              <p class="result-purpose">The decision margin is the scaled statistic minus Kα. Positive values cross Equation (6)'s threshold; negative values remain below it.</p>
+            </div>
+            <span class="availability-badge available">Available</span>
+          </div>
+
+          <div class="table-scroll" tabindex="0" aria-label="K-S Stage-II validation results">
+            <table class="preview-table">
+              <thead>
+                <tr>
+                  <th>Alarm</th>
+                  <th>Validation</th>
+                  <th>n₁</th>
+                  <th>n₂</th>
+                  <th>D</th>
+                  <th>Scaled K–S statistic</th>
+                  <th>Critical value Kα</th>
+                  <th>Margin</th>
+                  <th>p-value</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in rows %}
+                  <tr>
+                    <td>{{ row.alarm_time }}</td>
+                    <td>{{ row.validation_time }}</td>
+                    <td>{{ row.before_size }}</td>
+                    <td>{{ row.after_size }}</td>
+                    <td>{{ row.ks_statistic }}</td>
+                    <td>{{ row.scaled_statistic }}</td>
+                    <td>{{ row.k_alpha }}</td>
+                    <td>{{ row.margin }}</td>
+                    <td>{{ row.p_value }}</td>
+                    <td>{{ row.status }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+          <div class="result-taxonomy">
+            <div class="taxonomy-block">
+              <span class="taxonomy-label">Source implementation</span>
+              <code>src/detection/stage2/ks.py</code>
+            </div>
+            <div class="taxonomy-block">
+              <span class="taxonomy-label">Generated evidence</span>
+              <code>{{ results_path }}</code>
+            </div>
+            <div class="command-block">
+              <span class="taxonomy-label">Regenerate</span>
+              <code>python scripts/run_2015_synthetic_reproduction.py --dataset d2</code>
+            </div>
+          </div>
+        </div>
+      </section>
+    {% else %}
+      <section class="result-story">
+        <aside class="result-index">
+          <span class="step-number">06</span>
+          <span class="domain-badge">Stage II</span>
+        </aside>
+        <div class="result-body">
+          <div class="preview-section preview-placeholder">
+            <span class="taxonomy-label">No generated K-S validation output found</span>
+            <p>Run <code>python scripts/run_2015_synthetic_reproduction.py --dataset d2</code> to create <code>outputs/metrics/paper2015/d2/stage2_validations.csv</code>. This page will then populate automatically.</p>
+          </div>
+        </div>
+      </section>
+    {% endif %}
+  </main>
+
+  <script>
+    (function () {
+      const root = document.documentElement;
+      const themeButtons = document.querySelectorAll("[data-theme-option]");
+      function applyTheme(theme) {
+        root.dataset.theme = theme;
+        localStorage.setItem("dashboard-theme", theme);
+        themeButtons.forEach((button) => {
+          const active = button.dataset.themeOption === theme;
+          button.setAttribute("aria-pressed", active ? "true" : "false");
+          button.classList.toggle("active", active);
+        });
+      }
+      themeButtons.forEach((button) => {
+        button.addEventListener("click", () => applyTheme(button.dataset.themeOption));
+      });
+      applyTheme(root.dataset.theme || "dark");
+    })();
+  </script>
+</body>
+</html>
