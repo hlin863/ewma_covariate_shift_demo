@@ -212,6 +212,72 @@
               </section>
             {% endif %}
 
+            {% if group.lambda_analysis %}
+              <section class="lambda-analysis-panel" aria-label="Lambda optimisation and sensitivity analysis">
+                <div class="lambda-analysis-heading">
+                  <div>
+                    <p class="eyebrow">Stage-I parameter analysis</p>
+                    <h3>Lambda selection and downstream sensitivity</h3>
+                    <p>Read the section in two steps: first select lambda from the minimum prediction-error SSE, then inspect how fixed lambda values change detector behaviour.</p>
+                  </div>
+                  <span class="status-pill">{{ group.lambda_analysis.candidate_count }} lambda candidates</span>
+                </div>
+
+                <div class="lambda-selection-grid">
+                  <figure class="lambda-primary-figure">
+                    {% if group.lambda_analysis.sse_figure.available %}
+                      <img src="{{ url_for('outputs_file', filename=group.lambda_analysis.sse_figure.relative_path) }}" alt="{{ group.lambda_analysis.sse_figure.label }}">
+                    {% endif %}
+                    <figcaption>
+                      <span class="taxonomy-label">Parameter selection</span>
+                      <strong>{{ group.lambda_analysis.sse_figure.label }}</strong>
+                      <small>The star marks the lambda with the minimum one-step-ahead prediction-error SSE.</small>
+                    </figcaption>
+                  </figure>
+
+                  <aside class="lambda-summary-card">
+                    <span class="taxonomy-label">Selected training parameter</span>
+                    <div class="lambda-summary-value">
+                      <span>Best λ</span>
+                      <strong>{{ "%.2f"|format(group.lambda_analysis.best_lambda) }}</strong>
+                    </div>
+                    <div class="lambda-summary-metrics">
+                      <div>
+                        <span>Minimum SSE</span>
+                        <strong>{{ "%.4f"|format(group.lambda_analysis.minimum_sse) }}</strong>
+                      </div>
+                      <div>
+                        <span>Candidates</span>
+                        <strong>{{ group.lambda_analysis.candidate_count }}</strong>
+                      </div>
+                    </div>
+                    <p>The minimum-SSE value is the paper-grounded Stage-I training choice. The charts below are the repository's fixed-lambda sensitivity extension.</p>
+                  </aside>
+                </div>
+
+                <div class="lambda-sensitivity-heading">
+                  <div>
+                    <span class="taxonomy-label">Downstream sensitivity</span>
+                    <h4>What changes when lambda is forced to different values?</h4>
+                  </div>
+                </div>
+
+                <div class="lambda-sensitivity-grid">
+                  {% for figure in group.lambda_analysis.sensitivity_figures %}
+                    {% if figure.available %}
+                      <figure class="lambda-sensitivity-card">
+                        <img src="{{ url_for('outputs_file', filename=figure.relative_path) }}" alt="{{ figure.label }}">
+                        <figcaption>
+                          <strong>{{ figure.label }}</strong>
+                          <small>{{ figure.detail }}</small>
+                        </figcaption>
+                      </figure>
+                    {% endif %}
+                  {% endfor %}
+                </div>
+              </section>
+            {% endif %}
+
             <div class="result-evidence">
               <div class="evidence-main">
                 {% if group.preview %}
@@ -258,7 +324,7 @@
                   </div>
                 {% endif %}
 
-                {% if group.has_figures %}
+                {% if group.has_figures and not group.lambda_analysis %}
                   <div class="figure-strip" aria-label="Generated figures for {{ group.title }}">
                     {% for artifact in group.artifacts %}
                       {% if artifact.is_figure %}
