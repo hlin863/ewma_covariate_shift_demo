@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="en" data-theme="dark">
+
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -13,14 +14,26 @@
   </script>
   <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='navigation.css') }}">
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']]
+      }
+    };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
 </head>
+
 <body class="results-page">
   <main class="page-shell results-shell">
     <header class="hero results-hero">
       <div>
         <p class="eyebrow">Research results · Raza 2015 D2 reproduction</p>
         <h1>K–S Stage-II validation</h1>
-        <p class="lede">Per-warning evidence from <code>src/detection/stage2/ks.py</code>, showing how Stage-I EWMA candidates are confirmed or rejected using the paper-aligned two-sample K–S rule.</p>
+        <p class="lede">Per-warning evidence from <code>src/detection/stage2/ks.py</code>, showing how Stage-I EWMA
+          candidates are confirmed or rejected using the paper-aligned two-sample K–S rule.</p>
       </div>
       <div class="hero-actions">
         <a class="theme-button nav-link" href="{{ url_for('home') }}">Home</a>
@@ -36,8 +49,13 @@
     <section class="results-overview" aria-label="K-S validation overview">
       <div class="overview-copy">
         <p class="eyebrow">Raza et al. (2015) · Equation (6)</p>
-        <h2>sqrt(n₁n₂ / (n₁+n₂)) · D &gt; Kα</h2>
-        <p>A candidate is confirmed when the scaled K–S statistic exceeds the critical constant. The current D2 display uses α={{ alpha }} and Kα={{ k_alpha }} when the generated CSV does not already persist those fields.</p>
+        <div class="equation-display">
+          \[
+          \sqrt{\frac{n_1 n_2}{n_1+n_2}}\,D > K_\alpha
+          \]
+        </div>
+        <p>A candidate is confirmed when the scaled K–S statistic exceeds the critical constant. The current D2 display
+          uses α={{ alpha }} and Kα={{ k_alpha }} when the generated CSV does not already persist those fields.</p>
       </div>
       <div class="overview-stat">
         <span class="metric-label">Stage-I candidates</span>
@@ -57,84 +75,88 @@
     </section>
 
     {% if available %}
-      <section class="result-story">
-        <aside class="result-index">
-          <span class="step-number">06</span>
-          <span class="domain-badge">Stage II</span>
-        </aside>
-        <div class="result-body">
-          <div class="result-title-row">
-            <div>
-              <h2>Warning-level validation evidence</h2>
-              <p class="result-purpose">The decision margin is the scaled statistic minus Kα. Positive values cross Equation (6)'s threshold; negative values remain below it.</p>
-            </div>
-            <span class="availability-badge available">Available</span>
+    <section class="result-story">
+      <aside class="result-index">
+        <span class="step-number">06</span>
+        <span class="domain-badge">Stage II</span>
+      </aside>
+      <div class="result-body">
+        <div class="result-title-row">
+          <div>
+            <h2>Warning-level validation evidence</h2>
+            <p class="result-purpose">The decision margin is the scaled statistic minus Kα. Positive values cross
+              Equation (6)'s threshold; negative values remain below it.</p>
           </div>
+          <span class="availability-badge available">Available</span>
+        </div>
 
-          <div class="table-scroll" tabindex="0" aria-label="K-S Stage-II validation results">
-            <table class="preview-table">
-              <thead>
-                <tr>
-                  <th>Alarm</th>
-                  <th>Validation</th>
-                  <th>n₁</th>
-                  <th>n₂</th>
-                  <th>D</th>
-                  <th>Scaled K–S statistic</th>
-                  <th>Critical value Kα</th>
-                  <th>Margin</th>
-                  <th>p-value</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for row in rows %}
-                  <tr>
-                    <td>{{ row.alarm_time }}</td>
-                    <td>{{ row.validation_time }}</td>
-                    <td>{{ row.before_size }}</td>
-                    <td>{{ row.after_size }}</td>
-                    <td>{{ row.ks_statistic }}</td>
-                    <td>{{ row.scaled_statistic }}</td>
-                    <td>{{ row.k_alpha }}</td>
-                    <td>{{ row.margin }}</td>
-                    <td>{{ row.p_value }}</td>
-                    <td>{{ row.status }}</td>
-                  </tr>
-                {% endfor %}
-              </tbody>
-            </table>
+        <div class="table-scroll" tabindex="0" aria-label="K-S Stage-II validation results">
+          <table class="preview-table">
+            <thead>
+              <tr>
+                <th>Alarm</th>
+                <th>Validation</th>
+                <th>n₁</th>
+                <th>n₂</th>
+                <th>D</th>
+                <th>Scaled K–S statistic</th>
+                <th>Critical value Kα</th>
+                <th>Margin</th>
+                <th>p-value</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in rows %}
+              <tr>
+                <td>{{ row.alarm_time }}</td>
+                <td>{{ row.validation_time }}</td>
+                <td>{{ row.before_size }}</td>
+                <td>{{ row.after_size }}</td>
+                <td>{{ row.ks_statistic }}</td>
+                <td>{{ row.scaled_statistic }}</td>
+                <td>{{ row.k_alpha }}</td>
+                <td>{{ row.margin }}</td>
+                <td>{{ row.p_value }}</td>
+                <td>{{ row.status }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <div class="result-taxonomy">
+          <div class="taxonomy-block">
+            <span class="taxonomy-label">Source implementation</span>
+            <code>src/detection/stage2/ks.py</code>
           </div>
-
-          <div class="result-taxonomy">
-            <div class="taxonomy-block">
-              <span class="taxonomy-label">Source implementation</span>
-              <code>src/detection/stage2/ks.py</code>
-            </div>
-            <div class="taxonomy-block">
-              <span class="taxonomy-label">Generated evidence</span>
-              <code>{{ results_path }}</code>
-            </div>
-            <div class="command-block">
-              <span class="taxonomy-label">Regenerate</span>
-              <code>python scripts/run_2015_synthetic_reproduction.py --dataset d2</code>
-            </div>
+          <div class="taxonomy-block">
+            <span class="taxonomy-label">Generated evidence</span>
+            <code>{{ results_path }}</code>
+          </div>
+          <div class="command-block">
+            <span class="taxonomy-label">Regenerate</span>
+            <code>python scripts/run_2015_synthetic_reproduction.py --dataset d2</code>
           </div>
         </div>
-      </section>
+      </div>
+    </section>
     {% else %}
-      <section class="result-story">
-        <aside class="result-index">
-          <span class="step-number">06</span>
-          <span class="domain-badge">Stage II</span>
-        </aside>
-        <div class="result-body">
-          <div class="preview-section preview-placeholder">
-            <span class="taxonomy-label">No generated K-S validation output found</span>
-            <p>Run <code>python scripts/run_2015_synthetic_reproduction.py --dataset d2</code> to create <code>outputs/metrics/paper2015/d2/stage2_validations.csv</code>. This page will then populate automatically.</p>
-          </div>
+    <section class="result-story">
+      <aside class="result-index">
+        <span class="step-number">06</span>
+        <span class="domain-badge">Stage II</span>
+      </aside>
+      <div class="result-body">
+        <div class="preview-section preview-placeholder">
+          <span class="taxonomy-label">No generated K-S validation output found</span>
+          <p>Run <code>python scripts/run_2015_synthetic_reproduction.py --dataset d2</code> to create
+            <code>outputs/metrics/paper2015/d2/stage2_validations.csv</code>. This page will then populate
+            automatically.
+          </p>
         </div>
-      </section>
+      </div>
+    </section>
     {% endif %}
   </main>
 
@@ -158,4 +180,5 @@
     })();
   </script>
 </body>
+
 </html>
