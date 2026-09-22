@@ -212,6 +212,8 @@ def test_results_catalog_page_renders_domains_methods_and_theme_controls(
     figure_path = tmp_path / "figures" / "cse_lambda_stage1_warnings.png"
     figure_path.parent.mkdir(parents=True, exist_ok=True)
     figure_path.write_bytes(b"png")
+    sse_figure_path = tmp_path / "figures" / "cse_lambda_sse_curve.png"
+    sse_figure_path.write_bytes(b"png")
     app.config.update(TESTING=True, RESULTS_ROOT=str(tmp_path))
 
     response = app.test_client().get("/results")
@@ -225,6 +227,10 @@ def test_results_catalog_page_renders_domains_methods_and_theme_controls(
     assert "Methods" in html
     assert "Tracked fields" in html
     assert "computed_csw" in html
+    assert "Synthetic CSE lambda analysis" in html
+    assert "Prediction-error SSE" in html
+    assert "Prediction-error SSE by lambda" in html
+    assert "figures/cse_lambda_sse_curve.png" in html
     assert "figures/cse_lambda_stage1_warnings.png" in html
     assert "Light" in html
     assert "Dark" in html
