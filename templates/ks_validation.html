@@ -1,6 +1,5 @@
 <!doctype html>
 <html lang="en" data-theme="dark">
-
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -14,7 +13,6 @@
   </script>
   <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='navigation.css') }}">
-
   <script>
     window.MathJax = {
       tex: {
@@ -26,18 +24,18 @@
   <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
 </head>
 
-<body class="results-page">
+<body class="results-page ks-validation-page">
   <main class="page-shell results-shell">
     <header class="hero results-hero">
       <div>
         <p class="eyebrow">Research results · Raza 2015 D2 reproduction</p>
         <h1>K–S Stage-II validation</h1>
-        <p class="lede">Per-warning evidence from <code>src/detection/stage2/ks.py</code>, showing how Stage-I EWMA
-          candidates are confirmed or rejected using the paper-aligned two-sample K–S rule.</p>
+        <p class="lede">A paper-facing view of <code>src/detection/stage2/ks.py</code>: what Stage I warned about, what Stage II actually tested, and where candidate warnings were lost before confirmation.</p>
       </div>
       <div class="hero-actions">
         <a class="theme-button nav-link" href="{{ url_for('home') }}">Home</a>
         <a class="theme-button nav-link" href="{{ url_for('results_catalog') }}">← Research results</a>
+        <a class="theme-button nav-link" href="{{ url_for('paper_file', filename='2015-raza-ewma-covariate-shift.pdf') }}">Paper PDF</a>
         <a class="theme-button nav-link" href="{{ url_for('test_results.test_results') }}">Test cases</a>
         <div class="theme-switcher" role="group" aria-label="Colour theme">
           <button class="theme-button" type="button" data-theme-option="light" aria-pressed="false">Light</button>
@@ -46,59 +44,169 @@
       </div>
     </header>
 
-    <section class="results-overview" aria-label="K-S validation overview">
-      <div class="overview-copy">
+    <section class="ks-paper-panel" aria-label="Equation 6 paper correspondence">
+      <div>
         <p class="eyebrow">Raza et al. (2015) · Equation (6)</p>
         <div class="equation-display">
           \[
-          \sqrt{\frac{n_1 \cdot n_2}{n_1+n_2}}\,D_{n_1, n_2} > K_\alpha
+          \sqrt{\frac{n_1 \cdot n_2}{n_1+n_2}}\,D_{n_1,n_2} > K_\alpha
           \]
         </div>
-        <p>
-          A candidate is confirmed when the scaled K–S statistic exceeds the critical constant.
-          The current
-          \(D_2\)
-          display uses
-          <span class="math-inline">α = {{ alpha }}</span>
-          and
-          <span class="math-inline">K<sub>α</sub> = {{ k_alpha }}</span>
-          when the generated CSV does not already persist those fields.
-        </p>
       </div>
-      <div class="overview-stat">
-        <span class="metric-label">Stage-I candidates</span>
-        <strong>{{ summary.total }}</strong>
-        <small>rows in Stage-II validation output</small>
-      </div>
-      <div class="overview-stat">
-        <span class="metric-label">Confirmed / rejected</span>
-        <strong>{{ summary.confirmed }} / {{ summary.rejected }}</strong>
-        <small>statistically evaluated warnings</small>
-      </div>
-      <div class="overview-stat">
-        <span class="metric-label">Pending / skipped</span>
-        <strong>{{ summary.pending }} / {{ summary.skipped }}</strong>
-        <small>not yet or not directly evaluated</small>
-      </div>
+      <p>A Stage-I candidate is confirmed only when the scaled two-sample K–S statistic exceeds the tabulated critical constant. This view keeps the SciPy p-value as diagnostic evidence, while the displayed decision margin follows the paper-aligned threshold.</p>
     </section>
 
     {% if available %}
-    <section class="result-story">
-      <aside class="result-index">
-        <span class="step-number">06</span>
-        <span class="domain-badge">Stage II</span>
-      </aside>
-      <div class="result-body">
-        <div class="result-title-row">
-          <div>
-            <h2>Warning-level validation evidence</h2>
-            <p class="result-purpose">The decision margin is the scaled statistic minus Kα. Positive values cross
-              Equation (6)'s threshold; negative values remain below it.</p>
-          </div>
-          <span class="availability-badge available">Available</span>
-        </div>
+      <section class="ks-summary-grid" aria-label="Stage-II summary">
+        <article class="overview-stat">
+          <span class="metric-label">Stage-I candidates</span>
+          <strong>{{ summary.total }}</strong>
+          <small>all warning rows reaching the Stage-II output</small>
+        </article>
+        <article class="overview-stat">
+          <span class="metric-label">Actually evaluated</span>
+          <strong>{{ summary.evaluated }}</strong>
+          <small>confirmed + statistically rejected</small>
+        </article>
+        <article class="overview-stat">
+          <span class="metric-label">Confirmed shifts</span>
+          <strong>{{ summary.confirmed }}</strong>
+          <small>scaled statistic crossed Kα</small>
+        </article>
+        <article class="overview-stat">
+          <span class="metric-label">Loss / non-confirmation</span>
+          <strong>{{ summary.loss_total }}</strong>
+          <small>rejected, pending, skipped or ineligible</small>
+        </article>
+      </section>
 
-        <div class="table-scroll" tabindex="0" aria-label="K-S Stage-II validation results">
+      <section class="ks-analysis-grid">
+        <article class="ks-chart-panel">
+          <div class="section-title">
+            <div>
+              <p class="eyebrow">Failure-mode view</p>
+              <h2>Loss / non-confirmation cases</h2>
+            </div>
+            <span class="status-pill">{{ summary.loss_total }} cases</span>
+          </div>
+
+          <div class="ks-donut-layout">
+            <div
+              class="ks-donut"
+              role="img"
+              aria-label="Doughnut chart of rejected, pending, skipped, insufficient and other non-confirmed Stage-I candidates"
+              style="--rejected-end: {{ loss_chart.rejected_end }}%; --pending-end: {{ loss_chart.pending_end }}%; --skipped-end: {{ loss_chart.skipped_end }}%; --insufficient-end: {{ loss_chart.insufficient_end }}%; --other-end: {{ loss_chart.other_end }}%;"
+            >
+              <div class="ks-donut-hole">
+                <strong>{{ summary.loss_total }}</strong>
+                <span>not confirmed</span>
+              </div>
+            </div>
+
+            <div class="ks-donut-legend">
+              {% for segment in loss_chart.segments %}
+                <div class="ks-legend-row">
+                  <span class="ks-legend-swatch {{ segment.key }}" aria-hidden="true"></span>
+                  <div>
+                    <strong>{{ segment.label }}</strong>
+                    <span>{{ segment.count }} · {{ segment.percent }}%</span>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+
+          <p class="ks-chart-note">“Loss” here means a Stage-I candidate that did not become a confirmed Stage-II shift. Statistical rejection is kept separate from warnings that were pending, skipped or lacked an eligible window.</p>
+        </article>
+
+        <article class="ks-decision-panel">
+          <p class="eyebrow">Decision interpretation</p>
+          <h2>How to read Equation (6)</h2>
+          <div class="ks-decision-rule">
+            <span>Decision margin</span>
+            <strong>scaled K–S statistic − Kα</strong>
+          </div>
+          <div class="ks-decision-cases">
+            <div>
+              <span class="ks-decision-marker positive"></span>
+              <strong>Positive margin</strong>
+              <p>Threshold crossed → candidate confirmed.</p>
+            </div>
+            <div>
+              <span class="ks-decision-marker negative"></span>
+              <strong>Negative margin</strong>
+              <p>Threshold not crossed → candidate rejected.</p>
+            </div>
+          </div>
+          <div class="ks-parameter-strip">
+            <div><span>α</span><strong>{{ alpha }}</strong></div>
+            <div><span>Kα</span><strong>{{ k_alpha }}</strong></div>
+            <div><span>Evaluated</span><strong>{{ summary.evaluated }}</strong></div>
+          </div>
+        </article>
+      </section>
+
+      <section class="result-story ks-focused-table">
+        <aside class="result-index">
+          <span class="step-number">06</span>
+          <span class="domain-badge">Stage II</span>
+        </aside>
+        <div class="result-body">
+          <div class="result-title-row">
+            <div>
+              <p class="eyebrow">Paper result</p>
+              <h2>Equation (6) evaluated warnings</h2>
+              <p class="result-purpose">The main table now shows only candidates that were statistically evaluated. This keeps confirmed and rejected cases visible without allowing pending and skipped warnings to overwhelm the result.</p>
+            </div>
+            <span class="availability-badge available">{{ summary.evaluated }} evaluated</span>
+          </div>
+
+          <div class="table-scroll" tabindex="0" aria-label="Evaluated K-S Stage-II warnings">
+            <table class="preview-table">
+              <thead>
+                <tr>
+                  <th>Alarm</th>
+                  <th>Validation</th>
+                  <th>n₁</th>
+                  <th>n₂</th>
+                  <th>D</th>
+                  <th>Scaled K–S statistic</th>
+                  <th>Critical value Kα</th>
+                  <th>Margin</th>
+                  <th>p-value</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in evaluated_rows %}
+                  <tr class="ks-row {{ row.status }}">
+                    <td>{{ row.alarm_time }}</td>
+                    <td>{{ row.validation_time }}</td>
+                    <td>{{ row.before_size }}</td>
+                    <td>{{ row.after_size }}</td>
+                    <td>{{ row.ks_statistic }}</td>
+                    <td>{{ row.scaled_statistic }}</td>
+                    <td>{{ row.k_alpha }}</td>
+                    <td>{{ row.margin }}</td>
+                    <td>{{ row.p_value }}</td>
+                    <td><span class="ks-status {{ row.status }}">{{ row.status }}</span></td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <details class="ks-audit-panel">
+        <summary>
+          <span>
+            <span class="eyebrow">Full audit trail</span>
+            <strong>Show all {{ summary.total }} Stage-II records</strong>
+          </span>
+          <span class="ks-audit-hint">includes pending, skipped and insufficient cases</span>
+        </summary>
+        <div class="table-scroll" tabindex="0" aria-label="Complete K-S Stage-II validation audit">
           <table class="preview-table">
             <thead>
               <tr>
@@ -107,8 +215,8 @@
                 <th>n₁</th>
                 <th>n₂</th>
                 <th>D</th>
-                <th>Scaled K–S statistic</th>
-                <th>Critical value Kα</th>
+                <th>Scaled</th>
+                <th>Kα</th>
                 <th>Margin</th>
                 <th>p-value</th>
                 <th>Status</th>
@@ -116,55 +224,51 @@
             </thead>
             <tbody>
               {% for row in rows %}
-              <tr>
-                <td>{{ row.alarm_time }}</td>
-                <td>{{ row.validation_time }}</td>
-                <td>{{ row.before_size }}</td>
-                <td>{{ row.after_size }}</td>
-                <td>{{ row.ks_statistic }}</td>
-                <td>{{ row.scaled_statistic }}</td>
-                <td>{{ row.k_alpha }}</td>
-                <td>{{ row.margin }}</td>
-                <td>{{ row.p_value }}</td>
-                <td>{{ row.status }}</td>
-              </tr>
+                <tr>
+                  <td>{{ row.alarm_time }}</td>
+                  <td>{{ row.validation_time }}</td>
+                  <td>{{ row.before_size }}</td>
+                  <td>{{ row.after_size }}</td>
+                  <td>{{ row.ks_statistic }}</td>
+                  <td>{{ row.scaled_statistic }}</td>
+                  <td>{{ row.k_alpha }}</td>
+                  <td>{{ row.margin }}</td>
+                  <td>{{ row.p_value }}</td>
+                  <td><span class="ks-status {{ row.status }}">{{ row.status }}</span></td>
+                </tr>
               {% endfor %}
             </tbody>
           </table>
         </div>
+      </details>
 
-        <div class="result-taxonomy">
-          <div class="taxonomy-block">
-            <span class="taxonomy-label">Source implementation</span>
-            <code>src/detection/stage2/ks.py</code>
-          </div>
-          <div class="taxonomy-block">
-            <span class="taxonomy-label">Generated evidence</span>
-            <code>{{ results_path }}</code>
-          </div>
-          <div class="command-block">
-            <span class="taxonomy-label">Regenerate</span>
-            <code>python scripts/run_2015_synthetic_reproduction.py --dataset d2</code>
-          </div>
+      <section class="ks-provenance">
+        <div>
+          <span class="taxonomy-label">Source implementation</span>
+          <code>src/detection/stage2/ks.py</code>
         </div>
-      </div>
-    </section>
+        <div>
+          <span class="taxonomy-label">Generated evidence</span>
+          <code>{{ results_path }}</code>
+        </div>
+        <div>
+          <span class="taxonomy-label">Regenerate</span>
+          <code>python scripts/run_2015_synthetic_reproduction.py --dataset d2</code>
+        </div>
+      </section>
     {% else %}
-    <section class="result-story">
-      <aside class="result-index">
-        <span class="step-number">06</span>
-        <span class="domain-badge">Stage II</span>
-      </aside>
-      <div class="result-body">
-        <div class="preview-section preview-placeholder">
-          <span class="taxonomy-label">No generated K-S validation output found</span>
-          <p>Run <code>python scripts/run_2015_synthetic_reproduction.py --dataset d2</code> to create
-            <code>outputs/metrics/paper2015/d2/stage2_validations.csv</code>. This page will then populate
-            automatically.
-          </p>
+      <section class="result-story">
+        <aside class="result-index">
+          <span class="step-number">06</span>
+          <span class="domain-badge">Stage II</span>
+        </aside>
+        <div class="result-body">
+          <div class="preview-section preview-placeholder">
+            <span class="taxonomy-label">No generated K-S validation output found</span>
+            <p>Run <code>python scripts/run_2015_synthetic_reproduction.py --dataset d2</code> to create <code>outputs/metrics/paper2015/d2/stage2_validations.csv</code>. This page will populate automatically.</p>
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
     {% endif %}
   </main>
 
@@ -188,5 +292,4 @@
     })();
   </script>
 </body>
-
 </html>
