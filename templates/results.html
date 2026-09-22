@@ -124,6 +124,94 @@
               </div>
             </div>
 
+            {% if group.table3_visualisation %}
+              <section class="table3-visual-section" aria-label="Table III visual analysis">
+                <div class="table3-visual-heading">
+                  <div>
+                    <p class="eyebrow">Table III visual analysis</p>
+                    <h3>Detection errors, recognition delay and computation cost</h3>
+                    <p>Event confusion matrices use the repository's nine-shift D2 Table III scope. FP/TN are reconstructed from the same 991 non-shift observations used by the current FP-rate denominator.</p>
+                  </div>
+                  <span class="status-pill">{{ group.table3_visualisation.scope_observation_count }} observations</span>
+                </div>
+
+                <div class="table3-visual-grid">
+                  <div class="table3-confusion-panel">
+                    <div class="table3-panel-heading">
+                      <div>
+                        <span class="taxonomy-label">FP / FN event view</span>
+                        <h3>Confusion matrices</h3>
+                      </div>
+                      <small>{{ group.table3_visualisation.true_shift_count }} true shifts · {{ group.table3_visualisation.non_shift_count }} non-shift observations</small>
+                    </div>
+
+                    <div class="confusion-card-grid">
+                      {% for metric in group.table3_visualisation.methods %}
+                        <article class="confusion-card">
+                          <div class="confusion-card-title">
+                            <strong>{{ metric.method }}</strong>
+                            <span>FP {{ metric.computed_fp_percent }}% · FN {{ metric.computed_fn_percent }}%</span>
+                          </div>
+                          <div class="confusion-axis-label predicted">Predicted</div>
+                          <div class="confusion-matrix" aria-label="{{ metric.method }} confusion matrix">
+                            <div class="confusion-corner"></div>
+                            <div class="confusion-col-label">Shift</div>
+                            <div class="confusion-col-label">No shift</div>
+                            <div class="confusion-row-label">Actual shift</div>
+                            <div class="confusion-cell tp"><span>TP</span><strong>{{ metric.tp }}</strong></div>
+                            <div class="confusion-cell fn"><span>FN</span><strong>{{ metric.fn }}</strong></div>
+                            <div class="confusion-row-label">Actual no shift</div>
+                            <div class="confusion-cell fp"><span>FP</span><strong>{{ metric.fp }}</strong></div>
+                            <div class="confusion-cell tn"><span>TN</span><strong>{{ metric.tn }}</strong></div>
+                          </div>
+                        </article>
+                      {% endfor %}
+                    </div>
+                  </div>
+
+                  <div class="table3-performance-panel">
+                    <div class="table3-panel-heading">
+                      <div>
+                        <span class="taxonomy-label">RCI / CT trade-off</span>
+                        <h3>Delay and computation</h3>
+                      </div>
+                      <div class="table3-mini-legend">
+                        <span><i class="swatch published"></i>Published</span>
+                        <span><i class="swatch computed"></i>Computed</span>
+                      </div>
+                    </div>
+
+                    {% for metric in group.table3_visualisation.methods %}
+                      <article class="performance-method">
+                        <strong>{{ metric.method }}</strong>
+                        <div class="performance-metric">
+                          <div class="performance-label">
+                            <span>RCI</span>
+                            <span>{{ metric.computed_rci }} computed · {{ metric.published_rci }} published</span>
+                          </div>
+                          <div class="performance-bars">
+                            <span class="performance-bar published" style="width: {{ metric.published_rci_width }}%"></span>
+                            <span class="performance-bar computed" style="width: {{ metric.computed_rci_width }}%"></span>
+                          </div>
+                        </div>
+                        <div class="performance-metric">
+                          <div class="performance-label">
+                            <span>CT (s)</span>
+                            <span>{{ metric.computed_ct_seconds }} computed · {{ metric.published_ct_seconds }} published</span>
+                          </div>
+                          <div class="performance-bars">
+                            <span class="performance-bar published" style="width: {{ metric.published_ct_width }}%"></span>
+                            <span class="performance-bar computed" style="width: {{ metric.computed_ct_width }}%"></span>
+                          </div>
+                        </div>
+                      </article>
+                    {% endfor %}
+                    <p class="table3-chart-note">RCI and CT use separate within-metric scales, so bar length compares methods and published/computed values within each metric rather than treating delay and seconds as the same unit.</p>
+                  </div>
+                </div>
+              </section>
+            {% endif %}
+
             <div class="result-evidence">
               <div class="evidence-main">
                 {% if group.preview %}
