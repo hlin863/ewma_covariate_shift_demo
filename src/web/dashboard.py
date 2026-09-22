@@ -133,6 +133,8 @@ RESULT_DEFINITIONS = (
         "datasets": ["D2 AR jumping-mean stream"],
         "methods": ["SD-EWMA", "TSSD-EWMA", "ICI-CDT", "K-S Stage II"],
         "purpose": "Auditable Table III reproduction with detector traces, event-level scoring and published-versus-computed FP, FN, RCI and CT.",
+        "detail_endpoint": "ks_validation_results",
+        "detail_label": "View K–S Stage-II validation",
         "command": "python scripts/run_2015_synthetic_reproduction.py --dataset d2",
         "primary_artifact": "metrics/paper2015/d2/table3_comparison.csv",
         "preview_columns": [
@@ -357,6 +359,106 @@ def _build_results_catalog(outputs_root: str | Path) -> list[dict[str, object]]:
     return catalog
 
 
+KS_VALIDATION_RELATIVE_PATH = Path("metrics/paper2015/d2/stage2_validations.csv")
+
+
+def _load_ks_validation_results(outputs_root: str | Path) -> dict[str, object]:
+    """Build the Raza 2015 Stage-II K-S validation view from generated output."""
+
+    results_path = Path(outputs_root) / KS_VALIDATION_RELATIVE_PATH
+    if not results_path.is_file():
+        return {
+            "available": False,
+            "results_path": results_path,
+            "rows": [],
+            "summary": {
+                "total": 0,
+                "confirmed": 0,
+                "rejected": 0,
+                "pending": 0,
+                "skipped": 0,
+            },
+            "alpha": 0.05,
+            "k_alpha": 1.36,
+        }
+
+    frame = pd.read_csv(results_path)
+    required = {
+        "alarm_time",
+        "before_size",
+        "after_size",
+        "ks_statistic",
+        "p_value",
+        "status",
+        "confirmed_shift",
+    }
+    missing = required.difference(frame.columns)
+    if missing:
+        raise ValueError(
+            "Stage-II validation file is missing required columns: "
+            + ", ".join(sorted(missing))
+        )
+
+    alpha = 0.05
+    k_alpha = 1.36
+    rows: list[dict[str, object]] = []
+    for _, source in frame.iterrows():
+        n1 = float(source["before_size"])
+        n2 = float(source["after_size"])
+        ks_statistic = float(source["ks_statistic"]) if pd.notna(source["ks_statistic"]) else float("nan")
+        scaled = (
+            float(source["scaled_statistic"])
+            if "scaled_statistic" in frame.columns and pd.notna(source["scaled_statistic"])
+            else (
+                float((n1 * n2 / (n1 + n2)) ** 0.5 * ks_statistic)
+                if n1 > 0 and n2 > 0 and pd.notna(ks_statistic)
+                else float("nan")
+            )
+        )
+        row_k_alpha = (
+            float(source["k_alpha"])
+            if "k_alpha" in frame.columns and pd.notna(source["k_alpha"])
+            else k_alpha
+        )
+        margin = (
+            scaled - row_k_alpha
+            if pd.notna(scaled) and pd.notna(row_k_alpha)
+            else float("nan")
+        )
+        rows.append(
+            {
+                "alarm_time": _normalise_preview_value(source["alarm_time"]),
+                "validation_time": _normalise_preview_value(source.get("validation_time")),
+                "before_size": int(n1),
+                "after_size": int(n2),
+                "ks_statistic": _normalise_preview_value(ks_statistic),
+                "scaled_statistic": _normalise_preview_value(scaled),
+                "k_alpha": _normalise_preview_value(row_k_alpha),
+                "margin": _normalise_preview_value(margin),
+                "p_value": _normalise_preview_value(source["p_value"]),
+                "status": str(source["status"]),
+                "confirmed_shift": bool(source["confirmed_shift"]),
+            }
+        )
+
+    statuses = frame["status"].fillna("").astype(str)
+    summary = {
+        "total": int(frame.shape[0]),
+        "confirmed": int((statuses == "confirmed").sum()),
+        "rejected": int((statuses == "rejected").sum()),
+        "pending": int(statuses.str.startswith("pending").sum()),
+        "skipped": int(statuses.str.startswith("skipped").sum()),
+    }
+    return {
+        "available": True,
+        "results_path": results_path,
+        "rows": rows,
+        "summary": summary,
+        "alpha": alpha,
+        "k_alpha": k_alpha,
+    }
+
+
 @app.get("/outputs/<path:filename>")
 def outputs_file(filename: str):
     outputs_root = Path(app.config["RESULTS_ROOT"]).resolve()
@@ -437,6 +539,18 @@ def results_catalog():
         experiment_count=len(result_groups),
         available_artifacts=available_artifacts,
         total_artifacts=total_artifacts,
+    )
+
+
+@app.get("/results/paper2015-d2/ks-validation")
+def ks_validation_results():
+    """Show per-warning Stage-II K-S evidence for the Raza 2015 D2 reproduction."""
+
+    outputs_root = Path(app.config["RESULTS_ROOT"])
+    model = _load_ks_validation_results(outputs_root)
+    return render_template(
+        "ks_validation.html",
+        **model,
     )
 
 
