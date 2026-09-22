@@ -1,8 +1,12 @@
-"""Run a reproducible CSE lambda-sensitivity experiment.
+"""Run reproducible CSE lambda estimation and sensitivity experiments.
 
-The script compares fixed EWMA smoothing values while keeping the PCA,
-control-limit, and Hotelling validation settings constant. It writes a CSV
-summary and three bar charts under ``outputs``.
+The script first reproduces the Stage-I paper criterion for selecting the
+EWMA smoothing parameter by minimising one-step-ahead prediction-error SSE on
+the PCA-derived training signal. It then compares fixed lambda values while
+keeping the PCA, control-limit, and Hotelling validation settings constant.
+
+Outputs include the lambda-SSE search table and curve plus the downstream
+lambda-sensitivity metrics and charts under ``outputs``.
 """
 
 from pathlib import Path
@@ -19,6 +23,8 @@ import numpy as np
 import pandas as pd
 
 from src.cse import CSEConfig, run_cse
+from src.detection.preprocessing import extract_first_component, fit_cse_pca
+from src.detection.stage1.sd_ewma import estimate_lambda
 
 
 METRICS_DIR = PROJECT_ROOT / "outputs" / "metrics"
@@ -58,6 +64,25 @@ def make_experiment_data() -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     testing_times = np.arange(testing_features.shape[0])
 
     return training_features, testing_features, testing_times
+
+
+def run_lambda_sse_analysis() -> tuple[pd.DataFrame, float]:
+    """Estimate lambda from Stage-I training data using prediction-error SSE."""
+
+    training, _, _ = make_experiment_data()
+    pca_result = fit_cse_pca(
+        training_features=training,
+        n_components=2,
+    )
+    training_signal = extract_first_component(
+        pca_result.training_transformed
+    )
+
+    best_lambda, search_results = estimate_lambda(
+        values=training_signal,
+    )
+
+    return search_results, best_lambda
 
 
 def run_lambda_sweep() -> pd.DataFrame:
@@ -130,6 +155,52 @@ def run_lambda_sweep() -> pd.DataFrame:
     return pd.DataFrame.from_records(records)
 
 
+def save_lambda_sse_curve(
+    results: pd.DataFrame,
+    best_lambda: float,
+    filename: str,
+) -> None:
+    """Save the paper-grounded lambda-versus-SSE optimisation curve."""
+
+    best_row = results.loc[
+        results["lambda"] == best_lambda
+    ].iloc[0]
+
+    fig, ax = plt.subplots(figsize=(10, 5))
+    ax.plot(
+        results["lambda"],
+        results["sse"],
+        marker="o",
+        markersize=3,
+        linewidth=1.5,
+    )
+    ax.scatter(
+        [best_lambda],
+        [best_row["sse"]],
+        marker="*",
+        s=180,
+        zorder=3,
+    )
+    ax.annotate(
+        (
+            f"minimum SSE\n"
+            f"lambda = {best_lambda:.2f}"
+        ),
+        xy=(best_lambda, best_row["sse"]),
+        xytext=(14, 18),
+        textcoords="offset points",
+    )
+    ax.set_title(
+        "EWMA Lambda Selection by Prediction-Error SSE"
+    )
+    ax.set_xlabel("EWMA smoothing parameter (lambda)")
+    ax.set_ylabel("Sum of squared prediction errors")
+    ax.grid(axis="both", alpha=0.25)
+    fig.tight_layout()
+    fig.savefig(FIGURES_DIR / filename, dpi=200)
+    plt.close(fig)
+
+
 def save_bar_chart(
     results: pd.DataFrame,
     column: str,
@@ -156,6 +227,17 @@ def main() -> None:
 
     METRICS_DIR.mkdir(parents=True, exist_ok=True)
     FIGURES_DIR.mkdir(parents=True, exist_ok=True)
+
+    sse_results, best_lambda = run_lambda_sse_analysis()
+    sse_results.to_csv(
+        METRICS_DIR / "cse_lambda_sse.csv",
+        index=False,
+    )
+    save_lambda_sse_curve(
+        sse_results,
+        best_lambda=best_lambda,
+        filename="cse_lambda_sse_curve.png",
+    )
 
     results = run_lambda_sweep()
     results.to_csv(
@@ -185,6 +267,17 @@ def main() -> None:
         filename="cse_lambda_rci.png",
     )
 
+    minimum_sse = float(
+        sse_results.loc[
+            sse_results["lambda"] == best_lambda,
+            "sse",
+        ].iloc[0]
+    )
+    print(
+        f"Minimum-SSE lambda: {best_lambda:.2f} "
+        f"(SSE={minimum_sse:.6f})"
+    )
+    print("\nLambda sensitivity:")
     print(results.to_string(index=False))
     print(f"\nSaved metrics to: {METRICS_DIR}")
     print(f"Saved figures to: {FIGURES_DIR}")
