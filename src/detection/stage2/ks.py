@@ -53,6 +53,26 @@ def _validate_stream_inputs(values, times):
     return observations, time_values
 
 
+def _ks_critical_constant(alpha: float) -> float:
+    critical_values = {
+        0.10: 1.22,
+        0.05: 1.36,
+        0.025: 1.48,
+        0.01: 1.63,
+        0.005: 1.73,
+        0.001: 1.95,
+    }
+
+    if alpha not in critical_values:
+        raise ValueError(
+            "Unsupported alpha for the Raza et al. (2015) "
+            "K-S critical-value table. "
+            f"Supported values: {sorted(critical_values)}"
+        )
+
+    return critical_values[alpha]
+
+
 def validate_stage_1_alarm(
     values,
     times,
@@ -76,7 +96,18 @@ def validate_stage_1_alarm(
         raise ValueError("Insufficient observations after the alarm.")
     before_values = observations[before_start : alarm_index + 1]
     after_values = observations[after_start:after_end]
-    result = ks_2samp(before_values, after_values, alternative="two-sided", method="auto")
+
+    n1 = before_values.shape[0]
+    n2 = after_values.shape[0]
+
+    result = ks_2samp(
+        before_values, after_values, alternative="two-sided", method="auto"
+    )
+
+    scaled_statistic = (np.sqrt(n1 * n2 / (n1 + n2))) * result.statistic
+
+    k_alpha = _ks_critical_constant(config.alpha)
+
     return Stage2ValidationResult(
         alarm_time=int(alarm_time),
         before_start_time=int(time_values[before_start]),
@@ -87,7 +118,7 @@ def validate_stage_1_alarm(
         after_size=int(after_values.size),
         ks_statistic=float(result.statistic),
         p_value=float(result.pvalue),
-        confirmed_shift=bool(result.pvalue < config.alpha),
+        confirmed_shift=bool(scaled_statistic > k_alpha),
     )
 
 
@@ -135,7 +166,10 @@ def validate_stage_1_alarms(stage_1_results, values, times, config=None):
             "status": None,
             "confirmed_shift": False,
         }
-        if last_evaluated_index is not None and alarm_index - last_evaluated_index < minimum_gap:
+        if (
+            last_evaluated_index is not None
+            and alarm_index - last_evaluated_index < minimum_gap
+        ):
             record["status"] = "skipped_nearby_alarm"
         elif before_start < 0:
             record["status"] = "insufficient_before_window"
