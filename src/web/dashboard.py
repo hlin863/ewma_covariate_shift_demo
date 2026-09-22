@@ -320,6 +320,85 @@ def _csv_preview(path: Path, preferred_columns: list[str]) -> dict[str, object] 
     }
 
 
+def _table3_visualisation(outputs_root: str | Path) -> dict[str, object] | None:
+    """Build confusion-matrix and RCI/CT views for the D2 Table III result."""
+
+    path = Path(outputs_root) / "metrics" / "paper2015" / "d2" / "table3_comparison.csv"
+    if not path.is_file():
+        return None
+
+    try:
+        frame = pd.read_csv(path)
+    except (OSError, ValueError, pd.errors.ParserError):
+        return None
+
+    required = {
+        "method",
+        "computed_fp_percent",
+        "computed_fn_percent",
+        "computed_rci",
+        "published_rci",
+        "computed_ct_seconds",
+        "published_ct_seconds",
+    }
+    if required.difference(frame.columns):
+        return None
+
+    true_shift_count = 9
+    scope_observation_count = 1000
+    non_shift_count = scope_observation_count - true_shift_count
+
+    methods: list[dict[str, object]] = []
+    rci_values: list[float] = []
+    ct_values: list[float] = []
+
+    for _, source in frame.iterrows():
+        fp_percent = float(source["computed_fp_percent"])
+        fn_percent = float(source["computed_fn_percent"])
+        false_negative = int(round((fn_percent / 100.0) * true_shift_count))
+        true_positive = max(true_shift_count - false_negative, 0)
+        false_positive = int(round((fp_percent / 100.0) * non_shift_count))
+        true_negative = max(non_shift_count - false_positive, 0)
+
+        computed_rci = float(source["computed_rci"])
+        published_rci = float(source["published_rci"])
+        computed_ct = float(source["computed_ct_seconds"])
+        published_ct = float(source["published_ct_seconds"])
+        rci_values.extend([computed_rci, published_rci])
+        ct_values.extend([computed_ct, published_ct])
+
+        methods.append(
+            {
+                "method": str(source["method"]),
+                "tp": true_positive,
+                "fn": false_negative,
+                "fp": false_positive,
+                "tn": true_negative,
+                "computed_fp_percent": round(fp_percent, 4),
+                "computed_fn_percent": round(fn_percent, 4),
+                "computed_rci": round(computed_rci, 4),
+                "published_rci": round(published_rci, 4),
+                "computed_ct_seconds": round(computed_ct, 4),
+                "published_ct_seconds": round(published_ct, 4),
+            }
+        )
+
+    rci_max = max(rci_values + [1.0])
+    ct_max = max(ct_values + [0.001])
+    for method in methods:
+        method["computed_rci_width"] = 100.0 * float(method["computed_rci"]) / rci_max
+        method["published_rci_width"] = 100.0 * float(method["published_rci"]) / rci_max
+        method["computed_ct_width"] = 100.0 * float(method["computed_ct_seconds"]) / ct_max
+        method["published_ct_width"] = 100.0 * float(method["published_ct_seconds"]) / ct_max
+
+    return {
+        "methods": methods,
+        "true_shift_count": true_shift_count,
+        "non_shift_count": non_shift_count,
+        "scope_observation_count": scope_observation_count,
+    }
+
+
 def _build_results_catalog(outputs_root: str | Path) -> list[dict[str, object]]:
     root = Path(outputs_root)
     catalog: list[dict[str, object]] = []
@@ -353,6 +432,11 @@ def _build_results_catalog(outputs_root: str | Path) -> list[dict[str, object]]:
         item["preview"] = _csv_preview(
             primary_path,
             list(definition["preview_columns"]),
+        )
+        item["table3_visualisation"] = (
+            _table3_visualisation(root)
+            if definition["id"] == "paper2015-d2"
+            else None
         )
         catalog.append(item)
 
