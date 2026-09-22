@@ -100,12 +100,22 @@ RESULT_DEFINITIONS = (
     },
     {
         "id": "lambda-sweep",
-        "title": "Synthetic CSE lambda sweep",
+        "title": "Synthetic CSE lambda analysis",
         "domain": "synthetic",
         "domain_label": "Synthetic sensitivity",
         "datasets": ["Deterministic 3D Gaussian mean shift"],
-        "methods": ["PCA", "EWMA Stage I", "Hotelling Stage II", "Lambda sweep"],
-        "purpose": "Measures how the EWMA smoothing parameter changes warning count, validation count, recognition delay and computation time.",
+        "methods": [
+            "PCA",
+            "Prediction-error SSE",
+            "EWMA Stage I",
+            "Hotelling Stage II",
+            "Lambda sweep",
+        ],
+        "purpose": (
+            "Shows the paper-grounded SSE criterion used to select lambda, then "
+            "measures how fixed lambda values change warning count, validation "
+            "count, recognition delay and computation time."
+        ),
         "command": "python scripts/run_cse_lambda_sweep.py",
         "primary_artifact": "metrics/cse_lambda_sensitivity.csv",
         "preview_columns": [
@@ -119,6 +129,8 @@ RESULT_DEFINITIONS = (
             "computation_time_seconds",
         ],
         "artifacts": [
+            ("metrics/cse_lambda_sse.csv", "Lambda–SSE optimisation table"),
+            ("figures/cse_lambda_sse_curve.png", "Prediction-error SSE by lambda"),
             ("metrics/cse_lambda_sensitivity.csv", "Lambda sensitivity metrics"),
             ("figures/cse_lambda_stage1_warnings.png", "Stage-I warning-count chart"),
             ("figures/cse_lambda_confirmed_shifts.png", "Confirmed-shift chart"),
