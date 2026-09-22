@@ -204,6 +204,18 @@ def test_results_catalog_detects_available_primary_result(tmp_path: Path) -> Non
     assert any(artifact["is_figure"] for artifact in lambda_sweep["artifacts"])
 
 
+def _write_lambda_sse(path: Path) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame(
+        [
+            [0.01, 10.0],
+            [0.02, 7.5],
+            [0.03, 8.0],
+        ],
+        columns=["lambda", "sse"],
+    ).to_csv(path, index=False)
+
+
 def test_results_catalog_page_renders_domains_methods_and_theme_controls(
     tmp_path: Path,
 ) -> None:
@@ -214,6 +226,14 @@ def test_results_catalog_page_renders_domains_methods_and_theme_controls(
     figure_path.write_bytes(b"png")
     sse_figure_path = tmp_path / "figures" / "cse_lambda_sse_curve.png"
     sse_figure_path.write_bytes(b"png")
+    for filename in (
+        "cse_lambda_confirmed_shifts.png",
+        "cse_lambda_rci.png",
+    ):
+        (tmp_path / "figures" / filename).write_bytes(b"png")
+    _write_lambda_sse(
+        tmp_path / "metrics" / "cse_lambda_sse.csv"
+    )
     app.config.update(TESTING=True, RESULTS_ROOT=str(tmp_path))
 
     response = app.test_client().get("/results")
@@ -230,6 +250,13 @@ def test_results_catalog_page_renders_domains_methods_and_theme_controls(
     assert "Synthetic CSE lambda analysis" in html
     assert "Prediction-error SSE" in html
     assert "Prediction-error SSE by lambda" in html
+    assert "Lambda selection and downstream sensitivity" in html
+    assert "Selected training parameter" in html
+    assert "Best λ" in html
+    assert "0.02" in html
+    assert "Minimum SSE" in html
+    assert "7.5000" in html
+    assert "Downstream sensitivity" in html
     assert "figures/cse_lambda_sse_curve.png" in html
     assert "figures/cse_lambda_stage1_warnings.png" in html
     assert "Light" in html
