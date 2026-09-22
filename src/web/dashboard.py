@@ -332,6 +332,72 @@ def _csv_preview(path: Path, preferred_columns: list[str]) -> dict[str, object] 
     }
 
 
+def _lambda_analysis_visualisation(outputs_root: str | Path) -> dict[str, object] | None:
+    """Build the focused lambda-estimation and sensitivity presentation model."""
+
+    root = Path(outputs_root)
+    sse_path = root / "metrics" / "cse_lambda_sse.csv"
+    if not sse_path.is_file():
+        return None
+
+    try:
+        frame = pd.read_csv(sse_path)
+    except (OSError, ValueError, pd.errors.ParserError):
+        return None
+
+    required = {"lambda", "sse"}
+    if required.difference(frame.columns) or frame.empty:
+        return None
+
+    lambda_values = pd.to_numeric(frame["lambda"], errors="coerce")
+    sse_values = pd.to_numeric(frame["sse"], errors="coerce")
+    valid = lambda_values.notna() & sse_values.notna()
+    if not valid.any():
+        return None
+
+    clean = pd.DataFrame({
+        "lambda": lambda_values.loc[valid],
+        "sse": sse_values.loc[valid],
+    })
+    best_row = clean.loc[clean["sse"].idxmin()]
+
+    figures = (
+        {
+            "relative_path": "figures/cse_lambda_stage1_warnings.png",
+            "label": "Stage-I warning count",
+            "detail": "How fixed lambda changes the number of online EWMA warnings.",
+        },
+        {
+            "relative_path": "figures/cse_lambda_confirmed_shifts.png",
+            "label": "Confirmed shifts",
+            "detail": "Whether Stage-II validation changes as lambda varies.",
+        },
+        {
+            "relative_path": "figures/cse_lambda_rci.png",
+            "label": "Recognition delay",
+            "detail": "Detection delay measured by the CSE recognition capability index.",
+        },
+    )
+
+    return {
+        "best_lambda": float(best_row["lambda"]),
+        "minimum_sse": float(best_row["sse"]),
+        "candidate_count": int(clean.shape[0]),
+        "sse_figure": {
+            "relative_path": "figures/cse_lambda_sse_curve.png",
+            "label": "Prediction-error SSE by lambda",
+            "available": (root / "figures" / "cse_lambda_sse_curve.png").is_file(),
+        },
+        "sensitivity_figures": [
+            {
+                **figure,
+                "available": (root / figure["relative_path"]).is_file(),
+            }
+            for figure in figures
+        ],
+    }
+
+
 def _table3_visualisation(outputs_root: str | Path) -> dict[str, object] | None:
     """Build confusion-matrix and RCI/CT views for the D2 Table III result."""
 
@@ -448,6 +514,11 @@ def _build_results_catalog(outputs_root: str | Path) -> list[dict[str, object]]:
         item["table3_visualisation"] = (
             _table3_visualisation(root)
             if definition["id"] == "paper2015-d2"
+            else None
+        )
+        item["lambda_analysis"] = (
+            _lambda_analysis_visualisation(root)
+            if definition["id"] == "lambda-sweep"
             else None
         )
         catalog.append(item)
