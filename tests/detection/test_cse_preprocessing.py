@@ -4,6 +4,7 @@ import pytest
 from src.cse_preprocessing import (
     extract_first_component,
     fit_cse_pca,
+    reconstruct_cse_features,
     transform_cse_features,
 )
 
@@ -94,6 +95,48 @@ def test_extract_first_component() -> None:
     np.testing.assert_allclose(
         first_component,
         np.array([2.5, 3.1, 4.0]),
+    )
+
+
+def test_reconstruct_cse_features_returns_reconstructed_data_residuals_and_q() -> None:
+    training_features = np.array([
+        [1.0, 2.0, 3.0],
+        [2.0, 3.0, 4.0],
+        [3.0, 5.0, 6.0],
+        [4.0, 7.0, 8.0],
+    ])
+    testing_features = np.array([
+        [5.0, 8.0, 9.0],
+        [6.0, 9.0, 11.0],
+    ])
+
+    result = fit_cse_pca(
+        training_features,
+        n_components=2,
+    )
+
+    reconstruction = reconstruct_cse_features(
+        testing_features,
+        fitted_result=result,
+    )
+
+    expected_reconstruction = result.model.inverse_transform(
+        result.model.transform(testing_features)
+    )
+    expected_residuals = testing_features - expected_reconstruction
+    expected_q = np.sum(expected_residuals**2, axis=1)
+
+    np.testing.assert_allclose(
+        reconstruction.reconstructed_features,
+        expected_reconstruction,
+    )
+    np.testing.assert_allclose(
+        reconstruction.residual_vectors,
+        expected_residuals,
+    )
+    np.testing.assert_allclose(
+        reconstruction.squared_reconstruction_error,
+        expected_q,
     )
 
 

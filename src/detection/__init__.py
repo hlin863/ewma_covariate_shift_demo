@@ -13,9 +13,11 @@ from src.detection.two_stage import (
 )
 from src.detection.preprocessing import (
     CSEPCAResult,
+    CSEReconstructionResult,
     extract_first_component,
     extract_retained_components,
     fit_cse_pca,
+    reconstruct_cse_features,
     transform_cse_features,
 )
 
@@ -23,11 +25,13 @@ __all__ = [
     "CSEConfig",
     "CSEResult",
     "CSEPCAResult",
+    "CSEReconstructionResult",
     "TSSDEWMAConfig",
     "TSSDEWMAResult",
     "extract_first_component",
     "extract_retained_components",
     "fit_cse_pca",
+    "reconstruct_cse_features",
     "run_cse",
     "run_tssd_ewma",
     "transform_cse_features",

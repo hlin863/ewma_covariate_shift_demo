@@ -19,6 +19,13 @@ class CSEPCAResult:
         return self.training_transformed[:, 0]
 
 
+@dataclass(frozen=True)
+class CSEReconstructionResult:
+    reconstructed_features: np.ndarray
+    residual_vectors: np.ndarray
+    squared_reconstruction_error: np.ndarray
+
+
 def _validate_feature_matrix(
     features: np.ndarray,
     *,
@@ -113,6 +120,29 @@ def transform_cse_features(
 def extract_first_component(transformed_features: np.ndarray) -> np.ndarray:
     values = _validate_feature_matrix(transformed_features, minimum_observations=1)
     return np.asarray(values[:, 0], dtype=float)
+
+
+def reconstruct_cse_features(
+    features: np.ndarray,
+    fitted_result: CSEPCAResult,
+) -> CSEReconstructionResult:
+    values = _validate_feature_matrix(
+        features,
+        minimum_observations=1,
+        expected_features=fitted_result.n_input_features,
+    )
+    transformed = fitted_result.model.transform(values)
+    reconstructed = np.asarray(
+        fitted_result.model.inverse_transform(transformed),
+        dtype=float,
+    )
+    residuals = np.asarray(values - reconstructed, dtype=float)
+    q_statistic = np.asarray(np.sum(residuals**2, axis=1), dtype=float)
+    return CSEReconstructionResult(
+        reconstructed_features=reconstructed,
+        residual_vectors=residuals,
+        squared_reconstruction_error=q_statistic,
+    )
 
 
 def extract_retained_components(transformed_features: np.ndarray) -> np.ndarray:
