@@ -1,6 +1,7 @@
 """Diagnostic CSE execution for BCI Competition IV Dataset 2B."""
 
 from dataclasses import dataclass
+import warnings
 
 import pandas as pd
 
@@ -50,7 +51,8 @@ class Dataset2BDiagnosticResult:
     def warning_rows(self, testing: TrialFeatureResult) -> pd.DataFrame:
         warnings = self.cse_result.warning_results.copy()
         warnings.insert(0, "subject", self.subject)
-        warnings.insert(1, "lambda", self.published_lambda)
+        if "lambda" not in warnings.columns:
+            warnings.insert(1, "lambda", self.published_lambda)
         warnings["session_id"] = testing.session_ids
         warnings["cue_description"] = testing.cue_descriptions
         return warnings.loc[warnings["stage_1_alarm"].astype(bool)].reset_index(drop=True)
