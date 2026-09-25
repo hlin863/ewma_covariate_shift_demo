@@ -8,7 +8,25 @@
 </head>
 <body>
   <main class="shell">
-    <nav><a href="{{ url_for('home') }}">← Research hub</a><a href="{{ url_for('results_catalog') }}">All results</a></nav>
+    <nav>
+      <a href="{{ url_for('home') }}">← Research hub</a>
+      <a href="{{ url_for('results_catalog') }}">All results</a>
+      <div class="theme-switcher" role="group" aria-label="Colour theme">
+        <button class="theme-button" type="button" data-theme-option="light" aria-pressed="false" aria-label="Switch to light theme">
+          <svg class="icon icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+          <span>Light</span>
+        </button>
+        <button class="theme-button" type="button" data-theme-option="dark" aria-pressed="false" aria-label="Switch to dark theme">
+          <svg class="icon icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span>Dark</span>
+        </button>
+      </div>
+    </nav>
     <header>
       <p class="eyebrow">BCI Competition IV · Stage I extension</p>
       <h1>Complementary monitoring</h1>
@@ -93,6 +111,23 @@ python app.py</code></pre>
       <p>A residual-only warning needs a Stage II representation that retains the changed information; validating only PC1 could miss the same change. Compare this with controlled shifts and classifier outcomes in later experiments.</p>
     </section>
   </main>
+  <script>
+    (function () {
+      const root = document.documentElement;
+      const storedTheme = localStorage.getItem("dashboard-theme");
+      const preferredTheme = window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+      root.dataset.theme = storedTheme || preferredTheme;
+      const buttons = document.querySelectorAll("[data-theme-option]");
+      if (!buttons.length) return;
+      function applyTheme(theme) {
+        root.dataset.theme = theme;
+        localStorage.setItem("dashboard-theme", theme);
+        buttons.forEach((button) => button.setAttribute("aria-pressed", button.dataset.themeOption === theme ? "true" : "false"));
+      }
+      buttons.forEach((button) => button.addEventListener("click", () => applyTheme(button.dataset.themeOption)));
+      applyTheme(root.dataset.theme || "dark");
+    })();
+  </script>
   {% if options %}<script>
     const rows = {{ rows | tojson }};
     const canvas = document.getElementById('timeline');

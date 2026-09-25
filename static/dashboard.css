@@ -78,8 +78,8 @@ a { color: inherit; }
 
 .theme-switcher, .filter-switcher {
   display: inline-flex;
-  gap: 4px;
-  padding: 4px;
+  gap: 6px;
+  padding: 6px;
   border: 1px solid var(--line);
   border-radius: 999px;
   background: var(--switch-bg);
@@ -88,13 +88,17 @@ a { color: inherit; }
 .theme-button, .filter-button {
   border: 0;
   border-radius: 999px;
-  padding: 8px 12px;
+  min-height: 40px;
+  padding: 8px 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   background: transparent;
   color: var(--muted);
   cursor: pointer;
-  font-size: 0.78rem;
-  font-weight: 750;
-  transition: background-color 140ms ease, color 140ms ease, box-shadow 140ms ease;
+  font-size: 0.9rem;
+  font-weight: 800;
+  transition: transform 120ms ease, background-color 140ms ease, color 140ms ease, box-shadow 140ms ease;
 }
 
 .nav-link { text-decoration: none; border: 1px solid var(--line); }
@@ -103,11 +107,12 @@ a { color: inherit; }
 .theme-button[aria-pressed="true"],
 .filter-button.active,
 .filter-button[aria-pressed="true"] {
-  background: var(--panel);
-  color: var(--text);
-  box-shadow: 0 2px 10px var(--shadow);
+  background: var(--computed);
+  color: #071710;
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--computed) 25%, transparent);
+  transform: translateY(-1px);
 }
-.theme-button:focus-visible, .filter-button:focus-visible { outline: 2px solid var(--computed); outline-offset: 2px; }
+.theme-button:focus-visible, .filter-button:focus-visible { outline: none; box-shadow: 0 0 0 4px color-mix(in srgb, var(--computed) 12%, transparent); border-radius: 999px; }
 
 .eyebrow {
   margin: 0 0 8px;

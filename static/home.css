@@ -90,6 +90,10 @@
   .home-shell { width: min(100% - 26px, 1320px); }
   .home-brand { font-size: 0.86rem; }
   .home-nav .theme-button { padding: 7px 9px; }
+
+  /* small icon sizing inside nav buttons */
+  .home-nav .theme-button .icon { width: 16px; height: 16px; display: inline-block; }
+  .home-nav .theme-button svg { display: block; }
   .home-hero h1 { font-size: clamp(2.7rem, 15vw, 4rem); }
   .pipeline-grid, .lineage-grid { grid-template-columns: 1fr; }
   .pipeline-card { min-height: 150px; }
