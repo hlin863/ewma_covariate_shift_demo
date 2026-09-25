@@ -9,6 +9,15 @@ def build_home_page_model() -> dict[str, object]:
     return {
         "pages": (
             {
+                "endpoint": "complementary_results",
+                "label": "Complementary monitoring",
+                "kind": "BCI experiment",
+                "description": (
+                    "Explore PCA score and reconstruction-residual warnings "
+                    "for BCI Competition IV 2A and 2B."
+                ),
+            },
+            {
                 "endpoint": "dashboard",
                 "label": "Table 1 dashboard",
                 "kind": "Primary reproduction",
