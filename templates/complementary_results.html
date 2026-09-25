@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Complementary BCI monitoring · CSE Research</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='complementary_results.css') }}">
+</head>
+<body>
+  <main class="shell">
+    <nav><a href="{{ url_for('home') }}">← Research hub</a><a href="{{ url_for('results_catalog') }}">All results</a></nav>
+    <header>
+      <p class="eyebrow">BCI Competition IV · Stage I extension</p>
+      <h1>Complementary monitoring</h1>
+      <p class="lede">Compare warnings from the retained PCA score, reconstruction residual and their calibrated combined route across 2A and 2B evaluation sessions.</p>
+    </header>
+    <section class="context">
+      <div><strong>2A</strong><span>Session I fit / Session II evaluation; evaluation labels in <code>data/raw/bci_competition_iv_2a_labels</code>.</span></div>
+      <div><strong>2B</strong><span>Sessions I–III fit / IV–V evaluation, following the existing repository protocol.</span></div>
+    </section>
+    {% if error %}<section class="notice" role="alert"><h2>Trace file needs attention</h2><p>{{ error }}</p><p>Expected: <code>{{ path }}</code></p></section>{% endif %}
+    {% if not options %}
+    <section class="notice">
+      <h2>Awaiting real-dataset runs</h2>
+      <p>The current <code>scripts/run_complementary_monitoring.py</code> produces synthetic streams. Export real 2A/2B trial traces to <code>{{ path }}</code> to populate this page. Raw EEG files are not loaded by the web application.</p>
+      <p>Required CSV columns: <code>dataset, subject, session, time, pc1_score, residual_q, score_only_alarm, residual_only_alarm, score_alarm, residual_alarm, stage_1_alarm</code>.</p>
+      <p>Use one row per evaluation trial, with dataset values <code>2A</code> or <code>2B</code>. Fit PCA and alarm limits on training/development data only. Preserve the experiment configuration and commit alongside the exported traces.</p>
+    </section>
+    {% else %}
+    <form method="get" class="filters">
+      <label for="stream">Evaluation stream</label>
+      <select id="stream" aria-label="Evaluation stream" onchange="const v=this.value.split('|'); document.getElementById('dataset').value=v[0]; document.getElementById('subject').value=v[1]; document.getElementById('session').value=v[2]; this.form.submit()">
+        {% for dataset, subject, session in options %}
+        <option value="{{ dataset }}|{{ subject }}|{{ session }}" {% if selected == (dataset, subject, session) %}selected{% endif %}>{{ dataset }} · {{ subject }} · session {{ session }}</option>
+        {% endfor %}
+      </select>
+      <input type="hidden" name="dataset" id="dataset" value="{{ selected[0] }}">
+      <input type="hidden" name="subject" id="subject" value="{{ selected[1] }}">
+      <input type="hidden" name="session" id="session" value="{{ selected[2] }}">
+      <noscript><button type="submit">Show stream</button></noscript>
+    </form>
+    <section class="metrics" aria-label="Alarm burden">
+      {% for item in summary %}<article><span>{{ item.label }}</span><strong>{{ item.alarms }}</strong><small>{{ item.per_100 }} alarms per 100 trials</small></article>{% endfor %}
+    </section>
+    <section class="panel">
+      <h2>Trial timeline</h2>
+      <p>Signals use separate vertical scales. Orange marks score-route warnings; teal marks residual-route warnings; white marks trials where both routes warn.</p>
+      <div class="chart"><canvas id="timeline" role="img" aria-label="PC1 score and residual Q by trial, with warning markers"></canvas></div>
+      <p class="caption">Up to 1,200 sampled points are drawn; counts above use every trial. Consult the CSV for exact warning times.</p>
+    </section>
+    {% endif %}
+    <section class="method">
+      <h2>Reading the results</h2>
+      <p>These are Stage I warnings. Without independently annotated shift times, counts on unmodified EEG cannot be called detection rates or false-alarm rates. A warning alone does not establish prediction degradation or a need to retrain.</p>
+      <p>A residual-only warning needs a Stage II representation that retains the changed information; validating only PC1 could miss the same change. Compare this with controlled shifts and classifier outcomes in later experiments.</p>
+    </section>
+  </main>
+  {% if options %}<script>
+    const rows = {{ rows | tojson }};
+    const canvas = document.getElementById('timeline');
+    function draw() {
+      const bounds = canvas.getBoundingClientRect(), scale = devicePixelRatio || 1;
+      canvas.width = Math.round(bounds.width * scale); canvas.height = Math.round(320 * scale);
+      const ctx = canvas.getContext('2d'); ctx.scale(scale, scale);
+      const w = bounds.width, h = 320, left = 55, right = w - 20;
+      ctx.fillStyle = '#a9b6c7'; ctx.font = '12px system-ui';
+      ctx.fillText('PC1', 12, 72); ctx.fillText('Q', 23, 215); ctx.fillText('Trial →', right - 45, 310);
+      if (!rows.length) return;
+      const t0 = rows[0].time, t1 = rows[rows.length - 1].time;
+      const x = r => left + (right - left) * (r.time - t0) / (t1 - t0 || 1);
+      function series(key, top, bottom, color) {
+        const vals = rows.map(r => r[key]), min = Math.min(...vals), max = Math.max(...vals);
+        ctx.strokeStyle = '#33465d'; ctx.beginPath(); ctx.moveTo(left, bottom); ctx.lineTo(right, bottom); ctx.stroke();
+        ctx.strokeStyle = color; ctx.lineWidth = 1.7; ctx.beginPath();
+        rows.forEach((r, i) => { const y = bottom - (bottom - top) * (r[key] - min) / (max - min || 1); i ? ctx.lineTo(x(r), y) : ctx.moveTo(x(r), y); }); ctx.stroke();
+      }
+      series('pc1_score', 25, 125, '#edaa70'); series('residual_q', 165, 265, '#72d7c4');
+      rows.forEach(r => { if (!r.stage_1_alarm) return; ctx.fillStyle = r.score_alarm && r.residual_alarm ? '#fff' : r.score_alarm ? '#edaa70' : '#72d7c4'; ctx.fillRect(x(r) - 2, 139, 4, 13); });
+    }
+    addEventListener('resize', draw); draw();
+  </script>{% endif %}
+</body>
+</html>

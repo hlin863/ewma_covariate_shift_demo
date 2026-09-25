@@ -6,7 +6,8 @@ from copy import deepcopy
 from pathlib import Path
 
 import pandas as pd
-from flask import Flask, abort, render_template, send_from_directory
+import numpy as np
+from flask import Flask, abort, render_template, request, send_from_directory
 
 from src.bci.datasets.chowdhury.data import load_patient_demographics
 from src.web.chowdhury import build_chowdhury_cohort_view
@@ -188,6 +189,83 @@ app.config.setdefault("RESULTS_ROOT", str(DEFAULT_OUTPUTS_ROOT))
 app.config.setdefault("DATASET_2A_PATH", str(DEFAULT_DATASET_2A_PATH))
 app.config.setdefault("DATASET_2A_LABELS_PATH", str(DEFAULT_DATASET_2A_LABELS_PATH))
 app.config.setdefault("CHOWDHURY_DATA_PATH", str(DEFAULT_CHOWDHURY_DATA_PATH))
+app.config.setdefault(
+    "COMPLEMENTARY_BCI_TRACES_PATH",
+    str(DEFAULT_OUTPUTS_ROOT / "complementary_bci" / "traces.csv"),
+)
+
+
+@app.get("/results/complementary-bci")
+def complementary_results():
+    """Inspect exported real-dataset Stage-I traces without claiming shift truth."""
+    path = Path(app.config["COMPLEMENTARY_BCI_TRACES_PATH"])
+    required = {
+        "dataset", "subject", "session", "time", "pc1_score", "residual_q",
+        "score_only_alarm", "residual_only_alarm", "stage_1_alarm",
+        "score_alarm", "residual_alarm",
+    }
+    error = None
+    frame = pd.DataFrame()
+    if path.is_file():
+        try:
+            frame = pd.read_csv(path)
+            missing = required.difference(frame.columns)
+            if missing:
+                raise ValueError("Missing columns: " + ", ".join(sorted(missing)))
+            if not frame.empty:
+                frame["dataset"] = frame["dataset"].astype(str).str.upper()
+                frame = frame.loc[frame["dataset"].isin(["2A", "2B"])].copy()
+                for column in ("time", "pc1_score", "residual_q"):
+                    frame[column] = pd.to_numeric(frame[column], errors="raise")
+                if not np.isfinite(frame[["time", "pc1_score", "residual_q"]].to_numpy()).all():
+                    raise ValueError("Timeline values must be finite numbers")
+                for column in required.intersection(frame.columns) - {
+                    "dataset", "subject", "session", "time", "pc1_score", "residual_q"
+                }:
+                    values = frame[column].astype(str).str.lower()
+                    if not values.isin(["true", "false", "1", "0"]).all():
+                        raise ValueError(f"{column} must contain Boolean values")
+                    frame[column] = values.isin(["true", "1"])
+        except (OSError, ValueError, pd.errors.ParserError) as exc:
+            frame = pd.DataFrame()
+            error = str(exc)
+
+    options = []
+    if not frame.empty:
+        options = sorted(
+            (str(d), str(s), str(session))
+            for d, s, session in frame[["dataset", "subject", "session"]]
+            .drop_duplicates().itertuples(index=False, name=None)
+        )
+    selected = (request.args.get("dataset"), request.args.get("subject"), request.args.get("session"))
+    if selected not in options:
+        selected = options[0] if options else None
+    rows = []
+    summary = []
+    if selected:
+        group = frame.loc[
+            (frame["dataset"] == selected[0])
+            & (frame["subject"].astype(str) == selected[1])
+            & (frame["session"].astype(str) == selected[2])
+        ].sort_values("time")
+        for label, column in (
+            ("Score only", "score_only_alarm"),
+            ("Residual only", "residual_only_alarm"),
+            ("Combined", "stage_1_alarm"),
+        ):
+            count = int(group[column].sum())
+            summary.append({"label": label, "alarms": count,
+                            "per_100": round(100 * count / len(group), 2)})
+        # Chart sampling is for display only; summary counts use every trial.
+        step = max(1, (len(group) + 1199) // 1200)
+        rows = group.iloc[::step].loc[:, [
+            "time", "pc1_score", "residual_q", "score_alarm",
+            "residual_alarm", "stage_1_alarm",
+        ]].to_dict(orient="records")
+    return render_template(
+        "complementary_results.html", path=path, options=options,
+        selected=selected, rows=rows, summary=summary, error=error,
+    )
 
 
 def _load_results(path: str | Path) -> pd.DataFrame:
