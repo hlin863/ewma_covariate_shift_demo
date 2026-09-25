@@ -32,7 +32,7 @@ RESULT_DEFINITIONS = (
         "datasets": ["BCI Competition IV 2A", "BCI Competition IV 2B"],
         "methods": ["FBCSP", "PCA", "EWMA Stage I", "Hotelling T² Stage II"],
         "purpose": "Published-versus-computed CSE warning and validation counts for the paper-style Table 1 experiment.",
-        "command": "python scripts/run_bci_table1_reproduction.py --validation-mode paper_two_sample --labels-2a data/raw/bci_competition_iv_2a_labels",
+        "command": "python scripts/run_bci_table1_reproduction.py --validation-mode paper_two_sample --labels-2a {DATASET_2A_LABELS_PATH}",
         "primary_artifact": "metrics/bci_table1_comparison.csv",
         "preview_columns": [
             "dataset",
@@ -521,6 +521,21 @@ def _build_results_catalog(outputs_root: str | Path) -> list[dict[str, object]]:
             if definition["id"] == "lambda-sweep"
             else None
         )
+        # Expand any configuration placeholders in the command string so
+        # paths like the dataset labels can be configured via app.config.
+        if "command" in item and isinstance(item["command"], str):
+            try:
+                mapping = {
+                    "DATASET_2A_LABELS_PATH": app.config.get("DATASET_2A_LABELS_PATH", ""),
+                    "DATASET_2A_PATH": app.config.get("DATASET_2A_PATH", ""),
+                    "RESULTS_ROOT": app.config.get("RESULTS_ROOT", ""),
+                    "TABLE1_RESULTS_PATH": app.config.get("TABLE1_RESULTS_PATH", ""),
+                    "CHOWDHURY_DATA_PATH": app.config.get("CHOWDHURY_DATA_PATH", ""),
+                }
+                item["command"] = item["command"].format_map(mapping)
+            except Exception:
+                # If formatting fails for any reason, leave the original string.
+                pass
         catalog.append(item)
 
     return catalog
