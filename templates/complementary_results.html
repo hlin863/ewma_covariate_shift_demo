@@ -14,6 +14,41 @@
       <h1>Complementary monitoring</h1>
       <p class="lede">Compare warnings from the retained PCA score, reconstruction residual and their calibrated combined route across 2A and 2B evaluation sessions.</p>
     </header>
+    <section class="panel" id="synthetic-results">
+      <p class="eyebrow">Controlled PCA shifts · synthetic experiment</p>
+      <h2>Score and residual monitoring</h2>
+      {% if synthetic_error %}<p role="alert">Synthetic results could not be read: {{ synthetic_error }}</p>{% endif %}
+      {% if synthetic_summary %}
+      <p>Results from {{ synthetic_config.get('seeds', 'the recorded') }} seeds; shift magnitude {{ synthetic_config.get('magnitude', 'recorded in config') }}. The injected change begins at trial 500. These results come from generated features, not EEG recordings.</p>
+      <form method="get" class="filters">
+        <label for="scenario">Shift direction</label>
+        <select name="scenario" id="scenario" onchange="this.form.submit()">
+          {% for scenario in ('none', 'pc1', 'pc2', 'both') %}
+          <option value="{{ scenario }}" {% if synthetic_scenario == scenario %}selected{% endif %}>{{ {'none':'No change','pc1':'Along PC1','pc2':'Orthogonal to PC1','both':'Both directions'}[scenario] }}</option>
+          {% endfor %}
+        </select>
+        <noscript><button type="submit">Show</button></noscript>
+      </form>
+      <div class="chart"><canvas id="synthetic-timeline" role="img" aria-label="Synthetic PC1 score and residual Q with score and residual warnings"></canvas></div>
+      <p class="caption">The vertical marker shows the intervention at trial 500. Orange marks score warnings, teal residual warnings and white both.</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Scenario</th><th>Route</th><th>Baseline alarm rate</th><th>Window alarm rate</th><th>Detection within 20 trials</th><th>Delay when detected</th><th>Mean alarms</th></tr></thead>
+        <tbody>{% for item in synthetic_summary %}<tr>
+          <td>{{ item.scenario }}</td><td>{{ item.method.replace('_', ' ') }}</td>
+          <td>{{ '%.1f%%'|format(100 * item.mean_false_alarm_rate) }}</td>
+          <td>{{ '%.1f%%'|format(100 * item.window_alarm_rate) }}</td>
+          <td>{{ '%.1f%%'|format(100 * item.detection_rate) if item.detection_rate is not none else '—' }}</td>
+          <td>{{ '%.1f'|format(item.mean_delay_detected_only) if item.mean_delay_detected_only is not none else '—' }}</td>
+          <td>{{ '%.1f'|format(item.mean_alarm_count) }}</td>
+        </tr>{% endfor %}</tbody>
+      </table></div>
+      <p>Window alarm rate covers trials 500–519 for each scenario. The “none” rows show the matching no-change rate. A warning in a blind direction can occur by chance, so compare the changed rows with those “none” rows.</p>
+      {% else %}
+      <p>Generate the experiment outputs and reload this page:</p>
+      <pre><code>python -m scripts.run_complementary_monitoring --seeds 20
+python app.py</code></pre>
+      {% endif %}
+    </section>
     <section class="context">
       <div><strong>2A</strong><span>Session I fit / Session II evaluation; evaluation labels in <code>data/raw/bci_competition_iv_2a_labels</code>.</span></div>
       <div><strong>2B</strong><span>Sessions I–II fit, III calibrates alarm limits, IV–V evaluate; this holdout differs from the Table 1 protocol.</span></div>
@@ -61,7 +96,7 @@ python app.py</code></pre>
   {% if options %}<script>
     const rows = {{ rows | tojson }};
     const canvas = document.getElementById('timeline');
-    function draw() {
+    function drawTimeline(canvas, rows, intervention) {
       const bounds = canvas.getBoundingClientRect(), scale = devicePixelRatio || 1;
       canvas.width = Math.round(bounds.width * scale); canvas.height = Math.round(320 * scale);
       const ctx = canvas.getContext('2d'); ctx.scale(scale, scale);
@@ -78,9 +113,30 @@ python app.py</code></pre>
         rows.forEach((r, i) => { const y = bottom - (bottom - top) * (r[key] - min) / (max - min || 1); i ? ctx.lineTo(x(r), y) : ctx.moveTo(x(r), y); }); ctx.stroke();
       }
       series('pc1_score', 25, 125, '#edaa70'); series('residual_q', 165, 265, '#72d7c4');
+      if (intervention !== null) { ctx.strokeStyle = '#fff8'; ctx.setLineDash([4, 4]); ctx.beginPath(); ctx.moveTo(left + (right-left) * (intervention-t0)/(t1-t0||1), 20); ctx.lineTo(left + (right-left) * (intervention-t0)/(t1-t0||1), 270); ctx.stroke(); ctx.setLineDash([]); }
       rows.forEach(r => { if (!r.stage_1_alarm) return; ctx.fillStyle = r.score_alarm && r.residual_alarm ? '#fff' : r.score_alarm ? '#edaa70' : '#72d7c4'; ctx.fillRect(x(r) - 2, 139, 4, 13); });
     }
-    addEventListener('resize', draw); draw();
+    addEventListener('resize', () => drawTimeline(canvas, rows, null)); drawTimeline(canvas, rows, null);
+  </script>{% endif %}
+  {% if synthetic_rows %}<script>
+    const syntheticRows = {{ synthetic_rows | tojson }};
+    const syntheticCanvas = document.getElementById('synthetic-timeline');
+    function drawSynthetic() {
+      const bounds = syntheticCanvas.getBoundingClientRect(), scale = devicePixelRatio || 1;
+      syntheticCanvas.width = Math.round(bounds.width * scale); syntheticCanvas.height = Math.round(320 * scale);
+      const ctx = syntheticCanvas.getContext('2d'); ctx.scale(scale, scale);
+      const w = bounds.width, left = 55, right = w - 20, t0 = syntheticRows[0].time, t1 = syntheticRows[syntheticRows.length-1].time;
+      const x = r => left + (right-left)*(r.time-t0)/(t1-t0||1);
+      ctx.fillStyle = '#a9b6c7'; ctx.font = '12px system-ui'; ctx.fillText('PC1',12,72); ctx.fillText('Q',23,215); ctx.fillText('Trial →',right-45,310);
+      for (const [key,top,bottom,color] of [['pc1_score',25,125,'#edaa70'],['residual_q',165,265,'#72d7c4']]) {
+        const values=syntheticRows.map(r=>r[key]), min=Math.min(...values), max=Math.max(...values);
+        ctx.strokeStyle='#33465d'; ctx.beginPath();ctx.moveTo(left,bottom);ctx.lineTo(right,bottom);ctx.stroke();
+        ctx.strokeStyle=color;ctx.lineWidth=1.7;ctx.beginPath();syntheticRows.forEach((r,i)=>{const y=bottom-(bottom-top)*(r[key]-min)/(max-min||1); i?ctx.lineTo(x(r),y):ctx.moveTo(x(r),y)});ctx.stroke();
+      }
+      ctx.strokeStyle='#fff8';ctx.setLineDash([4,4]);ctx.beginPath();const shiftX=left+(right-left)*(500-t0)/(t1-t0||1);ctx.moveTo(shiftX,20);ctx.lineTo(shiftX,270);ctx.stroke();ctx.setLineDash([]);
+      syntheticRows.forEach(r=>{if(!r.stage_1_alarm)return;ctx.fillStyle=r.score_alarm&&r.residual_alarm?'#fff':r.score_alarm?'#edaa70':'#72d7c4';ctx.fillRect(x(r)-2,139,4,13)});
+    }
+    addEventListener('resize', drawSynthetic); drawSynthetic();
   </script>{% endif %}
 </body>
 </html>

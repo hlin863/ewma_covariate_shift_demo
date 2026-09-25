@@ -262,9 +262,44 @@ def complementary_results():
             "time", "pc1_score", "residual_q", "score_alarm",
             "residual_alarm", "stage_1_alarm",
         ]].to_dict(orient="records")
+    synthetic_root = Path(app.config["RESULTS_ROOT"]) / "complementary"
+    synthetic_scenario = request.args.get("scenario", "none")
+    if synthetic_scenario not in ("none", "pc1", "pc2", "both"):
+        synthetic_scenario = "none"
+    synthetic_summary = []
+    synthetic_rows = []
+    synthetic_config = {}
+    synthetic_error = None
+    summary_path = synthetic_root / "summary.csv"
+    trace_path = synthetic_root / f"trace_{synthetic_scenario}.csv"
+    if summary_path.is_file() and trace_path.is_file():
+        try:
+            import json
+            summary_frame = pd.read_csv(summary_path)
+            trace_frame = pd.read_csv(trace_path)
+            expected_summary = {"scenario", "method", "mean_false_alarm_rate", "window_alarm_rate", "detection_rate", "mean_delay_detected_only", "mean_alarm_count"}
+            expected_trace = {"time", "pc1_score", "residual_q", "score_alarm", "residual_alarm", "stage_1_alarm"}
+            if expected_summary - set(summary_frame) or expected_trace - set(trace_frame):
+                raise ValueError("Synthetic output columns do not match the experiment runner")
+            for column in ("time", "pc1_score", "residual_q"):
+                trace_frame[column] = pd.to_numeric(trace_frame[column], errors="raise")
+            if not np.isfinite(trace_frame[["time", "pc1_score", "residual_q"]].to_numpy()).all():
+                raise ValueError("Synthetic trace contains nonfinite values")
+            for column in ("score_alarm", "residual_alarm", "stage_1_alarm"):
+                trace_frame[column] = trace_frame[column].astype(str).str.lower().isin(("true", "1"))
+            synthetic_summary = summary_frame.astype(object).where(pd.notnull(summary_frame), None).to_dict("records")
+            synthetic_rows = trace_frame.loc[:, ["time", "pc1_score", "residual_q", "score_alarm", "residual_alarm", "stage_1_alarm"]].to_dict("records")
+            config_path = synthetic_root / "config.json"
+            if config_path.is_file():
+                synthetic_config = json.loads(config_path.read_text(encoding="utf-8"))
+        except (OSError, ValueError, pd.errors.ParserError) as exc:
+            synthetic_error = str(exc)
     return render_template(
         "complementary_results.html", path=path, options=options,
         selected=selected, rows=rows, summary=summary, error=error,
+        synthetic_summary=synthetic_summary, synthetic_rows=synthetic_rows,
+        synthetic_scenario=synthetic_scenario, synthetic_config=synthetic_config,
+        synthetic_error=synthetic_error, synthetic_root=synthetic_root,
     )
 
 
