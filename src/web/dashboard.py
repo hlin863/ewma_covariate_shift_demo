@@ -32,7 +32,7 @@ RESULT_DEFINITIONS = (
         "datasets": ["BCI Competition IV 2A", "BCI Competition IV 2B"],
         "methods": ["FBCSP", "PCA", "EWMA Stage I", "Hotelling T² Stage II"],
         "purpose": "Published-versus-computed CSE warning and validation counts for the paper-style Table 1 experiment.",
-        "command": "python scripts/run_bci_table1_reproduction.py --validation-mode paper_two_sample",
+        "command": "python scripts/run_bci_table1_reproduction.py --validation-mode paper_two_sample --labels-2a data/raw/bci_competition_iv_2a_labels",
         "primary_artifact": "metrics/bci_table1_comparison.csv",
         "preview_columns": [
             "dataset",
