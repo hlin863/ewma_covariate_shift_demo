@@ -16,13 +16,16 @@
     </header>
     <section class="context">
       <div><strong>2A</strong><span>Session I fit / Session II evaluation; evaluation labels in <code>data/raw/bci_competition_iv_2a_labels</code>.</span></div>
-      <div><strong>2B</strong><span>Sessions I–III fit / IV–V evaluation, following the existing repository protocol.</span></div>
+      <div><strong>2B</strong><span>Sessions I–II fit, III calibrates alarm limits, IV–V evaluate; this holdout differs from the Table 1 protocol.</span></div>
     </section>
     {% if error %}<section class="notice" role="alert"><h2>Trace file needs attention</h2><p>{{ error }}</p><p>Expected: <code>{{ path }}</code></p></section>{% endif %}
     {% if not options %}
     <section class="notice">
       <h2>Awaiting real-dataset runs</h2>
-      <p>The current <code>scripts/run_complementary_monitoring.py</code> produces synthetic streams. Export real 2A/2B trial traces to <code>{{ path }}</code> to populate this page. Raw EEG files are not loaded by the web application.</p>
+      <p>Run the real EEG experiment from the repository root, then reload this page. The 2A and 2B folders must exist locally; the attached tutorial contains synthetic code, not recordings.</p>
+      <pre><code>python -m scripts.run_complementary_bci --data-2a data/raw/bci_competition_iv_2a --labels-2a data/raw/bci_competition_iv_2a_labels --data-2b data/raw/bci_competition_iv_2b
+python app.py</code></pre>
+      <p>The experiment writes <code>{{ path }}</code>. Open <code>http://127.0.0.1:5000/results/complementary-bci</code> to view the result.</p>
       <p>Required CSV columns: <code>dataset, subject, session, time, pc1_score, residual_q, score_only_alarm, residual_only_alarm, score_alarm, residual_alarm, stage_1_alarm</code>.</p>
       <p>Use one row per evaluation trial, with dataset values <code>2A</code> or <code>2B</code>. Fit PCA and alarm limits on training/development data only. Preserve the experiment configuration and commit alongside the exported traces.</p>
     </section>
