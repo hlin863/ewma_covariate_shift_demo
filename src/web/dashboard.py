@@ -100,6 +100,101 @@ RESULT_DEFINITIONS = (
         ],
     },
     {
+        "id": "bagging-bci-real",
+        "title": "Bagging evaluation on BCI Competition IV 2A/2B",
+        "domain": "bci",
+        "domain_label": "Adaptive ensemble experiment",
+        "datasets": [
+            "BCI Competition IV Dataset 2A",
+            "BCI Competition IV Dataset 2B",
+        ],
+        "methods": [
+            "Real GDF/MAT loaders",
+            "FBCSP",
+            "Linear SVM",
+            "Bootstrap aggregation",
+            "Majority vote",
+        ],
+        "purpose": (
+            "Subject-level evaluation of the generic BaggingClassifier on the "
+            "downloaded BCI Competition IV recordings. Dataset 2A uses Session I "
+            "for training and official Session-II labels for evaluation. Dataset "
+            "2B defaults to the existing GDF-only path: Sessions I-II train and "
+            "labelled Session III is the holdout. Supplying --labels-2b opts into "
+            "the paper-style Sessions IV-V evaluation."
+        ),
+        "command": "python -m scripts.run_bagging_bci",
+        "primary_artifact": "metrics/bagging_bci_real.csv",
+        "preview_columns": [
+            "dataset",
+            "subject",
+            "evaluation_scope",
+            "method",
+            "training_trials",
+            "calibration_trials",
+            "testing_trials",
+            "accuracy",
+            "fit_seconds",
+            "fitted_estimators",
+            "sample_fraction",
+            "mean_member_disagreement",
+        ],
+        "artifacts": [
+            ("metrics/bagging_bci_real.csv", "Real subject-level bagging metrics"),
+            (
+                "figures/bagging_bci_real_accuracy.png",
+                "Real single-versus-bagged accuracy",
+            ),
+            (
+                "figures/bagging_bci_real_disagreement.png",
+                "Real bagging ensemble disagreement",
+            ),
+        ],
+    },
+    {
+        "id": "bagging-synthetic-bci",
+        "title": "Synthetic bagging smoke test",
+        "domain": "synthetic",
+        "domain_label": "Software smoke test",
+        "datasets": [
+            "Deterministic 2A-style fixture",
+            "Deterministic 2B-style fixture",
+        ],
+        "methods": [
+            "FBCSP",
+            "Linear SVM",
+            "Bootstrap aggregation",
+            "Majority vote",
+        ],
+        "purpose": (
+            "Fast deterministic software check that BaggingClassifier can pass "
+            "through the 2A/2B feature-processing interfaces. These generated "
+            "fixtures are not BCI Competition IV research results; use the real "
+            "bagging experiment above for dataset evaluation."
+        ),
+        "command": "python -m scripts.run_bagging_bci_synthetic",
+        "primary_artifact": "metrics/bagging_synthetic_bci.csv",
+        "preview_columns": [
+            "dataset",
+            "method",
+            "training_trials",
+            "testing_trials",
+            "accuracy",
+            "fit_seconds",
+            "fitted_estimators",
+            "sample_fraction",
+            "mean_member_disagreement",
+        ],
+        "artifacts": [
+            ("metrics/bagging_synthetic_bci.csv", "Synthetic smoke-test metrics"),
+            ("figures/bagging_synthetic_accuracy.png", "Synthetic accuracy check"),
+            (
+                "figures/bagging_synthetic_disagreement.png",
+                "Synthetic ensemble disagreement check",
+            ),
+        ],
+    },
+    {
         "id": "lambda-sweep",
         "title": "Synthetic CSE lambda analysis",
         "domain": "synthetic",

@@ -17,7 +17,7 @@ from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 
-from src.adaptation.classifier import LinearSVMClassifier
+from src.adaptation.classifier import LinearSVMClassifier, RetrainableClassifier
 from src.adaptation.policies import (
     AdaptationContext,
     AdaptationPolicy,
@@ -44,7 +44,7 @@ class SupervisedAdaptationResult:
 
     trial_results: pd.DataFrame
     update_events: pd.DataFrame
-    final_classifier: LinearSVMClassifier
+    final_classifier: RetrainableClassifier
 
     @property
     def accuracy(self) -> float:
@@ -134,7 +134,7 @@ def run_supervised_adaptation(
     evaluation_times: np.ndarray,
     validation_results: pd.DataFrame,
     warning_results: pd.DataFrame | None = None,
-    classifier: LinearSVMClassifier | None = None,
+    classifier: RetrainableClassifier | None = None,
     policy: AdaptationPolicy | None = None,
     config: SupervisedAdaptationConfig | None = None,
 ) -> SupervisedAdaptationResult:

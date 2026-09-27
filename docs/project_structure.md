@@ -8,6 +8,7 @@ src/
 │   ├── data.py                       # GDF/session loading and raw BCI models
 │   ├── features.py                   # generic repo-specific EEG features
 │   ├── fbcsp.py                      # paper-aligned Butterworth + CSP/FBCSP
+│   ├── splitting.py                  # shared stratified development indices
 │   └── datasets/
 │       ├── dataset2a/
 │       │   ├── experiment.py         # trial extraction + subject experiment
@@ -15,8 +16,16 @@ src/
 │       │   └── development_pipeline.py
 │       └── dataset2b/
 │           ├── experiment.py
+│           ├── development_split.py  # 2019 I–III pool / IV–V evaluation
+│           ├── development_pipeline.py # fit on development training only
 │           ├── diagnostics.py
 │           └── reference.py
+├── adaptation/
+│   ├── classifier.py                 # classifier and retraining contracts, SVM
+│   ├── supervised.py                 # labelled 2018 adaptation path
+│   ├── experiments/                  # real and synthetic bagging comparisons
+│   └── ensemble/
+│       └── bagging.py                # bootstrap ensemble classifier
 ├── detection/
 │   ├── core.py                       # dataset-agnostic CSE orchestration
 │   ├── preprocessing.py              # PCA preprocessing
@@ -57,6 +66,8 @@ Former flat modules remain import-compatible where practical so notebooks, tests
 
 - `src/bci`: raw BCI data access, EEG preprocessing and feature construction.
 - `src/bci/datasets`: dataset-specific assumptions such as sessions, channels, cue codes, development splits and published reproduction targets.
+- `src/bci/splitting.py`: shared stratified index operation; paper-specific session assignments stay in dataset packages.
+- `src/adaptation`: classifier contracts, supervised adaptation, and separate real/synthetic bagging comparisons. The 2019 pseudo-labelling and dynamic growth stages remain unimplemented.
 - `src/detection`: dataset-agnostic covariate-shift estimation logic.
 - `src/detection/stage1`: EWMA-based CS warning generation.
 - `src/detection/stage2`: K-S/Hotelling CS warning validation methods.

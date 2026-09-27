@@ -9,12 +9,30 @@ run with alternative models.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from typing import Protocol
 
 import numpy as np
 from sklearn.svm import SVC
 
 
 ArrayLike = np.ndarray
+
+
+class Classifier(Protocol):
+    """Feature-matrix contract shared by single and ensemble classifiers."""
+
+    def fit(self, features: np.ndarray, labels: np.ndarray) -> object: ...
+    def predict(self, features: np.ndarray) -> np.ndarray: ...
+
+
+class RetrainableClassifier(Classifier, Protocol):
+    """Additional contract needed by supervised append-and-retrain policies."""
+
+    @property
+    def training_size(self) -> int: ...
+    def append_and_retrain(
+        self, new_features: np.ndarray, new_labels: np.ndarray
+    ) -> object: ...
 
 
 def _as_2d_features(values: ArrayLike, *, name: str) -> np.ndarray:

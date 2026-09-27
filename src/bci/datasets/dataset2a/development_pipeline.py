@@ -23,6 +23,11 @@ class Dataset2ADevelopmentFeaturePipelineResult:
     validation: Dataset2ATrialFeatureResult
     testing: Dataset2ATrialFeatureResult
 
+    @property
+    def evaluation(self) -> Dataset2ATrialFeatureResult:
+        """Common development-pipeline name; testing remains the existing API."""
+        return self.testing
+
 
 def _feature_names(model: FBCSPModel) -> tuple[str, ...]:
     names: list[str] = []
