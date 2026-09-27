@@ -4,6 +4,11 @@ from src.bci.datasets.dataset2b.diagnostics import (
     Dataset2BDiagnosticResult,
     run_dataset_2b_diagnostic,
 )
+from src.bci.datasets.dataset2b.evaluation_labels import (
+    dataset_2b_evaluation_label_filename,
+    load_dataset_2b_evaluation_labels,
+    resolve_dataset_2b_evaluation_label_path,
+)
 from src.bci.datasets.dataset2b.experiment import (
     PUBLISHED_2B_RESULTS,
     Dataset2BExperimentResult,
@@ -31,6 +36,9 @@ __all__ = [
     "bci_2b_table1_reference",
     "build_dataset_2b_fbcsp_features",
     "concatenate_trial_signals",
+    "dataset_2b_evaluation_label_filename",
+    "load_dataset_2b_evaluation_labels",
+    "resolve_dataset_2b_evaluation_label_path",
     "extract_dataset_2b_trials",
     "run_dataset_2b_diagnostic",
     "run_dataset_2b_subject",
