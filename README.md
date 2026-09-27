@@ -12,7 +12,6 @@ src/
 │   ├── data.py                       # GDF loading and raw session models
 │   ├── features.py                   # generic repo-specific EEG features
 │   ├── fbcsp.py                      # paper-aligned Butterworth + CSP/FBCSP
-│   ├── splitting.py                  # shared stratified development indices
 │   └── datasets/
 │       ├── dataset2a/
 │       │   ├── experiment.py         # Dataset 2A trial/expt logic
@@ -20,15 +19,8 @@ src/
 │       │   └── development_pipeline.py
 │       └── dataset2b/
 │           ├── experiment.py
-│           ├── development_split.py  # 2019 protocol and 70/30 split
-│           ├── development_pipeline.py
 │           ├── diagnostics.py
 │           └── reference.py
-├── adaptation/
-│   ├── classifier.py                 # common classifier contracts and linear SVM
-│   ├── supervised.py                 # labelled adaptation loop
-│   └── ensemble/
-│       └── bagging.py                # bootstrap ensemble primitive
 ├── detection/
 │   ├── core.py                       # dataset-agnostic CSE orchestration
 │   ├── preprocessing.py              # PCA fit/transform helpers
@@ -68,7 +60,6 @@ The former flat modules such as `src.cse`, `src.fbcsp`, `src.bci_data`, `src.ewm
 - Cue-aligned EEG trial extraction for Dataset 2A and Dataset 2B
 - Dataset 2A paper channel selection: C3, FC3, CP3, C5, C1, C4, FC4, CP4, C2, C6
 - Dataset 2A Session-I stratified 70/30 development split before FBCSP fitting
-- Dataset 2B 2019 protocol: Sessions I–III stratified 70/30 development split; IV–V held-out evaluation; FBCSP fitted on development training only
 - Dataset 2A left/right-hand training from Session I and unlabeled Session II evaluation
 - 10-band filter-bank CSP feature extraction
   - 8th-order zero-phase Butterworth band-pass filters
@@ -82,7 +73,6 @@ The former flat modules such as `src.cse`, `src.fbcsp`, `src.bci_data`, `src.ewm
 - Combined Dataset 2A/2B Table 1 reproduction output
 - Flask dashboard for published-versus-computed Table 1 results
 - Diagnostic and sensitivity-analysis utilities
-- Linear SVM and bagging classifier primitives, plus supervised adaptation; 2019 pseudo-labelling and dynamic ensemble growth are not integrated
 - Paper-aligned D2 jumping-mean generator with repeated-shift truth labels
 - Full-stream SD-EWMA/TSSD-EWMA D2 experiment and event-level metrics
 - Pytest coverage and GitHub Actions CI for the CSE/EWMA pipeline
@@ -116,7 +106,7 @@ python scripts/run_bci_table1_reproduction.py \
   --session1-split-seed 42
 ```
 
-Dataset 2B's three 2019 runners use the same named I–III training-pool / IV–V evaluation protocol. Set `--dataset2b-validation-fraction` and `--dataset2b-split-seed` in the combined runner, or `--validation-fraction` and `--split-seed` in either dedicated 2B runner. The validation subset is transformed and exposed for parameter work, but the current detection runners do not yet select lambda, L, K, or T from it. In particular, the published lambda still overrides estimation. The 70/30 ratio comes from the paper; exact partition membership and seed are unreported. Changing from the previous whole-pool FBCSP fit changes computed results, so compare new counts to old output with that methodological difference in mind.
+The paper specifies the 70/30 ratio but does not report the exact random partition, so the seed is a repository reproducibility choice rather than a paper-defined parameter.
 
 The Stage-II interpretation can be compared explicitly:
 

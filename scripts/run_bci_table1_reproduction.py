@@ -24,9 +24,9 @@ from src.bci.datasets.dataset2a.evaluation_labels import (
 )
 from src.bci.datasets.dataset2b import (
     PUBLISHED_2B_RESULTS,
-    build_dataset_2b_development_fbcsp_features,
+    build_dataset_2b_fbcsp_features,
+    concatenate_trial_signals,
     extract_dataset_2b_trials,
-    prepare_cse_uael_2019_protocol,
 )
 from src.detection import CSEConfig, run_cse
 from src.reporting.table1 import (
@@ -195,14 +195,6 @@ def _parse_args():
         ),
     )
     parser.add_argument(
-        "--dataset2b-validation-fraction", type=_fraction, default=0.30,
-        help="Dataset 2B Sessions I–III validation fraction before FBCSP fitting.",
-    )
-    parser.add_argument(
-        "--dataset2b-split-seed", type=int, default=42,
-        help="Reproducible 2B development partition; exact paper seed is unreported.",
-    )
-    parser.add_argument(
         "--calibrate-control-limit-from-validation",
         action="store_true",
         help=(
@@ -345,14 +337,11 @@ def _run_2b(args, subject: int) -> Table1Row:
             args.data_2b, subject, session_number
         )
         session_trials.append(extract_dataset_2b_trials(session))
-    protocol = prepare_cse_uael_2019_protocol(
-        session_trials,
-        validation_fraction=args.dataset2b_validation_fraction,
-        random_state=args.dataset2b_split_seed,
-    )
-    pipeline = build_dataset_2b_development_fbcsp_features(
-        protocol.development,
-        protocol.evaluation,
+    training_trials = concatenate_trial_signals(session_trials[:3])
+    testing_trials = concatenate_trial_signals(session_trials[3:])
+    pipeline = build_dataset_2b_fbcsp_features(
+        training_trials,
+        testing_trials,
         components_per_side=args.components_per_side,
     )
 
@@ -363,8 +352,8 @@ def _run_2b(args, subject: int) -> Table1Row:
     )
     cse_result = run_cse(
         training_features=pipeline.training.features,
-        testing_features=pipeline.evaluation.features,
-        testing_times=pipeline.evaluation.times,
+        testing_features=pipeline.testing.features,
+        testing_times=pipeline.testing.times,
         config=CSEConfig(
             pca_components=args.pca_components,
             lambda_override=published_lambda,
@@ -392,9 +381,8 @@ def _run_2b(args, subject: int) -> Table1Row:
         cse_result.validation_results["confirmed_shift"].astype(bool).sum()
     )
     print(
-        f"{subject_id}: dev_train={pipeline.training.features.shape[0]}, "
-        f"validation={pipeline.validation.features.shape[0]}, "
-        f"test={pipeline.evaluation.features.shape[0]}, "
+        f"{subject_id}: train={pipeline.training.features.shape[0]}, "
+        f"test={pipeline.testing.features.shape[0]}, "
         f"PCA={cse_result.pca_result.n_components}, "
         f"PC1var={cse_result.pca_result.explained_variance_ratio[0]:.3f}, "
         f"CSW={computed_csw}/{published_csw}, CSV={computed_csv}/{published_csv}"

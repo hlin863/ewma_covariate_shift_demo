@@ -12,7 +12,6 @@ from src.bci.datasets.dataset2a.validation_calibration import (
     calibrate_stage1_control_limit_from_validation,
 )
 from src.bci.fbcsp import FBCSPModel, fit_transform_fbcsp
-from src.bci.splitting import stratified_split_indices
 from src.detection import CSEConfig, CSEResult, run_cse
 
 PUBLISHED_2A_RESULTS: dict[str, tuple[float, int, int]] = {
@@ -137,16 +136,41 @@ def split_dataset_2a_session1(
 
     if str(trials.session_id).upper() != "T":
         raise ValueError("70/30 development splitting is only valid for Session-I/T.")
+    if not 0.0 < validation_fraction < 1.0:
+        raise ValueError("validation_fraction must be in (0, 1).")
+
     labels = np.asarray(trials.labels, dtype=int)
     if labels.ndim != 1 or labels.size != trials.signals.shape[0]:
         raise ValueError("Session-I labels must contain one label per trial.")
-    indices = stratified_split_indices(
-        labels, validation_fraction=validation_fraction, random_state=random_state
-    )
+    classes = np.unique(labels)
+    if classes.size != 2 or np.any(classes < 0):
+        raise ValueError(
+            "Session-I development splitting requires two labelled classes."
+        )
+
+    rng = np.random.default_rng(random_state)
+    training_indices: list[int] = []
+    validation_indices: list[int] = []
+    for label in classes:
+        class_indices = np.flatnonzero(labels == label)
+        if class_indices.size < 2:
+            raise ValueError("each class must contain at least two Session-I trials.")
+        shuffled = rng.permutation(class_indices)
+        n_validation = int(round(class_indices.size * validation_fraction))
+        n_validation = min(max(n_validation, 1), class_indices.size - 1)
+        validation_indices.extend(int(index) for index in shuffled[:n_validation])
+        training_indices.extend(int(index) for index in shuffled[n_validation:])
+
+    training_array = np.asarray(sorted(training_indices), dtype=int)
+    validation_array = np.asarray(sorted(validation_indices), dtype=int)
+    if np.intersect1d(training_array, validation_array).size:
+        raise RuntimeError("training and validation subsets must not overlap.")
+    if training_array.size + validation_array.size != labels.size:
+        raise RuntimeError("development split must preserve every Session-I trial.")
 
     return Dataset2ADevelopmentSplit(
-        training=_subset_trial_signal_result(trials, indices.training),
-        validation=_subset_trial_signal_result(trials, indices.validation),
+        training=_subset_trial_signal_result(trials, training_array),
+        validation=_subset_trial_signal_result(trials, validation_array),
     )
 
 

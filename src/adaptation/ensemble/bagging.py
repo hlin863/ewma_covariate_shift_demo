@@ -13,14 +13,27 @@ reported by Li et al. (2010): 30 learners trained from samples containing
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Callable
+from typing import Callable, Protocol
 
 import numpy as np
-from src.adaptation.classifier import Classifier
 
 
-BaseClassifier = Classifier  # Compatibility alias for existing imports.
-EstimatorFactory = Callable[[], Classifier]
+class BaseClassifier(Protocol):
+    """Minimal interface required from each ensemble member."""
+
+    def fit(
+        self,
+        features: np.ndarray,
+        labels: np.ndarray,
+    ) -> object: ...
+
+    def predict(
+        self,
+        features: np.ndarray,
+    ) -> np.ndarray: ...
+
+
+EstimatorFactory = Callable[[], BaseClassifier]
 
 
 @dataclass
@@ -54,7 +67,7 @@ class BaggingClassifier:
     bootstrap: bool = True
     random_state: int | None = 42
 
-    estimators_: list[Classifier] = field(
+    estimators_: list[BaseClassifier] = field(
         default_factory=list,
         init=False,
         repr=False,
