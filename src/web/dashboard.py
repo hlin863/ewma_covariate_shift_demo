@@ -119,9 +119,9 @@ RESULT_DEFINITIONS = (
             "Subject-level evaluation of the generic BaggingClassifier on the "
             "downloaded BCI Competition IV recordings. Dataset 2A uses Session I "
             "for training and official Session-II labels for evaluation. Dataset "
-            "2B uses Sessions I-II for training, retains Session III as the "
-            "paper protocol's calibration/hyperparameter session, and evaluates "
-            "on labelled Sessions IV-V."
+            "2B defaults to the existing GDF-only path: Sessions I-II train and "
+            "labelled Session III is the holdout. Supplying --labels-2b opts into "
+            "the paper-style Sessions IV-V evaluation."
         ),
         "command": "python -m scripts.run_bagging_bci",
         "primary_artifact": "metrics/bagging_bci_real.csv",
