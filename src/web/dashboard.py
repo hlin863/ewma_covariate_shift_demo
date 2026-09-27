@@ -100,13 +100,65 @@ RESULT_DEFINITIONS = (
         ],
     },
     {
-        "id": "bagging-synthetic-bci",
-        "title": "Bagging integration on synthetic 2A/2B",
+        "id": "bagging-bci-real",
+        "title": "Bagging evaluation on BCI Competition IV 2A/2B",
         "domain": "bci",
         "domain_label": "Adaptive ensemble experiment",
         "datasets": [
-            "Deterministic Dataset 2A-like stream",
-            "Deterministic Dataset 2B-like stream",
+            "BCI Competition IV Dataset 2A",
+            "BCI Competition IV Dataset 2B",
+        ],
+        "methods": [
+            "Real GDF/MAT loaders",
+            "FBCSP",
+            "Linear SVM",
+            "Bootstrap aggregation",
+            "Majority vote",
+        ],
+        "purpose": (
+            "Subject-level evaluation of the generic BaggingClassifier on the "
+            "downloaded BCI Competition IV recordings. Dataset 2A uses Session I "
+            "for training and official Session-II labels for evaluation. Dataset "
+            "2B uses Sessions I-II for training, retains Session III as the "
+            "paper protocol's calibration/hyperparameter session, and evaluates "
+            "on labelled Sessions IV-V."
+        ),
+        "command": "python -m scripts.run_bagging_bci",
+        "primary_artifact": "metrics/bagging_bci_real.csv",
+        "preview_columns": [
+            "dataset",
+            "subject",
+            "evaluation_scope",
+            "method",
+            "training_trials",
+            "calibration_trials",
+            "testing_trials",
+            "accuracy",
+            "fit_seconds",
+            "fitted_estimators",
+            "sample_fraction",
+            "mean_member_disagreement",
+        ],
+        "artifacts": [
+            ("metrics/bagging_bci_real.csv", "Real subject-level bagging metrics"),
+            (
+                "figures/bagging_bci_real_accuracy.png",
+                "Real single-versus-bagged accuracy",
+            ),
+            (
+                "figures/bagging_bci_real_disagreement.png",
+                "Real bagging ensemble disagreement",
+            ),
+        ],
+    },
+    {
+        "id": "bagging-synthetic-bci",
+        "title": "Synthetic bagging smoke test",
+        "domain": "synthetic",
+        "domain_label": "Software smoke test",
+        "datasets": [
+            "Deterministic 2A-style fixture",
+            "Deterministic 2B-style fixture",
         ],
         "methods": [
             "FBCSP",
@@ -115,10 +167,10 @@ RESULT_DEFINITIONS = (
             "Majority vote",
         ],
         "purpose": (
-            "Integration test for the generic BaggingClassifier on the same "
-            "deterministic 2A/2B-style signal pipelines used by repository tests. "
-            "Compares a single linear SVM with 30-member bagging and reports "
-            "accuracy, runtime and ensemble disagreement."
+            "Fast deterministic software check that BaggingClassifier can pass "
+            "through the 2A/2B feature-processing interfaces. These generated "
+            "fixtures are not BCI Competition IV research results; use the real "
+            "bagging experiment above for dataset evaluation."
         ),
         "command": "python -m scripts.run_bagging_bci_synthetic",
         "primary_artifact": "metrics/bagging_synthetic_bci.csv",
@@ -134,11 +186,11 @@ RESULT_DEFINITIONS = (
             "mean_member_disagreement",
         ],
         "artifacts": [
-            ("metrics/bagging_synthetic_bci.csv", "Synthetic bagging metrics"),
-            ("figures/bagging_synthetic_accuracy.png", "Single-versus-bagged accuracy"),
+            ("metrics/bagging_synthetic_bci.csv", "Synthetic smoke-test metrics"),
+            ("figures/bagging_synthetic_accuracy.png", "Synthetic accuracy check"),
             (
                 "figures/bagging_synthetic_disagreement.png",
-                "Bagging ensemble disagreement",
+                "Synthetic ensemble disagreement check",
             ),
         ],
     },
