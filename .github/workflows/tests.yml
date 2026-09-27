@@ -20,3 +20,16 @@ jobs:
           python -m pip install -r requirements-test.txt
       - name: Run test suite
         run: python -m pytest -q
+      - name: Generate synthetic bagging results
+        run: |
+          python -m scripts.run_bagging_bci_synthetic
+          echo "---- bagging_synthetic_bci.csv ----"
+          cat outputs/metrics/bagging_synthetic_bci.csv
+      - name: Upload synthetic bagging results
+        uses: actions/upload-artifact@v4
+        with:
+          name: bagging-synthetic-bci-results
+          path: |
+            outputs/metrics/bagging_synthetic_bci.csv
+            outputs/figures/bagging_synthetic_accuracy.png
+            outputs/figures/bagging_synthetic_disagreement.png
