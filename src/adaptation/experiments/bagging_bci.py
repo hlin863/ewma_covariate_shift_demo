@@ -11,10 +11,13 @@ Dataset 2A:
     left/right evaluation trials using the official AxxE.mat labels.
 
 Dataset 2B:
-    Sessions I-II supply training trials. Session III is retained as the
-    paper's hyperparameter/calibration session and is reported but is not used
-    to fit either fixed-configuration classifier. Sessions IV-V supply the
-    320 evaluation trials using released Bxx04E.mat/Bxx05E.mat labels.
+    The default GDF-only benchmark uses Sessions I-II for training and the
+    labelled Session III GDF for evaluation. This keeps the experiment runnable
+    with the Dataset 2B files already supported by the repository.
+
+    If an explicit labels_directory is supplied, the optional paper-evaluation
+    mode instead retains Session III as calibration and evaluates Sessions IV-V
+    using released Bxx04E.mat/Bxx05E.mat labels.
 
 The comparison is classifier-focused: one LinearSVMClassifier versus a
 BaggingClassifier wrapping the same linear SVM. It does not reproduce IWLDA
@@ -231,7 +234,17 @@ def run_dataset_2b_bagging(
     n_estimators: int = 30,
     sample_fraction: float = 0.8,
 ) -> list[dict[str, object]]:
-    """Evaluate single versus bagged SVM on one real Dataset 2B subject."""
+    """Evaluate single versus bagged SVM on one real Dataset 2B subject.
+
+    With no labels_directory, the experiment is deliberately GDF-only:
+    Sessions I-II train the feature extractor/classifiers and labelled Session
+    III is the held-out evaluation set. This is a real-data bagging benchmark,
+    not a reproduction of the paper's Session IV-V classification table.
+
+    Supplying labels_directory opts into the paper-style evaluation split:
+    Sessions I-II train, Session III is retained as calibration, and Sessions
+    IV-V are evaluated using the separately released official labels.
+    """
 
     sessions = {
         index: extract_dataset_2b_trials(
@@ -239,6 +252,30 @@ def run_dataset_2b_bagging(
         )
         for index in (1, 2, 3)
     }
+    training = concatenate_trial_signals([sessions[1], sessions[2]])
+
+    if labels_directory is None:
+        testing = sessions[3]
+        if np.any(testing.labels < 0):
+            raise ValueError(
+                f"B{subject:02d}: Session III must contain labelled 769/770 "
+                "motor-imagery cues for the GDF-only bagging benchmark."
+            )
+        pipeline = build_dataset_2b_fbcsp_features(training, testing)
+        return _evaluate_models(
+            dataset="2B",
+            subject=f"B{subject:02d}",
+            evaluation_scope="Session III (GDF-only holdout)",
+            training_features=pipeline.training.features,
+            training_labels=training.labels,
+            testing_features=pipeline.testing.features,
+            testing_labels=testing.labels,
+            calibration_trials=0,
+            random_state=random_state,
+            n_estimators=n_estimators,
+            sample_fraction=sample_fraction,
+        )
+
     evaluation_iv = _label_dataset_2b_evaluation_trials(
         data_directory=data_directory,
         labels_directory=labels_directory,
@@ -251,9 +288,6 @@ def run_dataset_2b_bagging(
         subject=subject,
         session=5,
     )
-
-    training = concatenate_trial_signals([sessions[1], sessions[2]])
-    calibration = sessions[3]
     testing = concatenate_trial_signals([evaluation_iv, evaluation_v])
     pipeline = build_dataset_2b_fbcsp_features(training, testing)
 
@@ -266,12 +300,12 @@ def run_dataset_2b_bagging(
     return _evaluate_models(
         dataset="2B",
         subject=f"B{subject:02d}",
-        evaluation_scope="Sessions IV-V",
+        evaluation_scope="Sessions IV-V (official labels)",
         training_features=pipeline.training.features,
         training_labels=training.labels,
         testing_features=pipeline.testing.features,
         testing_labels=testing.labels,
-        calibration_trials=len(calibration.labels),
+        calibration_trials=len(sessions[3].labels),
         random_state=random_state,
         n_estimators=n_estimators,
         sample_fraction=sample_fraction,
