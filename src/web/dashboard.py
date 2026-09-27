@@ -100,6 +100,49 @@ RESULT_DEFINITIONS = (
         ],
     },
     {
+        "id": "bagging-synthetic-bci",
+        "title": "Bagging integration on synthetic 2A/2B",
+        "domain": "bci",
+        "domain_label": "Adaptive ensemble experiment",
+        "datasets": [
+            "Deterministic Dataset 2A-like stream",
+            "Deterministic Dataset 2B-like stream",
+        ],
+        "methods": [
+            "FBCSP",
+            "Linear SVM",
+            "Bootstrap aggregation",
+            "Majority vote",
+        ],
+        "purpose": (
+            "Integration test for the generic BaggingClassifier on the same "
+            "deterministic 2A/2B-style signal pipelines used by repository tests. "
+            "Compares a single linear SVM with 30-member bagging and reports "
+            "accuracy, runtime and ensemble disagreement."
+        ),
+        "command": "python -m scripts.run_bagging_bci_synthetic",
+        "primary_artifact": "metrics/bagging_synthetic_bci.csv",
+        "preview_columns": [
+            "dataset",
+            "method",
+            "training_trials",
+            "testing_trials",
+            "accuracy",
+            "fit_seconds",
+            "fitted_estimators",
+            "sample_fraction",
+            "mean_member_disagreement",
+        ],
+        "artifacts": [
+            ("metrics/bagging_synthetic_bci.csv", "Synthetic bagging metrics"),
+            ("figures/bagging_synthetic_accuracy.png", "Single-versus-bagged accuracy"),
+            (
+                "figures/bagging_synthetic_disagreement.png",
+                "Bagging ensemble disagreement",
+            ),
+        ],
+    },
+    {
         "id": "lambda-sweep",
         "title": "Synthetic CSE lambda analysis",
         "domain": "synthetic",
