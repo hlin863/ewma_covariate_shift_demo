@@ -11,6 +11,7 @@ from flask import Flask, abort, render_template, request, send_from_directory
 
 from src.bci.datasets.chowdhury.data import load_patient_demographics
 from src.web.chowdhury import build_chowdhury_cohort_view
+from src.web.data_processing import build_data_processing_view
 from src.web.figure1 import build_dataset_2a_figure1, serialise_figure1
 from src.web.home import build_home_page_model
 
@@ -1009,6 +1010,15 @@ def results_catalog():
         experiment_count=len(result_groups),
         available_artifacts=available_artifacts,
         total_artifacts=total_artifacts,
+    )
+
+
+@app.get("/data-processing")
+def data_processing_page():
+    """Show paper-specific session roles and the supplied processing evidence."""
+    return render_template(
+        "data_processing.html",
+        **build_data_processing_view(Path(app.config["RESULTS_ROOT"])),
     )
 
 

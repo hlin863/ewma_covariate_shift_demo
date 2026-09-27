@@ -1,0 +1,27 @@
+{
+  "provenance": "User-provided PowerShell run transcript, 27 September 2026; illustrative until a local output CSV is generated.",
+  "split_b01": {
+    "sessions": [120, 120, 160, 160, 160],
+    "development_training": 280,
+    "validation": 120,
+    "evaluation": 320,
+    "features": 20
+  },
+  "diagnostic_b01": {
+    "published_csw": 14,
+    "computed_csw": 17,
+    "published_csv": 10,
+    "computed_csv": 5,
+    "mode": "algorithm1_training_reference"
+  },
+  "bagging_accuracy": {
+    "2A": {
+      "single": [0.895833, 0.631944, 0.909722, 0.638889, 0.645833, 0.701389, 0.680556, 0.923611, 0.8125],
+      "bagged": [0.902778, 0.645833, 0.916667, 0.631944, 0.618056, 0.701389, 0.6875, 0.916667, 0.805556]
+    },
+    "2B": {
+      "single": [0.775, 0.58125, 0.55, 0.98125, 0.83125, 0.7125, 0.825, 0.7375, 0.74375],
+      "bagged": [0.75625, 0.5875, 0.55625, 0.98125, 0.84375, 0.7375, 0.8375, 0.71875, 0.76875]
+    }
+  }
+}

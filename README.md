@@ -165,6 +165,8 @@ The three source papers behind the 2015, 2018 and 2019 lineage panels are stored
 
 Open `/results` in the same Flask app to inspect the broader generated-result catalogue. That page groups the BCI Table 1 reproduction, Dataset 2B diagnostics, Dataset 2B control-limit sensitivity, synthetic lambda sensitivity and Raza 2015 D2/Table III outputs, including live CSV previews, tracked result fields and generated figure thumbnails when the corresponding files exist under `outputs/`.
 
+Open `/data-processing` for the protocol atlas. It shows the 2019 Dataset 2A/2B development roles, the separate GDF-only bagging holdout, the 2016 published split, and a paper-to-implementation map. The B01 session counts and baseline results in `data/reference/bci_processing_2026-09-27.json` are a labelled summary of a user-provided run transcript. When available, `outputs/metrics/bagging_bci_real.csv` supplies the classifier chart and `outputs/metrics/bci_2b_table1_results.csv` supplies B01 diagnostic counts. The split illustration retains its transcript provenance; the page does not infer a new split from those result files.
+
 ## Stage-II validation modes
 
 `CSEConfig.validation_mode` supports three explicitly separated interpretations:
