@@ -13,9 +13,11 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from src.bci_2b_diagnostics import run_dataset_2b_diagnostic
 from src.bci_2b_experiment import (
-    build_dataset_2b_fbcsp_features,
-    concatenate_trial_signals,
     extract_dataset_2b_trials,
+)
+from src.bci.datasets.dataset2b import (
+    build_dataset_2b_development_fbcsp_features,
+    prepare_cse_uael_2019_protocol,
 )
 from src.bci_data import load_bci_competition_iv_2b_session
 
@@ -55,6 +57,8 @@ def _parse_args():
     parser.add_argument("--alpha", type=float, default=0.05)
     parser.add_argument("--variance-smoothing", type=float, default=0.05)
     parser.add_argument("--components-per-side", type=int, default=1)
+    parser.add_argument("--validation-fraction", type=float, default=0.30)
+    parser.add_argument("--split-seed", type=int, default=42)
     parser.add_argument(
         "--output-file",
         type=Path,
@@ -63,26 +67,26 @@ def _parse_args():
     return parser.parse_args()
 
 
-def _load_features(data_directory: Path, subject: int, components_per_side: int):
-    sessions = {}
+def _load_features(data_directory: Path, subject: int, components_per_side: int,
+                   validation_fraction: float = 0.30, split_seed: int = 42):
+    sessions = []
     for session_number in range(1, 6):
         session = load_bci_competition_iv_2b_session(
             data_directory=data_directory,
             subject=subject,
             session=session_number,
         )
-        sessions[session_number] = extract_dataset_2b_trials(session)
+        sessions.append(extract_dataset_2b_trials(session))
 
-    training_trials = concatenate_trial_signals(
-        [sessions[1], sessions[2], sessions[3]]
+    protocol = prepare_cse_uael_2019_protocol(
+        sessions, validation_fraction=validation_fraction, random_state=split_seed,
     )
-    testing_trials = concatenate_trial_signals([sessions[4], sessions[5]])
-    pipeline = build_dataset_2b_fbcsp_features(
-        training_trials,
-        testing_trials,
+    pipeline = build_dataset_2b_development_fbcsp_features(
+        protocol.development,
+        protocol.evaluation,
         components_per_side=components_per_side,
     )
-    return pipeline.training, pipeline.testing
+    return pipeline.training, pipeline.evaluation
 
 
 def main() -> None:
@@ -96,6 +100,8 @@ def main() -> None:
             args.data_directory,
             subject,
             args.components_per_side,
+            args.validation_fraction,
+            args.split_seed,
         )
         print(
             f"B{subject:02d}: loaded train={training.features.shape}, "
