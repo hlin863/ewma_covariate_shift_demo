@@ -5,8 +5,7 @@ changed; adaptation policies decide whether that evidence should cause a model
 update; classifier wrappers implement the update itself.
 """
 
-from src.adaptation.classifier import Classifier, LinearSVMClassifier, RetrainableClassifier
-from src.adaptation.ensemble import BaggingClassifier
+from src.adaptation.classifier import LinearSVMClassifier
 from src.adaptation.policies import (
     AdaptationContext,
     AdaptationPolicy,
@@ -24,14 +23,11 @@ from src.adaptation.supervised import (
 __all__ = [
     "AdaptationContext",
     "AdaptationPolicy",
-    "BaggingClassifier",
-    "Classifier",
     "LinearSVMClassifier",
     "NeverUpdate",
     "PeriodicRetrain",
     "RetrainOnValidatedShift",
     "RetrainOnWarning",
-    "RetrainableClassifier",
     "SupervisedAdaptationConfig",
     "SupervisedAdaptationResult",
     "run_supervised_adaptation",
