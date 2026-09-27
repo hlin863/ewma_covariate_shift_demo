@@ -9,6 +9,15 @@ def build_home_page_model() -> dict[str, object]:
     return {
         "pages": (
             {
+                "endpoint": "data_processing_page",
+                "label": "Data processing atlas",
+                "kind": "Protocols and paper evidence",
+                "description": (
+                    "Trace the 2B development split and FBCSP boundary, compare "
+                    "classifier runs, and map completed work to the source papers."
+                ),
+            },
+            {
                 "endpoint": "complementary_results",
                 "label": "Complementary monitoring",
                 "kind": "BCI experiment",

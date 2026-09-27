@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Data processing &amp; paper map · EWMA Covariate Shift Demo</title>
+  <script>
+    (function () {
+      const saved = localStorage.getItem("dashboard-theme");
+      document.documentElement.dataset.theme = saved || (window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
+    })();
+  </script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='data_processing.css') }}">
+</head>
+<body>
+  <main class="page-shell processing-shell">
+    <nav class="processing-nav" aria-label="Page navigation">
+      <a href="{{ url_for('home') }}">← Research hub</a>
+      <div><a href="{{ url_for('results_catalog') }}">Results</a><a href="{{ url_for('dashboard') }}">Table 1</a></div>
+      <div class="theme-switcher" role="group" aria-label="Colour theme">
+        <button class="theme-button" type="button" data-theme-option="light">Light</button>
+        <button class="theme-button" type="button" data-theme-option="dark">Dark</button>
+      </div>
+    </nav>
+
+    <header class="processing-hero">
+      <div>
+        <p class="eyebrow">Methods atlas / 01</p>
+        <h1>One EEG stream.<br><em>Different experimental roles.</em></h1>
+        <p>The session split decides what can fit a model, what may tune parameters, and what must remain evaluation data. Follow the implemented path, then inspect what the papers support.</p>
+      </div>
+      <aside class="hero-proof">
+        <span>Observed run · B01</span>
+        <strong>{{ split.sessions[:3]|sum }} <small>development pool</small></strong>
+        <div class="proof-mini"><b>{{ split.development_training }}</b> fit <span>·</span> <b>{{ split.validation }}</b> validate <span>·</span> <b>{{ split.evaluation }}</b> evaluate</div>
+        <small>{{ split_source }}</small>
+      </aside>
+    </header>
+
+    <section class="atlas-section" id="protocols">
+      <div class="section-heading"><span class="chapter">01 / Protocols</span><div><h2>Same recordings, distinct questions</h2><p>Select a protocol to see why its session roles differ.</p></div></div>
+      <div class="protocol-tabs" role="tablist" aria-label="Experiment protocol">
+        <button id="tab-cse" type="button" role="tab" aria-controls="panel-cse" aria-selected="true" data-protocol="cse">2019 CSE-UAEL reconstruction</button>
+        <button id="tab-2a" type="button" role="tab" aria-controls="panel-2a" aria-selected="false" data-protocol="2a">Dataset 2A development</button>
+        <button id="tab-bagging" type="button" role="tab" aria-controls="panel-bagging" aria-selected="false" data-protocol="bagging">Current bagging benchmark</button>
+        <button id="tab-2016" type="button" role="tab" aria-controls="panel-2016" aria-selected="false" data-protocol="2016">2016 adaptive-learning paper</button>
+      </div>
+
+      <div class="protocol-panel" id="panel-cse" role="tabpanel" aria-labelledby="tab-cse">
+        <div class="panel-heading"><div><span class="label">BCI Competition IV · 2B · B01</span><h3>Three sessions form the development pool</h3></div><span class="source-pill">Raza et al. 2019 · §4.1.2 and §4.3</span></div>
+        <div class="session-strip" aria-label="B01 session trial counts and roles">
+          {% for count in split.sessions %}<div class="session-cell {{ 'pool' if loop.index <= 3 else 'held' }}"><span>Session {{ ['I','II','III','IV','V'][loop.index0] }}</span><strong>{{ count }}</strong><small>{{ 'development pool' if loop.index <= 3 else 'evaluation' }}</small></div>{% endfor %}
+        </div>
+        <div class="split-path"><div class="pool-path"><span>Sessions I–III · {{ split.sessions[:3]|sum }} trials</span><div class="split-bar"><div class="fit-segment" style="width:{{ 100 * split.development_training / (split.development_training + split.validation) }}%">{{ split.development_training }} fit · 70%</div><div class="validation-segment">{{ split.validation }} validation · 30%</div></div></div><div class="evaluation-path"><span>Sessions IV–V</span><strong>{{ split.evaluation }} held out</strong></div></div>
+        <p class="method-note">The split is stratified with a recorded seed. FBCSP fits only on the 70% training subset; the fitted filters transform validation and evaluation. Validation features are available, but the current CSE runners still override λ with its published value and do not select λ, L, K or T from this subset.</p>
+      </div>
+      <div class="protocol-panel" id="panel-2a" role="tabpanel" aria-labelledby="tab-2a" hidden>
+        <div class="panel-heading"><div><span class="label">BCI Competition IV · 2A</span><h3>Split Session I before fitting</h3></div><span class="source-pill">Raza et al. 2019 · §4.1.1 and §4.3</span></div>
+        <div class="role-cards"><article><span>Session I · left/right</span><strong>≈70%</strong><small>Development training; FBCSP fit</small></article><article><span>Session I · left/right</span><strong>≈30%</strong><small>Validation; transformed only</small></article><article><span>Session II · left/right</span><strong>Held out</strong><small>Evaluation; transformed only</small></article></div>
+        <p class="method-note">The stratified splitter acts inside Session I and preserves each selected trial. The separate bagging accuracy run shown below fits on all 144 retained Session-I left/right trials and evaluates on 144 Session-II trials; it is a classifier benchmark rather than this CSE development configuration.</p>
+      </div>
+      <div class="protocol-panel" id="panel-bagging" role="tabpanel" aria-labelledby="tab-bagging" hidden>
+        <div class="panel-heading"><div><span class="label">Repository classifier comparison · 2B · B01</span><h3>Session III is the labelled holdout</h3></div><span class="source-pill">Implemented benchmark; distinct from the paper protocol</span></div>
+        <div class="role-cards"><article><span>I–II</span><strong>240</strong><small>FBCSP and classifier fitting</small></article><article><span>III</span><strong>160</strong><small>Labelled GDF-only evaluation</small></article><article><span>IV–V</span><strong>Unused</strong><small>Unless released MAT labels are supplied</small></article></div>
+        <p class="method-note">The attached run compares a single linear SVM with a 30-member bagged SVM. No Stage-II confirmation triggers ensemble growth here. With official IV–V labels, the optional route treats III as calibration and evaluates IV–V.</p>
+      </div>
+      <div class="protocol-panel" id="panel-2016" role="tabpanel" aria-labelledby="tab-2016" hidden>
+        <div class="panel-heading"><div><span class="label">Published design · Dataset 2B</span><h3>Session III selects hyperparameters</h3></div><a class="source-pill" href="https://doi.org/10.1007/s00500-015-1937-5" target="_blank" rel="noopener">Raza et al. 2016 · §3.1.2 and §3.4 ↗</a></div>
+        <div class="role-cards"><article><span>I–II</span><strong>240</strong><small>Classifier training</small></article><article><span>III</span><strong>160</strong><small>Hyperparameter selection</small></article><article><span>IV–V</span><strong>320</strong><small>Evaluation</small></article></div>
+        <p class="method-note">This paper uses a different feature and adaptation configuration from the 2019 ten-band CSE Table 1 reconstruction. The current bagging benchmark reuses I–II for fitting but evaluates on III; matching the first two session counts does not make it a reproduction of the 2016 experiment.</p>
+      </div>
+    </section>
+
+    <section class="atlas-section" id="processing">
+      <div class="section-heading"><span class="chapter">02 / Processing</span><div><h2>What a retained trial becomes</h2><p>Each fitting boundary is explicit in the repository.</p></div></div>
+      <ol class="processing-steps">
+        <li><span>01</span><div><h3>Cue-aligned EEG</h3><p>B01: C3, Cz and C4; a 3-second segment after each cue.</p></div></li>
+        <li><span>02</span><div><h3>Temporal filter bank</h3><p>Ten overlapping 8–30 Hz bands, eighth-order zero-phase Butterworth filtering.</p></div></li>
+        <li><span>03</span><div><h3>Spatial features</h3><p>CSP extreme components and log-normalised variance; {{ split.features }} features with one component per side.</p></div></li>
+        <li><span>04</span><div><h3>Detection path</h3><p>PCA → PC1 EWMA warning → multivariate Stage-II validation. Fit and evaluation are kept separate.</p></div></li>
+        <li><span>05</span><div><h3>Classifier path</h3><p>Single or bagged linear SVM on FBCSP features, currently a separate benchmark from CSE-triggered adaptation.</p></div></li>
+      </ol>
+    </section>
+
+    <section class="atlas-section" id="observed">
+      <div class="section-heading"><span class="chapter">03 / Observed</span><div><h2>Numbers from the run</h2><p>Computed values are kept beside published targets and their run provenance.</p></div></div>
+      <div class="observed-grid">
+        <article class="observation-card"><span class="label">B01 · CSE diagnostic</span><h3>Warnings and confirmations</h3><div class="count-pair"><div><small>CSW</small><strong>{{ diagnostic.computed_csw }}</strong><span>computed / {{ diagnostic.published_csw }} published</span></div><div><small>CSV</small><strong>{{ diagnostic.computed_csv }}</strong><span>computed / {{ diagnostic.published_csv }} published</span></div></div><p>Mode: <code>{{ diagnostic.mode }}</code>. Counts here are from the dedicated 2B diagnostic, not the two-sample Table 1 runner.</p><small>{{ diagnostic_source }}</small></article>
+        <article class="observation-card"><span class="label">Classifier comparison</span><h3>Mean accuracy by dataset</h3>{% for dataset, mean in accuracy_means.items() %}<div class="mean-row"><strong>{{ dataset }} · {{ mean.subjects }} subjects</strong><span>Single {{ '%.2f'|format(mean.single * 100) }}%</span><span>Bagged {{ '%.2f'|format(mean.bagged * 100) }}%</span></div>{% endfor %}<p>These are classification results from the displayed run, not CSE-UAEL adaptation results.</p><small>{{ accuracy_source }}</small></article>
+      </div>
+      <div class="accuracy-section"><div class="chart-heading"><div><h3>Subject-level accuracy</h3><p>Dots compare the single SVM and bagged SVM on the same holdout for each subject.</p></div><div class="dataset-switch" role="group" aria-label="Accuracy dataset"><button type="button" data-dataset="2A" aria-pressed="true">2A</button><button type="button" data-dataset="2B" aria-pressed="false">2B</button></div></div>
+        {% if accuracy_error %}<p class="data-error">{{ accuracy_error }}</p>{% endif %}
+        <div class="chart-legend"><span><i class="single-dot"></i> Single linear SVM</span><span><i class="bagged-dot"></i> Bagged linear SVM</span></div>
+        <div class="accuracy-chart">{% for row in accuracy_rows %}<div class="accuracy-line" data-accuracy-dataset="{{ row.dataset }}" {% if row.dataset != '2A' %}hidden{% endif %}><b>{{ row.subject }}</b><div class="accuracy-track" aria-label="{{ row.subject }}: single {{ '%.1f'|format(row.single * 100) }} percent, bagged {{ '%.1f'|format(row.bagged * 100) }} percent; {{ row.scope }}"><span class="track-fill" style="width:{{ row.single * 100 }}%"></span><span class="single-dot" style="left:{{ row.single * 100 }}%"></span><span class="bagged-dot" style="left:{{ row.bagged * 100 }}%"></span></div><span>{{ '%+.1f'|format((row.bagged - row.single) * 100) }} pp</span></div>{% endfor %}</div>
+        <div class="axis"><span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span></div>
+        {% for dataset, scopes in accuracy_scopes.items() %}<p class="scope-line" data-scope-dataset="{{ dataset }}" {% if dataset != '2A' %}hidden{% endif %}>Evaluation: {{ scopes|join(', ') }}</p>{% endfor %}
+        <small class="provenance">{{ accuracy_source }}</small>
+      </div>
+    </section>
+
+    <section class="atlas-section" id="paper-map">
+      <div class="section-heading"><span class="chapter">04 / Paper map</span><div><h2>What the implementation now establishes</h2><p>Each completed task is linked to a source and its exact implementation boundary.</p></div></div>
+      <div class="paper-map">
+        <article><span>01 · Data roles</span><h3>2A and 2B development partitions</h3><p><a href="{{ url_for('paper_file', filename='2019-raza-cse-uael.pdf') }}" target="_blank" rel="noopener">Raza et al. (2019), §§4.1–4.3 ↗</a> defines dataset-specific sessions and the subsequent 70/30 training/validation partition.</p><small>Implemented: <a href="https://github.com/hlin863/ewma_covariate_shift_demo/blob/main/src/bci/datasets/dataset2a/experiment.py" target="_blank" rel="noopener"><code>2A split ↗</code></a>, <a href="https://github.com/hlin863/ewma_covariate_shift_demo/blob/main/src/bci/datasets/dataset2b/development_split.py" target="_blank" rel="noopener"><code>2B protocol ↗</code></a> and shared <a href="https://github.com/hlin863/ewma_covariate_shift_demo/blob/main/src/bci/splitting.py" target="_blank" rel="noopener"><code>splitting.py ↗</code></a>. Exact random membership was not reported in the paper.</small></article>
+        <article><span>02 · Signal representation</span><h3>Ten-band FBCSP and PCA</h3><p><a href="{{ url_for('paper_file', filename='2019-raza-cse-uael.pdf') }}" target="_blank" rel="noopener">Raza et al. (2019), §§4.2–4.3 ↗</a> describes the filter bank, CSP variance features and PCA before CSE.</p><small>Implemented: <a href="https://github.com/hlin863/ewma_covariate_shift_demo/blob/main/src/bci/fbcsp.py" target="_blank" rel="noopener"><code>bci/fbcsp.py ↗</code></a> and <a href="https://github.com/hlin863/ewma_covariate_shift_demo/blob/main/src/bci/datasets/dataset2b/development_pipeline.py" target="_blank" rel="noopener"><code>development_pipeline.py ↗</code></a>; validation and evaluation are transformed by training-fitted filters.</small></article>
+        <article><span>03 · Detector</span><h3>Warning before validation</h3><p><a href="{{ url_for('paper_file', filename='2015-raza-ewma-covariate-shift.pdf') }}" target="_blank" rel="noopener">Raza et al. (2015) ↗</a> motivates EWMA shift detection; <a href="{{ url_for('paper_file', filename='2019-raza-cse-uael.pdf') }}" target="_blank" rel="noopener">Raza et al. (2019), Algorithm 1 ↗</a> connects Stage-I warnings to Stage-II confirmation.</p><small>Implemented: <a href="https://github.com/hlin863/ewma_covariate_shift_demo/tree/main/src/detection" target="_blank" rel="noopener"><code>detection/ ↗</code></a> and subject diagnostics. The supplied B01 run differs from the published Table 1 target under that configuration.</small></article>
+        <article><span>04 · Alternate protocol</span><h3>The 2016 split is a separate experiment</h3><p><a href="https://doi.org/10.1007/s00500-015-1937-5" target="_blank" rel="noopener">Raza et al. (2016), §§3.1.2 and 3.4 ↗</a> uses I–II to train, III to choose hyperparameters and IV–V to evaluate.</p><small>Conceptually distinguished. The current GDF-only bagging benchmark evaluates on III, so it does not implement that published selection/evaluation sequence.</small></article>
+        <article><span>05 · Classifier comparison</span><h3>Single versus bagged SVM</h3><p><a href="{{ url_for('paper_file', filename='2018-chowdhury-online-adaptive-bci.pdf') }}" target="_blank" rel="noopener">Chowdhury et al. (2018) ↗</a> supplies online linear-SVM adaptation context; <a href="{{ url_for('paper_file', filename='2019-raza-cse-uael.pdf') }}" target="_blank" rel="noopener">Raza et al. (2019) ↗</a> motivates adaptive ensembles.</p><small>Implemented as a separate <a href="https://github.com/hlin863/ewma_covariate_shift_demo/blob/main/src/adaptation/experiments/bagging_bci.py" target="_blank" rel="noopener"><code>fixed classifier benchmark ↗</code></a>. PWKNN pseudo-labels, confirmation-triggered dynamic ensemble growth and the full online feedback system remain outside this result.</small></article>
+      </div>
+    </section>
+    <footer class="processing-footer"><a href="{{ url_for('results_catalog') }}">Explore generated artifacts →</a><span>Run data and paper methods are labelled separately throughout this page.</span></footer>
+  </main>
+  <script>
+    (function () {
+      const themeButtons = document.querySelectorAll('[data-theme-option]');
+      function setTheme(theme) { document.documentElement.dataset.theme = theme; localStorage.setItem('dashboard-theme', theme); themeButtons.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.themeOption === theme))); }
+      themeButtons.forEach(b => b.addEventListener('click', () => setTheme(b.dataset.themeOption)));
+      setTheme(document.documentElement.dataset.theme);
+      const tabs = [...document.querySelectorAll('[data-protocol]')];
+      function showProtocol(name) { tabs.forEach(b => { const on = b.dataset.protocol === name; b.setAttribute('aria-selected', String(on)); document.getElementById('panel-' + b.dataset.protocol).hidden = !on; }); }
+      tabs.forEach(b => b.addEventListener('click', () => showProtocol(b.dataset.protocol)));
+      const datasetButtons = [...document.querySelectorAll('[data-dataset]')];
+      function showDataset(name) { datasetButtons.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.dataset === name))); document.querySelectorAll('[data-accuracy-dataset]').forEach(row => { row.hidden = row.dataset.accuracyDataset !== name; }); document.querySelectorAll('[data-scope-dataset]').forEach(line => { line.hidden = line.dataset.scopeDataset !== name; }); }
+      datasetButtons.forEach(b => b.addEventListener('click', () => showDataset(b.dataset.dataset)));
+    })();
+  </script>
+</body>
+</html>
