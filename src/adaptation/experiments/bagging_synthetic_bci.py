@@ -140,7 +140,9 @@ def _evaluate_models(
             "method": "single_linear_svm",
             "training_trials": int(training_features.shape[0]),
             "testing_trials": int(testing_features.shape[0]),
-            "correct_predictions": int(np.count_nonzero(single_predictions == testing_labels)),
+            "correct_predictions": int(
+                np.count_nonzero(single_predictions == testing_labels)
+            ),
             "accuracy": float(np.mean(single_predictions == testing_labels)),
             "fit_seconds": float(fit_seconds),
             "predict_seconds": float(predict_seconds),
@@ -180,7 +182,9 @@ def _evaluate_models(
             "method": "bagged_linear_svm",
             "training_trials": int(training_features.shape[0]),
             "testing_trials": int(testing_features.shape[0]),
-            "correct_predictions": int(np.count_nonzero(ensemble_predictions == testing_labels)),
+            "correct_predictions": int(
+                np.count_nonzero(ensemble_predictions == testing_labels)
+            ),
             "accuracy": float(np.mean(ensemble_predictions == testing_labels)),
             "fit_seconds": float(fit_seconds),
             "predict_seconds": float(predict_seconds),
@@ -202,9 +206,7 @@ def run_bagging_synthetic_bci_experiment(
 ) -> pd.DataFrame:
     """Run bagging against the repository's deterministic 2A/2B-like streams."""
 
-    training_2a = extract_dataset_2a_trials(
-        _dataset_2a_session("T", n_trials=48)
-    )
+    training_2a = extract_dataset_2a_trials(_dataset_2a_session("T", n_trials=48))
     testing_2a = extract_dataset_2a_trials(
         _dataset_2a_session("E", n_trials=288),
         evaluation_labels=_dataset_2a_evaluation_labels(),
