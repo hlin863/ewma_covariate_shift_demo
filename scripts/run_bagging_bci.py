@@ -1,7 +1,9 @@
 """Run bagging on real BCI Competition IV Dataset 2A/2B files.
 
-Run from the repository root after downloading the GDF recordings and official
-evaluation-label MAT files:
+Run from the repository root with the existing GDF recordings. Dataset 2B
+defaults to a GDF-only real-data benchmark: Sessions I-II train and Session III
+is the labelled holdout. Optional official Session IV-V MAT labels can still be
+supplied with --labels-2b for the paper-style evaluation split:
 
     python -m scripts.run_bagging_bci
 
@@ -118,7 +120,7 @@ def run_and_write(
     metrics_dir.mkdir(parents=True, exist_ok=True)
     figures_dir.mkdir(parents=True, exist_ok=True)
 
-    labels_2b_path = Path(labels_2b) if labels_2b is not None else Path(data_2b)
+    labels_2b_path = Path(labels_2b) if labels_2b is not None else None
 
     frame = run_bagging_bci_experiment(
         data_2a=data_2a,
@@ -172,8 +174,9 @@ def _build_parser() -> argparse.ArgumentParser:
         type=Path,
         default=None,
         help=(
-            "Directory containing Bxx04E.mat/Bxx05E.mat official labels. "
-            "Defaults to --data-2b."
+            "Optional directory containing Bxx04E.mat/Bxx05E.mat official "
+            "labels. Omit this option to use the existing GDF-only benchmark "
+            "(Sessions I-II train, Session III evaluate)."
         ),
     )
     parser.add_argument(
