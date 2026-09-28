@@ -7,80 +7,127 @@ def build_home_page_model() -> dict[str, object]:
     """Return the research narrative, implementation status and page catalogue."""
 
     return {
-        "pages": (
-            {
-                "endpoint": "data_processing_page",
-                "label": "Data processing atlas",
-                "kind": "Protocols and paper evidence",
-                "description": (
-                    "Trace the 2B development split and FBCSP boundary, compare "
-                    "classifier runs, and map completed work to the source papers."
+        "application_map": {
+            "root": {
+                "title": "CSE research application",
+                "detail": (
+                    "The home page is the navigation root. Evidence flows from "
+                    "dataset/protocol inspection into experiment analysis and then "
+                    "into generated results and implementation verification."
                 ),
             },
-            {
-                "endpoint": "complementary_results",
-                "label": "Complementary monitoring",
-                "kind": "BCI experiment",
-                "description": (
-                    "Explore PCA score and reconstruction-residual warnings "
-                    "for BCI Competition IV 2A and 2B."
-                ),
-            },
-            {
-                "endpoint": "dashboard",
-                "label": "Table 1 dashboard",
-                "kind": "Primary reproduction",
-                "description": (
-                    "Compare published and computed CSW/CSV counts for BCI "
-                    "Competition IV Datasets 2A and 2B."
-                ),
-            },
-            {
-                "endpoint": "results_catalog",
-                "label": "Research results",
-                "kind": "Evidence catalogue",
-                "description": (
-                    "Inspect generated tables, detector diagnostics, sensitivity "
-                    "studies and synthetic reproductions."
-                ),
-            },
-            {
-                "endpoint": "figure_1",
-                "label": "Figure 1 · A07",
-                "kind": "Signal visualisation",
-                "description": (
-                    "Follow Dataset 2A subject A07 from cue-aligned trials through "
-                    "FBCSP features and the training/evaluation shift view."
-                ),
-            },
-            {
-                "endpoint": "chowdhury_demographics",
-                "label": "Chowdhury cohort",
-                "kind": "Clinical extension",
-                "description": (
-                    "Explore connected stroke-cohort metadata with distributions "
-                    "and participant-level Cleveland dot plots."
-                ),
-            },
-            {
+            "layers": (
+                {
+                    "number": "01",
+                    "title": "Data and protocol foundation",
+                    "detail": (
+                        "Inspect source datasets, processing boundaries and cohort "
+                        "context before interpreting detector or classifier outputs."
+                    ),
+                    "relationship": "feeds experiments",
+                    "pages": (
+                        {
+                            "endpoint": "data_processing_page",
+                            "label": "Data processing atlas",
+                            "kind": "Protocols and paper evidence",
+                            "description": (
+                                "Trace development splits, FBCSP boundaries and "
+                                "paper-to-implementation decisions."
+                            ),
+                        },
+                        {
+                            "endpoint": "figure_1",
+                            "label": "Figure 1 · A07",
+                            "kind": "Signal visualisation",
+                            "description": (
+                                "Follow Dataset 2A subject A07 from cue-aligned "
+                                "trials through FBCSP and the shift view."
+                            ),
+                        },
+                        {
+                            "endpoint": "chowdhury_demographics",
+                            "label": "Chowdhury cohort",
+                            "kind": "Clinical extension",
+                            "description": (
+                                "Inspect stroke-cohort metadata and participant-level "
+                                "distributions used by the clinical extension."
+                            ),
+                        },
+                    ),
+                },
+                {
+                    "number": "02",
+                    "title": "Detection and experiment analysis",
+                    "detail": (
+                        "Run and inspect the primary reproduction and complementary "
+                        "monitoring experiments built on the data-processing layer."
+                    ),
+                    "relationship": "produces evidence",
+                    "pages": (
+                        {
+                            "endpoint": "dashboard",
+                            "label": "Table 1 dashboard",
+                            "kind": "Primary reproduction",
+                            "description": (
+                                "Compare published and computed CSW/CSV counts for "
+                                "BCI Competition IV Datasets 2A and 2B."
+                            ),
+                        },
+                        {
+                            "endpoint": "complementary_results",
+                            "label": "Complementary monitoring",
+                            "kind": "BCI experiment",
+                            "description": (
+                                "Explore PCA score and reconstruction-residual "
+                                "warnings across BCI Competition IV 2A and 2B."
+                            ),
+                        },
+                    ),
+                },
+                {
+                    "number": "03",
+                    "title": "Evidence and implementation assurance",
+                    "detail": (
+                        "Consolidate generated artifacts and verify that the code "
+                        "contracts supporting those artifacts continue to pass."
+                    ),
+                    "relationship": "supports interpretation",
+                    "pages": (
+                        {
+                            "endpoint": "results_catalog",
+                            "label": "Research results",
+                            "kind": "Evidence catalogue",
+                            "description": (
+                                "Inspect generated tables, detector diagnostics, "
+                                "sensitivity studies and experiment visualisations."
+                            ),
+                        },
+                        {
+                            "endpoint": "test_results.test_results",
+                            "label": "Automated tests",
+                            "kind": "Implementation verification",
+                            "description": (
+                                "Review pytest/JUnit evidence and drill into each "
+                                "test's observed and expected behaviour."
+                            ),
+                        },
+                    ),
+                },
+            ),
+            "support": {
                 "endpoint": "support.support_layer",
                 "label": "Local RAG support layer",
-                "kind": "Repository and dataset assistant",
+                "kind": "Cross-cutting repository assistant",
                 "description": (
-                    "Ask a local Llama 3.2 model about development code, dataset "
-                    "protocols, generated results and the configured research proposal."
+                    "Ask local Llama 3.2 about code, dataset protocols, generated "
+                    "results and proposal scope using retrieved project evidence."
+                ),
+                "boundary": (
+                    "Reads across all application layers for explanation and "
+                    "navigation; it does not alter the CSE scientific pipeline."
                 ),
             },
-            {
-                "endpoint": "test_results.test_results",
-                "label": "Automated tests",
-                "kind": "Implementation verification",
-                "description": (
-                    "Review the current pytest/JUnit evidence and drill into each "
-                    "test's observed and expected behaviour."
-                ),
-            },
-        ),
+        },
         "pipeline": (
             {
                 "number": "01",
