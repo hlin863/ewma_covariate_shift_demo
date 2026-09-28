@@ -115,20 +115,71 @@
       </div>
     </section>
 
-    <section class="home-section" id="pages">
+    <section class="home-section application-section" id="pages">
       <div class="home-section-heading">
-        <div><p class="eyebrow">Application map</p><h2>Choose the evidence you need</h2></div>
-        <p>Each page has one responsibility: reproduce, inspect, visualise, extend or verify.</p>
+        <div>
+          <p class="eyebrow">Application architecture</p>
+          <h2>Follow how evidence moves through the research application</h2>
+        </div>
+        <p>
+          The map separates data foundations, experiment analysis, evidence
+          assurance and the cross-cutting local support layer.
+        </p>
       </div>
-      <div class="page-grid">
-        {% for page in pages %}
-          <a class="page-card" href="{{ url_for(page.endpoint) }}">
-            <span>{{ "%02d"|format(loop.index) }} · {{ page.kind }}</span>
-            <h3>{{ page.label }}</h3>
-            <p>{{ page.description }}</p>
-            <strong>Open page <span aria-hidden="true">↗</span></strong>
+
+      <div class="application-map" aria-label="Hierarchical application architecture">
+        <div class="application-main-flow">
+          <article class="application-root">
+            <span class="map-kicker">Research hub</span>
+            <div>
+              <h3>{{ application_map.root.title }}</h3>
+              <p>{{ application_map.root.detail }}</p>
+            </div>
+          </article>
+
+          {% for layer in application_map.layers %}
+            <div class="map-relationship" aria-hidden="true">
+              <span>{{ layer.relationship }}</span>
+            </div>
+
+            <section class="application-layer" aria-labelledby="application-layer-{{ layer.number }}">
+              <header class="application-layer-heading">
+                <span class="layer-number">{{ layer.number }}</span>
+                <div>
+                  <p class="eyebrow">Application layer</p>
+                  <h3 id="application-layer-{{ layer.number }}">{{ layer.title }}</h3>
+                  <p>{{ layer.detail }}</p>
+                </div>
+              </header>
+
+              <div class="application-layer-pages">
+                {% for page in layer.pages %}
+                  <a class="architecture-card" href="{{ url_for(page.endpoint) }}">
+                    <span>{{ layer.number }}.{{ loop.index }} · {{ page.kind }}</span>
+                    <h4>{{ page.label }}</h4>
+                    <p>{{ page.description }}</p>
+                    <strong>Open page <span aria-hidden="true">↗</span></strong>
+                  </a>
+                {% endfor %}
+              </div>
+            </section>
+          {% endfor %}
+        </div>
+
+        <aside class="application-support-rail" aria-label="Cross-cutting support layer">
+          <div class="support-rail-line" aria-hidden="true"></div>
+          <div class="support-rail-label">reads across all layers</div>
+          <a class="support-architecture-card" href="{{ url_for(application_map.support.endpoint) }}">
+            <span>{{ application_map.support.kind }}</span>
+            <h3>{{ application_map.support.label }}</h3>
+            <p>{{ application_map.support.description }}</p>
+            <div class="support-boundary-note">
+              <strong>Boundary</strong>
+              <p>{{ application_map.support.boundary }}</p>
+            </div>
+            <strong class="support-open">Open support layer <span aria-hidden="true">↗</span></strong>
           </a>
-        {% endfor %}
+        </aside>
       </div>
     </section>
 
