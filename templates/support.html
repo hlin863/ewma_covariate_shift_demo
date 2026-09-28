@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Local RAG Support Layer · CSE Research</title>
+  <script>
+    (function () {
+      const saved = localStorage.getItem("dashboard-theme");
+      const preferred = window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+      document.documentElement.dataset.theme = saved || preferred;
+    })();
+  </script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='navigation.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='support.css') }}">
+</head>
+<body class="support-page">
+  <main class="support-shell">
+    <nav class="support-nav">
+      <a href="{{ url_for('home') }}">← Research hub</a>
+      <a href="{{ url_for('data_processing_page') }}">Data processing</a>
+      <a href="{{ url_for('results_catalog') }}">Results</a>
+    </nav>
+
+    <header class="support-hero">
+      <div>
+        <p class="eyebrow">Support layer · local RAG · not the core scientific model</p>
+        <h1>Ask the repository about its code, datasets and research design.</h1>
+        <p>
+          Retrieval stays local. Repository text, generated result metadata, dataset
+          inventories and the configured research-proposal PDF are retrieved first;
+          only those retrieved chunks are sent to a local Ollama Llama 3.2 model.
+        </p>
+      </div>
+      {% if status %}
+      <aside class="support-status">
+        <span class="status-dot"></span>
+        <strong>{{ status.model }}</strong>
+        <p>{{ status.chunk_count }} indexed chunks</p>
+        <p>
+          Proposal:
+          {% if status.proposal_indexed %}
+            indexed
+          {% else %}
+            not indexed
+          {% endif %}
+        </p>
+        <p>{{ status.dataset_inventory_count }} local dataset inventories</p>
+      </aside>
+      {% endif %}
+    </header>
+
+    <section class="support-boundary">
+      <strong>Evidence boundary</strong>
+      <p>
+        The assistant must distinguish implemented repository behaviour from proposal
+        intentions, and benchmark BCI EEG from procedurally generated synthetic streams.
+        Raw GDF/MAT signal contents are not sent to the LLM.
+      </p>
+    </section>
+
+    {% if page_error %}
+      <section class="support-error" role="alert">
+        <h2>Support index needs attention</h2>
+        <p>{{ page_error }}</p>
+      </section>
+    {% endif %}
+
+    <section class="ask-panel">
+      <form method="post" action="{{ url_for('support.support_layer') }}">
+        <label for="query">Research or development question</label>
+        <textarea
+          id="query"
+          name="query"
+          rows="5"
+          placeholder="Example: Which Dataset 2B sessions are used by the bagging benchmark, and how does that differ from the CSE reproduction?"
+        >{{ query }}</textarea>
+        <div class="ask-actions">
+          <button type="submit">Ask local Llama 3.2</button>
+          <span>Default model: <code>{{ status.model if status else 'llama3.2:1b' }}</code></span>
+        </div>
+      </form>
+    </section>
+
+    {% if result %}
+      <section class="answer-grid">
+        <article class="answer-card">
+          <p class="eyebrow">Grounded answer</p>
+          {% if result.answer %}
+            <div class="answer-text">{{ result.answer }}</div>
+          {% else %}
+            <div class="support-error">
+              <strong>Retrieval succeeded, but local generation did not.</strong>
+              <p>{{ result.model_error }}</p>
+              <p>The retrieved evidence remains available on the right.</p>
+            </div>
+          {% endif %}
+        </article>
+
+        <aside class="source-card">
+          <p class="eyebrow">Retrieved evidence</p>
+          {% for hit in result.hits %}
+            <article class="source-hit">
+              <div>
+                <strong>[S{{ loop.index }}] {{ hit.chunk.locator }}</strong>
+                <span>{{ '%.3f'|format(hit.score) }}</span>
+              </div>
+              <p>{{ hit.chunk.text[:700] }}{% if hit.chunk.text|length > 700 %}…{% endif %}</p>
+            </article>
+          {% endfor %}
+        </aside>
+      </section>
+    {% endif %}
+
+    <section class="setup-panel">
+      <div>
+        <p class="eyebrow">Local setup</p>
+        <h2>Run without a cloud model</h2>
+      </div>
+      <pre><code>python -m pip install -r requirements-support.txt
+ollama pull llama3.2:1b
+$env:SUPPORT_RAG_PROPOSAL_PATH = "C:\path\to\Research Proposal Haocheng Lin(5).pdf"
+python app.py</code></pre>
+      <p>Then open <code>http://127.0.0.1:5000/support</code>.</p>
+      <form method="post" action="{{ url_for('support.reindex_support_layer') }}">
+        <button class="secondary-button" type="submit">Rebuild local index</button>
+      </form>
+    </section>
+  </main>
+</body>
+</html>
