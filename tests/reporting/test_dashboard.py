@@ -113,6 +113,11 @@ def test_home_page_presents_research_scope_and_application_map() -> None:
     assert "Current project progress" in html
     assert "CSE warning and validation are implemented and testable" in html
     assert "The full CSE-UAEL loop" in html
+    assert "Application architecture" in html
+    assert "Data and protocol foundation" in html
+    assert "Detection and experiment analysis" in html
+    assert "Evidence and implementation assurance" in html
+    assert "reads across all layers" in html
     assert "Table 1 dashboard" in html
     assert 'href="/table-1"' in html
     assert 'href="/results"' in html
