@@ -63,6 +63,15 @@ def build_home_page_model() -> dict[str, object]:
                 ),
             },
             {
+                "endpoint": "support.support_layer",
+                "label": "Local RAG support layer",
+                "kind": "Repository and dataset assistant",
+                "description": (
+                    "Ask a local Llama 3.2 model about development code, dataset "
+                    "protocols, generated results and the configured research proposal."
+                ),
+            },
+            {
                 "endpoint": "test_results.test_results",
                 "label": "Automated tests",
                 "kind": "Implementation verification",
