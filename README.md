@@ -46,8 +46,11 @@ src/
 ├── experiments/
 │   └── paper2015/
 │       └── d2.py                     # D2 generation/detection/evaluation
+├── support/
+│   └── rag.py                        # local repository/proposal RAG support layer
 └── web/
     ├── home.py                       # paper-grounded home-page model
+    ├── support.py                    # local Llama support route
     └── dashboard.py                  # Flask routes and result presentation
 ```
 
@@ -166,6 +169,45 @@ The three source papers behind the 2015, 2018 and 2019 lineage panels are stored
 Open `/results` in the same Flask app to inspect the broader generated-result catalogue. That page groups the BCI Table 1 reproduction, Dataset 2B diagnostics, Dataset 2B control-limit sensitivity, synthetic lambda sensitivity and Raza 2015 D2/Table III outputs, including live CSV previews, tracked result fields and generated figure thumbnails when the corresponding files exist under `outputs/`.
 
 Open `/data-processing` for the protocol atlas. It shows the 2019 Dataset 2A/2B development roles, the separate GDF-only bagging holdout, the 2016 published split, and a paper-to-implementation map. The B01 session counts and baseline results in `data/reference/bci_processing_2026-09-27.json` are a labelled summary of a user-provided run transcript. When available, `outputs/metrics/bagging_bci_real.csv` supplies the classifier chart and `outputs/metrics/bci_2b_table1_results.csv` supplies B01 diagnostic counts. The split illustration retains its transcript provenance; the page does not infer a new split from those result files.
+
+## Local RAG research support layer
+
+The research hub includes a separate local support layer at `/support`. It is
+not part of the CSE detector or adaptive-learning model. The page retrieves
+evidence from repository source files, documentation, generated metric tables,
+local dataset inventories and an optional research-proposal PDF, then sends only
+the retrieved context to a locally hosted Ollama model.
+
+The default lightweight model is `llama3.2:1b`. Retrieval uses TF-IDF so the
+support layer does not require a hosted embedding API or cloud vector database.
+Raw GDF and MAT signal contents are not indexed; for the BCI Competition folders
+the retriever records local inventory metadata such as file names and counts.
+
+Install the support dependencies and local model:
+
+```powershell
+python -m pip install -r requirements-support.txt
+ollama pull llama3.2:1b
+```
+
+Point the support layer at the local research proposal without committing the
+PDF to the repository:
+
+```powershell
+$env:SUPPORT_RAG_PROPOSAL_PATH = "C:\path\to\Research Proposal Haocheng Lin(5).pdf"
+python app.py
+```
+
+Then open `http://127.0.0.1:5000/support`. The page displays retrieved source
+locations alongside every generated answer. If Ollama is not running, retrieval
+still completes and the source evidence is shown with a local-model error rather
+than falling back to a cloud service.
+
+The support prompt explicitly separates implemented repository behaviour from
+proposal intentions, and distinguishes BCI Competition benchmark EEG from
+procedurally generated synthetic detector streams. Rebuild the in-memory index
+from the page after changing code, generated result files or the configured
+proposal.
 
 ## Stage-II validation modes
 
