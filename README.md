@@ -14,6 +14,7 @@ src/
 │   ├── fbcsp.py                      # paper-aligned Butterworth + CSP/FBCSP
 │   ├── splitting.py                  # shared stratified development indices
 │   └── datasets/
+│       ├── chowdhury/              # participant metadata, loaders, CSE experiment
 │       ├── dataset2a/
 │       │   ├── experiment.py         # Dataset 2A trial/expt logic
 │       │   ├── development_split.py  # Session-I 70/30 split
@@ -33,16 +34,16 @@ src/
 ├── detection/
 │   ├── core.py                       # dataset-agnostic CSE orchestration
 │   ├── preprocessing.py              # PCA fit/transform helpers
-│   ├── stage1/
-│   │   ├── sd_ewma.py
-│   │   └── msd_ewma.py
-│   └── stage2/                       # Hotelling validation API
+│   ├── stage1/                    # SD/MSD EWMA and complementary PCA monitoring
+│   ├── stage2/                    # Hotelling and K–S validation APIs
+│   └── baselines/                 # ICI-CDT comparison
 ├── reporting/
 │   ├── table1.py                     # Table 1 output/comparison
 │   └── metrics.py                    # detector evaluation metrics
 ├── simulation/
 │   ├── gaussian.py                   # synthetic abrupt mean-shift streams
-│   └── jumping_mean.py               # paper D2 AR jumping-mean stream
+│   ├── jumping_mean.py               # paper D2 AR jumping-mean stream
+│   └── pca_subspace.py               # score/residual shift scenarios
 ├── experiments/
 │   └── paper2015/
 │       └── d2.py                     # D2 generation/detection/evaluation
@@ -51,7 +52,10 @@ src/
 └── web/
     ├── home.py                       # paper-grounded home-page model
     ├── support.py                    # local Llama support route
-    └── dashboard.py                  # Flask routes and result presentation
+    ├── dashboard.py                  # Flask routes and result presentation
+    ├── figure1.py                    # real 2A feature-distribution view
+    ├── chowdhury.py                  # cohort metadata view
+    └── test_results.py               # test-report views
 ```
 
 New code should use these structured imports, for example:
@@ -85,7 +89,10 @@ The former flat modules such as `src.cse`, `src.fbcsp`, `src.bci_data`, `src.ewm
 - Multivariate Stage-II Hotelling validation
 - Combined Dataset 2A/2B Table 1 reproduction output
 - Flask dashboard for published-versus-computed Table 1 results
-- Diagnostic and sensitivity-analysis utilities
+- Diagnostic and sensitivity-analysis utilities, including Dataset 2A validation-only control-limit calibration
+- Complementary PCA score/residual Stage-I monitoring on synthetic and real 2A/2B features
+- Chowdhury participant metadata loader and prepared-feature CSE experiment interface
+- K–S Stage-II and ICI-CDT baseline for the 2015 D2 comparison
 - Linear SVM, bagging classifier, supervised adaptation, and separate real/synthetic bagging experiments; 2019 pseudo-labelling and dynamic ensemble growth are not integrated
 - Paper-aligned D2 jumping-mean generator with repeated-shift truth labels
 - Full-stream SD-EWMA/TSSD-EWMA D2 experiment and event-level metrics
@@ -109,39 +116,42 @@ data/raw/bci_competition_iv_2b/
 Run the combined reproduction:
 
 ```bash
-python scripts/run_bci_table1_reproduction.py
+python scripts/run_bci_table1_reproduction.py --labels-2a data/raw/bci_competition_iv_2a_labels
 ```
 
 Dataset 2A now applies its Session-I 70/30 development split before FBCSP fitting. The validation fraction and reproducible split seed are explicit experiment controls:
 
 ```bash
 python scripts/run_bci_table1_reproduction.py \
+  --labels-2a data/raw/bci_competition_iv_2a_labels \
   --session1-validation-fraction 0.30 \
   --session1-split-seed 42
 ```
 
-Dataset 2B's three 2019 runners use the same named I–III training-pool / IV–V evaluation protocol. Set `--dataset2b-validation-fraction` and `--dataset2b-split-seed` in the combined runner, or `--validation-fraction` and `--split-seed` in either dedicated 2B runner. The validation subset is transformed and exposed for parameter work, but the current detection runners do not yet select lambda, L, K, or T from it. In particular, the published lambda still overrides estimation. The 70/30 ratio comes from the paper; exact partition membership and seed are unreported. Changing from the previous whole-pool FBCSP fit changes computed results, so compare new counts to old output with that methodological difference in mind.
+Dataset 2B's three 2019 runners use the same named I–III training-pool / IV–V evaluation protocol. Set `--dataset2b-validation-fraction` and `--dataset2b-split-seed` in the combined runner, or `--validation-fraction` and `--split-seed` in either dedicated 2B runner. The validation subset is transformed and exposed for parameter work. Dataset 2A can optionally calibrate the Stage-I control-limit multiplier from its held-out validation errors with `--calibrate-control-limit-from-validation`; this is a repository extension, not a reported paper selection rule. The Table 1 runners otherwise use published lambda overrides and do not select K or T from the validation split. The 70/30 ratio comes from the paper; exact partition membership and seed are unreported. Changing from the previous whole-pool FBCSP fit changes computed results, so compare new counts to old output with that methodological difference in mind.
 
 The separate bagging benchmark retains its stated classifier-comparison protocols: Dataset 2B defaults to I–II fitting with labelled III evaluation, and the optional released-label route uses III for calibration and IV–V for evaluation. It does not call the 2019 CSE-UAEL development split; its reported accuracy is a distinct experiment.
 
 The Stage-II interpretation can be compared explicitly:
 
 ```bash
-python scripts/run_bci_table1_reproduction.py --validation-mode paper_two_sample
-python scripts/run_bci_table1_reproduction.py --validation-mode algorithm1_training_reference
-python scripts/run_bci_table1_reproduction.py --validation-mode retrospective_windows
+python scripts/run_bci_table1_reproduction.py --labels-2a data/raw/bci_competition_iv_2a_labels --validation-mode paper_two_sample
+python scripts/run_bci_table1_reproduction.py --labels-2a data/raw/bci_competition_iv_2a_labels --validation-mode algorithm1_training_reference
+python scripts/run_bci_table1_reproduction.py --labels-2a data/raw/bci_competition_iv_2a_labels --validation-mode retrospective_windows
 ```
 
 PCA retention is an explicit experiment option. Stage I still monitors PC1 only in the univariate Algorithm-1 path:
 
 ```bash
-python scripts/run_bci_table1_reproduction.py --pca-components 1
-python scripts/run_bci_table1_reproduction.py --pca-components 3
-python scripts/run_bci_table1_reproduction.py --pca-components 0.95
-python scripts/run_bci_table1_reproduction.py --pca-components all
+python scripts/run_bci_table1_reproduction.py --labels-2a data/raw/bci_competition_iv_2a_labels --pca-components 1
+python scripts/run_bci_table1_reproduction.py --labels-2a data/raw/bci_competition_iv_2a_labels --pca-components 3
+python scripts/run_bci_table1_reproduction.py --labels-2a data/raw/bci_competition_iv_2a_labels --pca-components 0.95
+python scripts/run_bci_table1_reproduction.py --labels-2a data/raw/bci_competition_iv_2a_labels --pca-components all
 ```
 
 Each subject line reports the retained PCA component count and the PC1 explained-variance ratio so PCA behavior can be audited alongside CSW/CSV results.
+
+For a GDF-only diagnostic without the official 2A labels, explicitly set `--dataset2a-evaluation-mode gdf-only`. It retains the unlabelled Session-II cues and must not be interpreted as the paper's 144-trial left/right evaluation. The default paper mode requires `--labels-2a`.
 
 Outputs:
 
@@ -165,6 +175,8 @@ python app.py
 Open `/` for the research home page. It maps the paper lineage, implementation progress, current evidence boundary and links to every analytical page. The original Table 1 dashboard is preserved at `/table-1` and reads `outputs/metrics/bci_table1_comparison.csv` on each request, so new experiment output updates the visualisation without copying values into the web application.
 
 The three source papers behind the 2015, 2018 and 2019 lineage panels are stored under `papers/`. Selecting a paper panel opens the repository PDF through `/papers/<filename>` for an inline browser preview. Bibliographic details and file mappings are documented in `papers/README.md`.
+
+Open `/figure-1` for the real Dataset 2A A07 feature-distribution view (class-aware only when official evaluation labels are installed), `/chowdhury-demographics` for the included participant metadata, and `/tests` for a local JUnit XML report. The `/results/complementary-bci` page reads exported complementary-monitoring traces and synthetic summaries. Its real EEG view reports alarm counts and trajectories without ground-truth shift or detector accuracy claims. The `/results/paper2015-d2/ks-validation` page inspects generated K–S Stage-II evidence.
 
 Open `/results` in the same Flask app to inspect the broader generated-result catalogue. That page groups the BCI Table 1 reproduction, Dataset 2B diagnostics, Dataset 2B control-limit sensitivity, synthetic lambda sensitivity and Raza 2015 D2/Table III outputs, including live CSV previews, tracked result fields and generated figure thumbnails when the corresponding files exist under `outputs/`.
 
@@ -208,6 +220,17 @@ proposal intentions, and distinguishes BCI Competition benchmark EEG from
 procedurally generated synthetic detector streams. Rebuild the in-memory index
 from the page after changing code, generated result files or the configured
 proposal.
+
+## Complementary monitoring experiments
+
+The complementary Stage-I experiment monitors the PCA score and the residual outside the retained subspace. Its synthetic stream has known shift scenarios, while the real BCI export supports descriptive alarm inspection only.
+
+```bash
+python -m scripts.run_complementary_monitoring --seeds 20
+python -m scripts.run_complementary_bci --labels-2a data/raw/bci_competition_iv_2a_labels
+```
+
+The first command writes runs, calibration, summaries and scenario traces to `outputs/complementary/`. The second requires downloaded 2A and 2B recordings by default and writes trial traces, calibration and configuration to `outputs/complementary_bci/`. Use `--datasets 2b` for a 2B-only real-data export without 2A evaluation labels. View both through `/results/complementary-bci` after generation.
 
 ## Stage-II validation modes
 
@@ -264,10 +287,11 @@ final-regime and Table III evaluation-scope decisions.
 
 ## Testing
 
-Run the architecture smoke test first, then the complete suite:
+Install test dependencies and run the architecture smoke test, then the complete suite:
 
 ```bash
-python -m pytest tests/test_project_structure.py -v
+python -m pip install -r requirements-test.txt
+python -m pytest tests/integration/test_project_structure.py -v
 python -m pytest -q
 ```
 
@@ -275,4 +299,4 @@ The test suite covers Dataset 2A trial extraction and 70/30 development processi
 
 ## Current research boundary
 
-The repository currently covers signal processing, feature extraction, CSE warning, and Stage-II validation portions of the 2019 CSE-UAEL pipeline. PWKNN-driven unsupervised adaptation, dynamic LDA ensemble growth, and weighted ensemble classification remain future implementation stages.
+The repository covers signal processing, feature extraction, CSE warning, and Stage-II validation portions of the 2019 CSE-UAEL pipeline, alongside separate supervised policies, bagging comparisons and complementary monitoring experiments. These components are not an integrated 2019 CSE-UAEL adaptive classifier. PWKNN-driven unsupervised adaptation, dynamic LDA ensemble growth, and weighted ensemble classification remain future stages.
