@@ -1,0 +1,3 @@
+subject,lambda,training_trials,testing_trials,published_csw,computed_csw,csw_difference,published_csv,computed_csv,csv_difference,control_limit_multiplier,variance_update_mode,initial_half_width,mean_half_width,median_half_width,final_half_width,maximum_half_width,matches_published
+B01,0.28,280.0,320.0,14.0,17.0,3.0,10.0,5.0,-5.0,1.96,always,1.8806239483217964,1.733859378014397,1.6705483539296335,1.4875022220775438,2.372424515354627,False
+Mean,0.28,280.0,320.0,14.0,17.0,3.0,10.0,5.0,-5.0,1.96,always,1.8806239483217964,1.733859378014397,1.6705483539296335,1.4875022220775438,2.372424515354627,False

@@ -1,0 +1,5 @@
+dataset,method,training_trials,testing_trials,correct_predictions,accuracy,fit_seconds,predict_seconds,requested_estimators,fitted_estimators,sample_fraction,mean_member_disagreement
+2A,single_linear_svm,48,144,144,1.0,0.01337000000057742,0.00032130000181496143,1,1,1.0,0.0
+2A,bagged_linear_svm,48,144,144,1.0,0.02660430000105407,0.0065619999950286,30,30,0.8,0.0
+2B,single_linear_svm,24,16,16,1.0,0.0014586000033887103,0.00019979999342467636,1,1,1.0,0.0
+2B,bagged_linear_svm,24,16,16,1.0,0.026602500001899898,0.003538499993737787,30,30,0.8,0.0
