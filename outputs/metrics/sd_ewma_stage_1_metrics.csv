@@ -1,0 +1,2 @@
+Method,Shift detected,True shift,First alarm,RCI,False positives,False-positive rate,False negatives,Runtime (ms)
+SD-EWMA,Yes,500,500,0,0,Not applicable,0,4.220

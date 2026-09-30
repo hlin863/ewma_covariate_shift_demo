@@ -1,0 +1,60 @@
+{
+  "dataset": "D2",
+  "evaluation_scope": "Table III inferred final 1,000-point window",
+  "table_3_shift_times": [
+    4101,
+    4201,
+    4301,
+    4401,
+    4501,
+    4601,
+    4701,
+    4801,
+    4901
+  ],
+  "estimated_lambda": 0.4,
+  "computed": [
+    {
+      "method": "SD-EWMA",
+      "fp_percent": 3.733602421796166,
+      "fn_percent": 0.0,
+      "rci": 9.666666666666666,
+      "ct_seconds": 0.016600300034042448
+    },
+    {
+      "method": "TSSD-EWMA",
+      "fp_percent": 0.20181634712411706,
+      "fn_percent": 55.55555555555556,
+      "rci": 19.75,
+      "ct_seconds": 0.14600240002619103
+    },
+    {
+      "method": "ICI-CDT",
+      "fp_percent": 0.10090817356205853,
+      "fn_percent": 0.0,
+      "rci": 27.88888888888889,
+      "ct_seconds": 0.004971100017428398
+    }
+  ],
+  "paper_table_3_reference": {
+    "lambda": 0.4,
+    "sd_ewma": {
+      "fp_percent": 0.3,
+      "fn_percent": 0.0,
+      "rci": 0,
+      "ct_seconds": 0.189
+    },
+    "tssd_ewma": {
+      "fp_percent": 0.0,
+      "fn_percent": 11.1,
+      "rci": 10,
+      "ct_seconds": 0.224
+    },
+    "ici_cdt": {
+      "fp_percent": 0.0,
+      "fn_percent": 55.4,
+      "rci": 40,
+      "ct_seconds": 0.196
+    }
+  }
+}

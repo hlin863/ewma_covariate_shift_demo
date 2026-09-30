@@ -6,7 +6,8 @@ data/raw/chowdhury_cse_uael/
 
 # Generated and processed experiment data
 data/processed/
-outputs/
+# outputs/
+# enable the output to be tracked for version control and serving as control datasets in reproduction experiments.
 reports/
 figures/
 instance/

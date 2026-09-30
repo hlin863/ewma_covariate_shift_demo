@@ -1,0 +1,165 @@
+{
+  "datasets": [
+    "D3",
+    "D4"
+  ],
+  "metadata": {
+    "repetitions": 100,
+    "lambda": 0.1,
+    "raw_control_limit": 22.67,
+    "pca_control_limit": 10.58,
+    "pca_components": 2,
+    "stage_2_window_size": 25,
+    "ica_implementation": "scikit-learn FastICA",
+    "d4_parameterization": "scale adjusted so t covariance equals paper Sigma",
+    "scoring_scope": "first departure at 101; return at 201 retained in stream"
+  },
+  "computed": [
+    {
+      "dataset": "D3",
+      "method": "MSD-EWMA",
+      "fp_percent": 0.08,
+      "fn_percent": 0.0,
+      "rci": 5.75,
+      "ct_seconds": 0.002922311997972429
+    },
+    {
+      "dataset": "D3",
+      "method": "MSD-EWMA-PCA",
+      "fp_percent": 0.25,
+      "fn_percent": 0.0,
+      "rci": 5.15,
+      "ct_seconds": 0.00367479600594379
+    },
+    {
+      "dataset": "D3",
+      "method": "MSD-EWMA-ICA",
+      "fp_percent": 0.08,
+      "fn_percent": 0.0,
+      "rci": 5.75,
+      "ct_seconds": 0.045812774000223724
+    },
+    {
+      "dataset": "D3",
+      "method": "TSMSD-EWMA",
+      "fp_percent": 0.01,
+      "fn_percent": 28.0,
+      "rci": 32.208333333333336,
+      "ct_seconds": 0.005922626004321501
+    },
+    {
+      "dataset": "D3",
+      "method": "TSMSD-EWMA-ICA",
+      "fp_percent": 0.01,
+      "fn_percent": 28.0,
+      "rci": 32.208333333333336,
+      "ct_seconds": 0.04860680699814111
+    },
+    {
+      "dataset": "D4",
+      "method": "MSD-EWMA",
+      "fp_percent": 0.22,
+      "fn_percent": 0.0,
+      "rci": 5.32,
+      "ct_seconds": 0.0031647309951949865
+    },
+    {
+      "dataset": "D4",
+      "method": "MSD-EWMA-PCA",
+      "fp_percent": 0.27,
+      "fn_percent": 0.0,
+      "rci": 4.56,
+      "ct_seconds": 0.0037182630051393064
+    },
+    {
+      "dataset": "D4",
+      "method": "MSD-EWMA-ICA",
+      "fp_percent": 0.22,
+      "fn_percent": 0.0,
+      "rci": 5.32,
+      "ct_seconds": 0.04773454999900423
+    },
+    {
+      "dataset": "D4",
+      "method": "TSMSD-EWMA",
+      "fp_percent": 0.02,
+      "fn_percent": 21.0,
+      "rci": 29.620253164556964,
+      "ct_seconds": 0.006480577995534986
+    },
+    {
+      "dataset": "D4",
+      "method": "TSMSD-EWMA-ICA",
+      "fp_percent": 0.02,
+      "fn_percent": 21.0,
+      "rci": 29.620253164556964,
+      "ct_seconds": 0.050984996005427094
+    }
+  ],
+  "paper_table_4_reference": {
+    "D3": {
+      "MSD-EWMA": [
+        5.0,
+        8.0,
+        9.0,
+        0.228
+      ],
+      "MSD-EWMA-PCA": [
+        5.5,
+        6.0,
+        8.0,
+        0.272
+      ],
+      "MSD-EWMA-ICA": [
+        5.0,
+        8.0,
+        8.0,
+        0.528
+      ],
+      "TSMSD-EWMA": [
+        2.0,
+        5.0,
+        25.0,
+        0.201
+      ],
+      "TSMSD-EWMA-ICA": [
+        2.5,
+        5.0,
+        25.0,
+        0.594
+      ]
+    },
+    "D4": {
+      "MSD-EWMA": [
+        4.0,
+        15.0,
+        7.0,
+        0.213
+      ],
+      "MSD-EWMA-PCA": [
+        5.5,
+        5.0,
+        8.0,
+        0.251
+      ],
+      "MSD-EWMA-ICA": [
+        5.0,
+        15.0,
+        7.0,
+        0.677
+      ],
+      "TSMSD-EWMA": [
+        5.0,
+        7.0,
+        25.0,
+        0.202
+      ],
+      "TSMSD-EWMA-ICA": [
+        4.5,
+        9.0,
+        25.0,
+        0.647
+      ]
+    }
+  }
+}
