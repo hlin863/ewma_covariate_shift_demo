@@ -1,0 +1,8 @@
+{
+  "seeds": 20,
+  "alpha": 0.01,
+  "lambda_value": 0.2,
+  "magnitude": 3.0,
+  "horizon": 20,
+  "output": "outputs/complementary"
+}

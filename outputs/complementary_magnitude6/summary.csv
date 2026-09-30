@@ -1,0 +1,13 @@
+scenario,method,mean_false_alarm_rate,window_alarm_rate,detection_rate,mean_delay_detected_only,mean_alarm_count
+both,combined,0.01008,1.0,1.0,0.06,471.14
+both,residual_only,0.010280000000000001,1.0,1.0,0.05,479.86
+both,score_only,0.009300000000000001,0.65,0.65,2.3692307692307693,10.59
+none,combined,0.0106,0.26,,,10.6
+none,residual_only,0.01052,0.21,,,10.52
+none,score_only,0.00991,0.21,,,9.91
+pc1,combined,0.01008,0.82,0.82,1.475609756097561,11.56
+pc1,residual_only,0.010280000000000001,0.21,0.21,8.619047619047619,10.52
+pc1,score_only,0.009300000000000001,0.88,0.88,0.6818181818181818,11.42
+pc2,combined,0.01008,1.0,1.0,0.0,504.8
+pc2,residual_only,0.010280000000000001,1.0,1.0,0.0,504.98
+pc2,score_only,0.009300000000000001,0.21,0.21,11.523809523809524,9.91
