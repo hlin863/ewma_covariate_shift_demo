@@ -98,6 +98,148 @@ The former flat modules such as `src.cse`, `src.fbcsp`, `src.bci_data`, `src.ewm
 - Full-stream SD-EWMA/TSSD-EWMA D2 experiment and event-level metrics
 - Pytest coverage and GitHub Actions CI for the CSE/EWMA pipeline
 
+
+## Is there evidence that the feature distribution has changed?
+
+This question corresponds to the data-monitoring role in Diethe et al. (2019),
+*Continual Learning in Practice*, Section 4.1. The repository answers it at
+several evidence levels; a warning, a statistical confirmation, and a known
+ground-truth shift are different observations.
+
+### Implemented evidence chain
+
+1. **Define the representation.** The development pipelines fit FBCSP on
+   development-training trials and transform validation/evaluation trials with
+   that fitted model. `src/detection/core.py` fits PCA on the supplied training
+   features and reuses it on evaluation features. Claims concern this feature
+   representation, not every property of the raw EEG.
+2. **Screen for unusual observations.** In the PC1 path,
+   `src/detection/stage1/sd_ewma.py` computes the prediction error
+   `x_t - z_(t-1)` and warns when `x_t <= LCL_t` or `x_t >= UCL_t`.
+   The limits use the previous EWMA state and previous error standard
+   deviation. A warning is a candidate change, not statistical confirmation.
+3. **Validate a candidate.** With `validation_mode="paper_two_sample"`,
+   `src/cse_paper_stage_2.py` compares two disjoint samples in retained PCA
+   space using a two-sample Hotelling T-squared test. For warning index i and
+   window H, the reference is `features[i-H+1:i+1]` and the current sample is
+   `features[i+1:i+1+H]`. The implemented decision is `p_value < alpha`.
+   This is evidence against equal multivariate means under the test
+   assumptions; it is not an omnibus test of every distributional change.
+4. **Check information outside PC1.** The separate complementary Stage-I
+   experiment in `src/detection/stage1/complementary.py` monitors PC1 prediction
+   errors and squared reconstruction residuals, with limits calibrated on
+   separate reference data. Its `alarm_source` identifies score, residual,
+   both or neither. These alarms are not automatically Stage-II confirmations.
+5. **Evaluate evidence against known changes where available.** Synthetic
+   experiments measure false alarms, missed changes and delay.
+   `src/reporting/metrics.py` includes repeated-shift event matching.
+   Real EEG alarms have no supplied ground-truth shift-event labels.
+
+The other Stage-II modes compare different objects. In particular,
+`algorithm1_training_reference` compares a current vector to a training
+reference; it must not be described as the same equal-window test. The
+univariate K-S validation in the 2015 D2 experiment is a separate pathway.
+
+### Interpret the validation status before answering
+
+| Paper two-sample status | Defensible interpretation |
+| --- | --- |
+| `confirmed` | The implemented test rejects equal means at the configured alpha |
+| `rejected` | The warning was not confirmed; this does not establish stationarity |
+| `pending_current_window` | More subsequent observations are needed |
+| `insufficient_reference_window` | Not enough preceding observations to test |
+| `insufficient_degrees_of_freedom` | The window/dimension combination cannot support this test |
+| `skipped_nearby_alarm` | No new test was performed because of the alarm-gap rule |
+
+Confirmation becomes available at `validation_time`, after the second
+window has arrived, not at `alarm_time`. The requirement
+`2*H - d - 1 > 0` is necessary for the two-sample F conversion, but alone
+does not guarantee well-conditioned covariance estimation or valid inference.
+Repeated, data-selected tests and temporal dependence also require calibration;
+a per-test alpha is not a stream-wide false-alarm guarantee. Shrinkage or
+regularization can alter the classical reference distribution.
+
+### What the committed results currently show
+
+Snapshot inspected at source commit
+`a3271c24b2aefebeaa45ca805536a6a76c17d0e6` (30 September 2026):
+
+| Dataset | Total computed warnings | Total computed confirmations | Subjects with confirmations |
+| --- | ---: | ---: | --- |
+| 2A | 52 | 3 | A02 |
+| 2B | 127 | 6 | B02, B03, B04, B06, B07, B08 |
+
+Source: [committed Table 1 comparison](outputs/metrics/bci_table1_comparison.csv).
+These are saved outputs, not a new experiment. The aggregate CSV does not
+record validation mode, alpha, window sizes, per-event p-values or all
+validation statuses. It therefore supports a statement about the recorded
+confirmation counts, but cannot independently establish each event's test
+configuration or explain every unconfirmed warning. Do not equate
+`CSW - CSV` with the number of statistically rejected warnings.
+
+The [100-seed complementary summary](outputs/complementary_100/summary.csv)
+provides controlled synthetic evidence: PC2 shifts have detection rates of
+21% for score-only and 100% for residual-only and combined monitoring.
+For PC1 shifts the corresponding rates are 35%, 21% and 31%, so the combined
+method does not dominate every scenario. The
+[configuration](outputs/complementary_100/config.json) uses a 20-observation
+detection horizon. Under no change, combined monitoring has a 1.06%
+per-observation false-alarm rate but a 26% matched-window alarm rate.
+These results demonstrate representation-dependent sensitivity, not real EEG
+detection accuracy or universal false-alarm control.
+
+### Export the evidence for an individual CSE run
+
+After obtaining `result = run_cse(..., config=config)` on prepared features,
+use the following snippet to preserve the decisions and their settings.
+This is an explicit user-run export example, not an automatic runner feature.
+
+```python
+from dataclasses import asdict
+from pathlib import Path
+import json
+
+out = Path("outputs/feature_shift_evidence/run_001")
+out.mkdir(parents=True, exist_ok=False)  # use a new name for each run
+
+result.warning_results.to_csv(out / "warnings.csv", index=False)
+result.validation_results.to_csv(out / "validations.csv", index=False)
+metadata = {
+    "config": asdict(config),
+    "effective_lambda": float(result.effective_lambda),
+    "retained_dimensions": int(result.testing_transformed.shape[1]),
+}
+(out / "config.json").write_text(
+    json.dumps(metadata, indent=2), encoding="utf-8"
+)
+
+print(result.validation_results["status"].value_counts(dropna=False))
+```
+
+Also record the actual source commit, dataset/subject, session roles, split
+seed and feature-processing settings with the run. For a paper-two-sample
+confirmation, inspect `reference_start_time`, `reference_end_time`,
+`current_start_time`, `current_end_time`, `sample_size`, `n_features`,
+`hotelling_t_squared`, `p_value` and `validation_time`.
+
+A suitable conclusion is: "The configured monitor produced candidate warnings,
+and the specified validation test confirmed a subset in the monitored feature
+space." Name the run, representation, comparison windows and test threshold
+before making a more specific statistical claim. Neither a confirmation nor a
+change in P(X) establishes the covariate-shift condition that P(Y|X) is unchanged.
+Classifier harm and the benefit of retraining require separate evaluation.
+
+### Next evidence improvements
+
+- Export event-level decisions and complete run provenance from the standard
+  BCI runners, alongside the aggregate counts.
+- Report mean differences or a clearly defined effect-size measure alongside
+  p-values; p-values do not quantify change magnitude.
+- Calibrate the full warning-plus-validation procedure on no-change streams,
+  accounting for temporal dependence and repeated testing.
+- Link confirmations to subsequent labelled prediction performance before
+  concluding that adaptation is needed.
+
 ## Reproduce the paper's Table 1 structure
 
 The paper reports subject-level smoothing constant (lambda), covariate-shift warnings (CSW), and covariate-shift validations (CSV) for nine Dataset 2A subjects and nine Dataset 2B subjects. The repository keeps those published values only as reference targets and writes the experiment's computed values into the same side-by-side 2A/2B structure.
@@ -168,7 +310,7 @@ The web interface uses `src/web/home.py` for the paper-grounded research overvie
 
 ```bash
 python -m pip install -r requirements-dashboard.txt
-python scripts/run_bci_table1_reproduction.py --validation-mode paper_two_sample
+python scripts/run_bci_table1_reproduction.py --labels-2a data/raw/bci_competition_iv_2a_labels --validation-mode paper_two_sample
 python app.py
 ```
 
