@@ -25,6 +25,29 @@ from src.adaptation.policies import (
     RetrainOnValidatedShift,
 )
 
+from typing import Protocol
+
+
+@dataclass(frozen=True)
+class PseudoLabelResult:
+    labels: np.ndarray
+    confidence: np.ndarray
+
+
+class PseudoLabeler(Protocol):
+    def predict_with_confidence(
+        self,
+        *,
+        reference_features: np.ndarray,
+        reference_labels: np.ndarray,
+        query_features: np.ndarray,
+    ) -> PseudoLabelResult:
+        pseudo_result = pseudo_labeler.predict_with_confidence(
+            reference_features=model.training_features,
+            reference_labels=model.training_labels,
+            query_features=x_candidate,
+        )
+
 
 @dataclass(frozen=True)
 class SupervisedAdaptationConfig:
@@ -40,6 +63,28 @@ class SupervisedAdaptationConfig:
             raise ValueError(
                 "update_scope must be 'current_trial' or 'since_last_update'."
             )
+
+
+@dataclass(frozen=True)
+class UnsupervisedAdaptationConfig:
+    """Controls pseudo-labelled adaptation of an unlabelled evaluation stream."""
+
+    update_scope: str = "since_last_update"
+
+    pseudo_label_threshold: float = 0.80
+    min_accepted_samples: int = 1
+
+    def __post_init__(self) -> None:
+        if self.update_scope not in {"current_trial", "since_last_update"}:
+            raise ValueError(
+                "update_scope must be 'current_trial' or 'since_last_update'."
+            )
+
+        if not 0.0 <= self.pseudo_label_threshold <= 1.0:
+            raise ValueError("pseudo_label_threshold must be between 0 and 1.")
+
+        if self.min_accepted_samples < 1:
+            raise ValueError("min_accepted_samples must be positive.")
 
 
 @dataclass(frozen=True)
@@ -94,7 +139,9 @@ def _validate_inputs(
     return x_cal, y_cal, x_eval, y_eval, times
 
 
-def _validation_by_time(validation_results: pd.DataFrame) -> dict[object, dict[str, object]]:
+def _validation_by_time(
+    validation_results: pd.DataFrame,
+) -> dict[object, dict[str, object]]:
     if validation_results.empty:
         return {}
 
@@ -124,9 +171,7 @@ def _warning_times(warning_results: pd.DataFrame | None) -> set[object]:
         raise ValueError(
             "warning_results must contain 'time' and 'stage_1_alarm' columns."
         )
-    alarms = warning_results.loc[
-        warning_results["stage_1_alarm"].astype(bool), "time"
-    ]
+    alarms = warning_results.loc[warning_results["stage_1_alarm"].astype(bool), "time"]
     return set(alarms.tolist())
 
 
@@ -187,7 +232,8 @@ def run_supervised_adaptation(
         window = adaptation_config.performance_window
         recent_accuracy = (
             float(np.mean(correctness[-window:]))
-            if len(correctness) >= window else None
+            if len(correctness) >= window
+            else None
         )
         validation_record = validations.get(time_value)
         stage1_warning = time_value in warning_time_set
@@ -215,7 +261,9 @@ def run_supervised_adaptation(
                 "prediction_seconds": prediction_seconds,
                 "stage1_warning": stage1_warning,
                 "stage2_status": (
-                    validation_record.get("status") if validation_record is not None else None
+                    validation_record.get("status")
+                    if validation_record is not None
+                    else None
                 ),
                 "stage2_p_value": (
                     validation_record.get("p_value")
@@ -260,7 +308,9 @@ def run_supervised_adaptation(
                 "trigger_time": context.time,
                 "stage1_warning": stage1_warning,
                 "stage2_status": (
-                    validation_record.get("status") if validation_record is not None else None
+                    validation_record.get("status")
+                    if validation_record is not None
+                    else None
                 ),
                 "validated_shift": bool(
                     validation_record.get("confirmed_shift", False)
@@ -282,3 +332,30 @@ def run_supervised_adaptation(
         final_classifier=model,
         initial_fit_seconds=initial_fit_seconds,
     )
+
+
+def run_unsupervised_adaptation(
+    *,
+    calibration_features: np.ndarray,
+    calibration_labels: np.ndarray,
+    evaluation_features: np.ndarray,
+    evaluation_times: np.ndarray,
+    validation_results: pd.DataFrame,
+    warning_results: pd.DataFrame | None = None,
+    classifier: RetrainableClassifier | None = None,
+    policy: AdaptationPolicy | None = None,
+    config: SupervisedAdaptationConfig | None = None,
+) -> UnsupervisedAdaptationResult:
+    """Run sequential classification and unsupervised append-and-retrain updates.
+
+    Prediction for trial ``t`` is made before any adaptation triggered at that
+    same time.  Therefore, a validated shift changes the model used for future
+    trials rather than retroactively changing the current prediction.
+
+    Unlike the supervised adaptation loop, this function does not require
+    evaluation labels because it models an unsupervised or pseudo-labelled
+    adaptation pathway.  The classifier is updated based on the policy and
+    validation results rather than true labels.
+    """
+    # Implementation would be similar to run_supervised_adaptation but without using evaluation_labels.
+    pass  # Placeholder for actual implementation.
