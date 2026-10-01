@@ -1,1 +1,1 @@
-"""Reporting, evaluation, dashboard, and CLI tests."""
+"""Numerical evaluation metrics and research table exports."""

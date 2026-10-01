@@ -446,15 +446,18 @@ final-regime and Table III evaluation-scope decisions.
 
 ## Testing
 
-Install test dependencies and run the architecture smoke test, then the complete suite:
+Install test dependencies and run the complete suite:
 
 ```bash
 python -m pip install -r requirements-test.txt
-python -m pytest tests/integration/test_project_structure.py -v
 python -m pytest -q
 ```
 
 The test suite covers Dataset 2A trial extraction and 70/30 development processing, FBCSP construction, Stage-II validation, Table 1 formatting, Flask dashboard rendering, PCA parsing, Dataset 2B regression behavior, EWMA/CSE logic, and legacy-import compatibility.
+
+Tests are grouped by dataset and component, with separate experiment, web, CLI,
+and compatibility checks. See [`tests/README.md`](tests/README.md) for focused
+commands, retention criteria and the review of removed or consolidated cases.
 
 ## Current research boundary
 
