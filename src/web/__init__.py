@@ -1,6 +1,7 @@
 """Web presentation layer for research-result visualisation."""
 
 from src.web.dashboard import app
+from src.web.diethe import diethe_bp
 from src.web.test_results import (
     DEFAULT_TEST_REFRESH_SECONDS,
     DEFAULT_TEST_REPORT_PATH,
@@ -19,6 +20,10 @@ if "support" not in app.blueprints:
 
 if "test_results" not in app.blueprints:
     app.register_blueprint(test_results_bp)
+
+
+if "diethe" not in app.blueprints:
+    app.register_blueprint(diethe_bp)
 
 
 __all__ = ["app"]

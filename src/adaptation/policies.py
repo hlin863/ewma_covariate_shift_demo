@@ -20,6 +20,8 @@ class AdaptationContext:
     time: float | int
     stage1_warning: bool = False
     validation_record: Mapping[str, object] | None = None
+    recent_accuracy: float | None = None
+    trials_since_update: int = 0
 
 
 class AdaptationPolicy(Protocol):
@@ -71,3 +73,29 @@ class PeriodicRetrain:
 
     def should_update(self, context: AdaptationContext) -> bool:
         return (context.trial_index + 1) % self.interval == 0
+
+
+@dataclass(frozen=True)
+class RetrainOnPerformanceDrop:
+    """Experimental labelled-performance rule, not an algorithm from Diethe.
+
+    The reference accuracy must come from a separate pre-evaluation holdout.
+    A full recent window and a cooldown are supplied by the online loop.
+    """
+
+    reference_accuracy: float
+    drop: float = 0.10
+    cooldown: int = 20
+
+    def __post_init__(self) -> None:
+        if not 0 <= self.reference_accuracy <= 1 or not 0 < self.drop <= 1:
+            raise ValueError("Accuracy must be in [0, 1] and drop in (0, 1].")
+        if self.cooldown < 1:
+            raise ValueError("cooldown must be positive.")
+
+    def should_update(self, context: AdaptationContext) -> bool:
+        return (
+            context.recent_accuracy is not None
+            and context.trials_since_update >= self.cooldown
+            and context.recent_accuracy < self.reference_accuracy - self.drop
+        )

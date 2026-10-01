@@ -13,6 +13,7 @@ embedding EWMA or Hotelling logic here.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from time import perf_counter
 
 import numpy as np
 import pandas as pd
@@ -30,8 +31,11 @@ class SupervisedAdaptationConfig:
     """Controls which labelled evaluation trials are added at an update."""
 
     update_scope: str = "since_last_update"
+    performance_window: int = 20
 
     def __post_init__(self) -> None:
+        if self.performance_window < 1:
+            raise ValueError("performance_window must be positive.")
         if self.update_scope not in {"current_trial", "since_last_update"}:
             raise ValueError(
                 "update_scope must be 'current_trial' or 'since_last_update'."
@@ -45,6 +49,7 @@ class SupervisedAdaptationResult:
     trial_results: pd.DataFrame
     update_events: pd.DataFrame
     final_classifier: RetrainableClassifier
+    initial_fit_seconds: float = 0.0
 
     @property
     def accuracy(self) -> float:
@@ -159,7 +164,9 @@ def run_supervised_adaptation(
     )
 
     model = classifier or LinearSVMClassifier()
+    started = perf_counter()
     model.fit(x_cal, y_cal)
+    initial_fit_seconds = perf_counter() - started
     trigger_policy = policy or RetrainOnValidatedShift()
     adaptation_config = config or SupervisedAdaptationConfig()
 
@@ -170,9 +177,18 @@ def run_supervised_adaptation(
     update_records: list[dict[str, object]] = []
     last_update_end = 0
     classifier_version = 0
+    correctness: list[bool] = []
 
     for index, (features, label, time_value) in enumerate(zip(x_eval, y_eval, times)):
+        started = perf_counter()
         prediction = model.predict(features.reshape(1, -1))[0]
+        prediction_seconds = perf_counter() - started
+        correctness.append(bool(prediction == label))
+        window = adaptation_config.performance_window
+        recent_accuracy = (
+            float(np.mean(correctness[-window:]))
+            if len(correctness) >= window else None
+        )
         validation_record = validations.get(time_value)
         stage1_warning = time_value in warning_time_set
 
@@ -181,6 +197,8 @@ def run_supervised_adaptation(
             time=time_value.item() if hasattr(time_value, "item") else time_value,
             stage1_warning=stage1_warning,
             validation_record=validation_record,
+            recent_accuracy=recent_accuracy,
+            trials_since_update=index + 1 - last_update_end,
         )
         should_update = bool(trigger_policy.should_update(context))
 
@@ -193,6 +211,8 @@ def run_supervised_adaptation(
                     prediction.item() if hasattr(prediction, "item") else prediction
                 ),
                 "correct": bool(prediction == label),
+                "rolling_accuracy": recent_accuracy,
+                "prediction_seconds": prediction_seconds,
                 "stage1_warning": stage1_warning,
                 "stage2_status": (
                     validation_record.get("status") if validation_record is not None else None
@@ -225,13 +245,17 @@ def run_supervised_adaptation(
         x_new = x_eval[start:stop]
         y_new = y_eval[start:stop]
         size_before = model.training_size
+        started = perf_counter()
         model.append_and_retrain(x_new, y_new)
+        retrain_seconds = perf_counter() - started
         classifier_version += 1
         last_update_end = stop
 
         update_records.append(
             {
                 "update_index": len(update_records),
+                "retrain_seconds": retrain_seconds,
+                "recent_accuracy": recent_accuracy,
                 "trigger_trial_index": index,
                 "trigger_time": context.time,
                 "stage1_warning": stage1_warning,
@@ -256,4 +280,5 @@ def run_supervised_adaptation(
         trial_results=pd.DataFrame(trial_records),
         update_events=pd.DataFrame(update_records),
         final_classifier=model,
+        initial_fit_seconds=initial_fit_seconds,
     )

@@ -363,6 +363,23 @@ procedurally generated synthetic detector streams. Rebuild the in-memory index
 from the page after changing code, generated result files or the configured
 proposal.
 
+## Diethe policy laboratory
+
+Open `/results/diethe` to compare never-update, periodic, warning-triggered,
+validated-shift and performance-drop policies on an identical synthetic stream.
+The page reports rolling accuracy, update events, training size, classifier cost
+and full Stage-II evidence, with a JSON download. It is an experiment inspired
+by Diethe et al. (2019), not an implementation reported in that paper.
+
+```bash
+python -m scripts.run_diethe_experiment --scenario relationship_shift --seed 42
+```
+
+The CLI also accepts prepared EEG features and explicit provenance. See
+[Diethe experiment protocols and data contract](docs/diethe_experiments.md).
+Immediate labels and an expanding training set are explicit assumptions;
+rollback, delayed labels and bounded-memory adaptation remain future work.
+
 ## Complementary monitoring experiments
 
 The complementary Stage-I experiment monitors the PCA score and the residual outside the retained subspace. Its synthetic stream has known shift scenarios, while the real BCI export supports descriptive alarm inspection only.
