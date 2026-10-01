@@ -14,11 +14,11 @@ JUNIT_XML = """<?xml version="1.0" encoding="utf-8"?>
       </properties>
       <system-out>loader completed</system-out>
     </testcase>
-    <testcase classname="tests.detection.test_cse" name="test_cse" time="0.20" />
-    <testcase classname="tests.reporting.test_dashboard" name="test_dashboard" time="0.30">
+    <testcase classname="tests.detection.pipelines.test_cse" name="test_cse" time="0.20" />
+    <testcase classname="tests.web.test_table1_page" name="test_dashboard" time="0.30">
       <failure message="assert 1 == 2">assert 1 == 2</failure>
     </testcase>
-    <testcase classname="tests.integration.test_project_structure" name="test_structure" time="0.05">
+    <testcase classname="tests.compatibility.test_legacy_imports" name="test_structure" time="0.05">
       <skipped message="optional dependency" />
     </testcase>
   </testsuite>
@@ -44,8 +44,8 @@ def test_load_test_report_calculates_distribution(tmp_path: Path) -> None:
     assert {group["name"] for group in report["groups"]} == {
         "bci",
         "detection",
-        "integration",
-        "reporting",
+        "compatibility",
+        "web",
     }
 
 
@@ -111,12 +111,12 @@ def test_test_results_api_returns_current_counts(tmp_path: Path) -> None:
 
 def test_source_analysis_extracts_expected_contracts() -> None:
     analysis = _extract_test_source_analysis(
-        "tests.detection.test_cse",
+        "tests.detection.pipelines.test_cse",
         "test_run_cse_returns_complete_result",
     )
 
     assert analysis["available"] is True
-    assert analysis["source_path"] == "tests/detection/test_cse.py"
+    assert analysis["source_path"] == "tests/detection/pipelines/test_cse.py"
     assert "test_run_cse_returns_complete_result" in analysis["source"]
     assert len(analysis["assertions"]) >= 5
     assert any(

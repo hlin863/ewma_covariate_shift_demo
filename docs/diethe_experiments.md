@@ -119,5 +119,5 @@ pseudo-labelling and dynamic ensemble growth.
 Run the targeted checks with:
 
 ```bash
-python -m pytest tests/adaptation/test_diethe.py tests/reporting/test_diethe_page.py -q
+python -m pytest tests/adaptation/test_policies.py tests/adaptation/test_supervised.py tests/adaptation/experiments/test_diethe.py tests/web/test_diethe_page.py -q
 ```

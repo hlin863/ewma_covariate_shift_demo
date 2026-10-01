@@ -27,18 +27,13 @@ def _session1_trials() -> Dataset2ATrialSignalResult:
     )
 
 
-def test_session1_split_returns_explicit_development_split() -> None:
-    split = split_dataset_2a_session1(_session1_trials())
-
-    assert isinstance(split, Dataset2ADevelopmentSplit)
-    assert split.training.signals.shape[0] == 14
-    assert split.validation.signals.shape[0] == 6
-
-
 def test_session1_split_is_stratified_and_preserves_all_trials_without_overlap() -> None:
     trials = _session1_trials()
     split = split_dataset_2a_session1(trials, validation_fraction=0.30, random_state=42)
 
+    assert isinstance(split, Dataset2ADevelopmentSplit)
+    assert split.training.signals.shape[0] == 14
+    assert split.validation.signals.shape[0] == 6
     np.testing.assert_array_equal(np.bincount(split.training.labels), [7, 7])
     np.testing.assert_array_equal(np.bincount(split.validation.labels), [3, 3])
 

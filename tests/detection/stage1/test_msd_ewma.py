@@ -6,24 +6,7 @@ from src.msd_ewma import (
 )
 
 
-def test_multivariate_ewma_path_returns_expected_shapes():
-    values = np.array([
-        [1.0, 10.0],
-        [2.0, 12.0],
-        [3.0, 14.0],
-    ])
-
-    states, errors = calculate_multivariate_ewma_path(
-        values=values,
-        lambda_value=0.5,
-        initial_z=np.array([0.0, 8.0]),
-    )
-
-    assert states.shape == values.shape
-    assert errors.shape == values.shape
-
-
-def test_multivariate_ewma_path_calculates_first_state():
+def test_multivariate_ewma_path_matches_manual_recurrence():
     values = np.array([
         [2.0, 10.0],
         [4.0, 14.0],
@@ -35,15 +18,10 @@ def test_multivariate_ewma_path_calculates_first_state():
         initial_z=np.array([0.0, 6.0]),
     )
 
-    np.testing.assert_allclose(
-        errors[0],
-        np.array([2.0, 4.0]),
-    )
+    assert states.shape == errors.shape == values.shape
+    np.testing.assert_allclose(errors, [[2.0, 4.0], [3.0, 6.0]])
 
-    np.testing.assert_allclose(
-        states[0],
-        np.array([1.0, 8.0]),
-    )
+    np.testing.assert_allclose(states, [[1.0, 8.0], [2.5, 11.0]])
 
 
 def test_multivariate_ewma_path_rejects_1d_values():

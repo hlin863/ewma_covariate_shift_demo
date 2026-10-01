@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 
 from src.ewma import SD_EWMA_Config
 from src.stage_2 import Stage2Config
@@ -51,8 +52,6 @@ def test_tssd_pipeline_returns_all_result_components():
     assert "status" in result.stage_2_results.columns
     assert result.computation_time_seconds >= 0.0
 
-import pytest
-
 
 def test_tssd_pipeline_rejects_mismatched_testing_inputs():
     config = TSSDEWMAConfig(
@@ -72,3 +71,24 @@ def test_tssd_pipeline_rejects_mismatched_testing_inputs():
             testing_times=np.arange(9),
             config=config,
         )
+
+def test_configured_lambda_and_variance_mode_are_preserved() -> None:
+    rng = np.random.default_rng(4)
+    training = rng.normal(0.0, 1.0, 100)
+    testing = np.concatenate([rng.normal(0.0, 1.0, 50), rng.normal(4.0, 1.0, 50)])
+    result = run_tssd_ewma(
+        training,
+        testing,
+        np.arange(100, 200),
+        TSSDEWMAConfig(
+            stage_1=SD_EWMA_Config(
+                lambda_value=0.4,
+                variance_update_mode="frozen",
+            ),
+            stage_2=Stage2Config(before_size=10, after_size=10),
+            lambda_mode="configured",
+        ),
+    )
+
+    assert result.training_result.lambda_value == 0.4
+    assert set(result.stage_1_results["variance_update_mode"]) == {"frozen"}

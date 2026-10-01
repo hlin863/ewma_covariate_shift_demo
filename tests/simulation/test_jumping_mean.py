@@ -5,10 +5,6 @@ import pytest
 from src.simulation import JumpingMeanConfig, generate_d2_jumping_mean
 
 
-def test_public_simulation_namespace_exports_d2_generator() -> None:
-    assert callable(generate_d2_jumping_mean)
-
-
 def test_default_generator_has_paper_shape_and_truth_columns() -> None:
     stream = generate_d2_jumping_mean()
 

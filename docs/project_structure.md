@@ -77,7 +77,7 @@ Former flat modules remain import-compatible where practical so notebooks, tests
 - `src/experiments`: paper-specific dataset splits, detector settings and evaluation scope.
 - `src/web`: presentation only; it consumes generated result files and does not execute EEG/CSE processing.
 - `scripts`: executable experiment orchestration.
-- `tests`: unit, regression, integration and architecture smoke tests.
+- `tests`: domain-grouped numerical, protocol, pipeline and regression checks; web, CLI and legacy compatibility checks are separate. See [test architecture](../tests/README.md).
 - `archive`: legacy workflows retained for reference but excluded from the active architecture.
 
 ## Compatibility strategy
