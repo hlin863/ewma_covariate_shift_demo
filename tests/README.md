@@ -19,7 +19,7 @@ research quality.
 | `detection/stage2/` | K-S, training-reference Hotelling and paper two-sample Hotelling validation |
 | `detection/pipelines/` | CSE/TSSD execution, parameter forwarding and window/decision consistency |
 | `detection/baselines/` | ICI-CDT reference detector |
-| `adaptation/` | Classifier contracts, policy decisions and prediction-before-update ordering |
+| `adaptation/` | Classifier contracts, supervised updates, PWKNN pseudo-labelling, confidence-gated transductive adaptation, policy decisions and prediction-before-update ordering |
 | `adaptation/experiments/` | Diethe scenarios, matched policies, bagging protocols and exports |
 | `experiments/paper2015/` | D1 detection and D2/Table III reproduction orchestration |
 | `simulation/` | D2 recurrence, shift schedule, indexing and reproducibility |
@@ -109,6 +109,9 @@ though they are not experimental evidence.
   exclusion: these protect the interpretation of results.
 - Window ownership, pending validation, validation time, prediction-before-update
   and cooldown: these protect causal ordering and delay accounting.
+- Evaluation-label exclusion, PWKNN confidence gating, rejected pseudo-labels
+  and duplicate-admission protection: these protect the transductive adaptation
+  boundary and knowledge-base update semantics.
 - Official labels, channel layouts, dimensions and invalid inputs: these prevent
   silently evaluating a different dataset or protocol.
 - False-positive/false-negative metrics and published/computed provenance:

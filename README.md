@@ -27,7 +27,7 @@ src/
 │           └── reference.py
 ├── adaptation/
 │   ├── classifier.py                 # common classifier contracts and linear SVM
-│   ├── supervised.py                 # labelled adaptation loop
+│   ├── supervised.py                 # supervised + PWKNN transductive adaptation
 │   ├── experiments/                  # real and synthetic bagging comparisons
 │   └── ensemble/
 │       └── bagging.py                # bootstrap ensemble classifier
@@ -93,7 +93,9 @@ The former flat modules such as `src.cse`, `src.fbcsp`, `src.bci_data`, `src.ewm
 - Complementary PCA score/residual Stage-I monitoring on synthetic and real 2A/2B features
 - Chowdhury participant metadata loader and prepared-feature CSE experiment interface
 - K–S Stage-II and ICI-CDT baseline for the 2015 D2 comparison
-- Linear SVM, bagging classifier, supervised adaptation, and separate real/synthetic bagging experiments; 2019 pseudo-labelling and dynamic ensemble growth are not integrated
+- Linear SVM, bagging classifier, supervised adaptation, and separate real/synthetic bagging experiments
+- First-step CSE-UAEL transductive adaptation with labelled calibration data, unlabelled evaluation features, RBF-weighted PWKNN pseudo-labels, confidence-gated knowledge-base growth, and separate offline ground-truth scoring
+- Dynamic LDA ensemble growth and weighted ensemble classification remain future CSE-UAEL stages
 - Paper-aligned D2 jumping-mean generator with repeated-shift truth labels
 - Full-stream SD-EWMA/TSSD-EWMA D2 experiment and event-level metrics
 - Pytest coverage and GitHub Actions CI for the CSE/EWMA pipeline
@@ -380,6 +382,34 @@ The CLI also accepts prepared EEG features and explicit provenance. See
 Immediate labels and an expanding training set are explicit assumptions;
 rollback, delayed labels and bounded-memory adaptation remain future work.
 
+## First-step unsupervised CSE-UAEL adaptation
+
+`src/adaptation/supervised.py` now contains a separate transductive adaptation
+path alongside the supervised 2018-style loop. The learner is fitted from
+labelled calibration data but `run_unsupervised_adaptation(...)` does not accept
+evaluation ground-truth labels. When the selected adaptation policy triggers,
+candidate evaluation observations are pseudo-labelled from the current
+knowledge base using an RBF-weighted PWKNN rule. Only pseudo-labels whose
+confidence is strictly above the configured threshold are admitted before
+append-and-retrain.
+
+The default `update_scope="all_seen"` mirrors the first CSE-UAEL knowledge-base
+update idea by considering evaluation observations already seen at a trigger
+while preventing an accepted trial from being appended twice. Alternative
+`current_trial` and `since_last_update` scopes are retained as explicit
+experimental variants.
+
+Ground-truth evaluation labels are kept outside the online learner. Use
+`evaluate_unsupervised_adaptation(...)` after the run to measure classifier
+accuracy, pseudo-label accuracy and accepted-pseudo-label accuracy without
+leaking test truth into adaptation.
+
+This is a first-step reconstruction, not yet the full 2019 CSE-UAEL system.
+PWKNN pseudo-labelling and confidence-gated knowledge-base updates are
+implemented; dynamic LDA ensemble growth, dynamic weighted ensemble
+classification, subject-specific K/threshold selection, and a complete 2A/2B
+adaptive reproduction remain future stages.
+
 ## Complementary monitoring experiments
 
 The complementary Stage-I experiment monitors the PCA score and the residual outside the retained subspace. Its synthetic stream has known shift scenarios, while the real BCI export supports descriptive alarm inspection only.
@@ -453,7 +483,7 @@ python -m pip install -r requirements-test.txt
 python -m pytest -q
 ```
 
-The test suite covers Dataset 2A trial extraction and 70/30 development processing, FBCSP construction, Stage-II validation, Table 1 formatting, Flask dashboard rendering, PCA parsing, Dataset 2B regression behavior, EWMA/CSE logic, and legacy-import compatibility.
+The test suite covers Dataset 2A trial extraction and 70/30 development processing, FBCSP construction, Stage-II validation, Table 1 formatting, Flask dashboard rendering, PCA parsing, Dataset 2B regression behavior, EWMA/CSE logic, supervised adaptation, PWKNN pseudo-labelling, confidence-gated transductive updates, evaluation-label isolation, and legacy-import compatibility.
 
 Tests are grouped by dataset and component, with separate experiment, web, CLI,
 and compatibility checks. See [`tests/README.md`](tests/README.md) for focused
@@ -461,4 +491,4 @@ commands, retention criteria and the review of removed or consolidated cases.
 
 ## Current research boundary
 
-The repository covers signal processing, feature extraction, CSE warning, and Stage-II validation portions of the 2019 CSE-UAEL pipeline, alongside separate supervised policies, bagging comparisons and complementary monitoring experiments. These components are not an integrated 2019 CSE-UAEL adaptive classifier. PWKNN-driven unsupervised adaptation, dynamic LDA ensemble growth, and weighted ensemble classification remain future stages.
+The repository covers signal processing, feature extraction, CSE warning, Stage-II validation, supervised adaptation, and a first-step PWKNN-driven transductive adaptation path for unlabelled evaluation features. The current pseudo-labelled path keeps evaluation truth outside the learner, applies confidence-gated knowledge-base growth, and supports post-run scoring against hidden labels. These components are still not a complete 2019 CSE-UAEL adaptive ensemble: dynamic LDA ensemble growth, weighted ensemble classification, paper-matched subject-specific PWKNN parameter selection, and an end-to-end 2A/2B adaptive reproduction remain future stages.

@@ -22,7 +22,7 @@ src/
 │           └── reference.py
 ├── adaptation/
 │   ├── classifier.py                 # classifier and retraining contracts, SVM
-│   ├── supervised.py                 # labelled 2018 adaptation path
+│   ├── supervised.py                 # supervised + PWKNN transductive adaptation
 │   ├── experiments/                  # real and synthetic bagging comparisons
 │   └── ensemble/
 │       └── bagging.py                # bootstrap ensemble classifier
@@ -67,7 +67,7 @@ Former flat modules remain import-compatible where practical so notebooks, tests
 - `src/bci`: raw BCI data access, EEG preprocessing and feature construction.
 - `src/bci/datasets`: dataset-specific assumptions such as sessions, channels, cue codes, development splits and published reproduction targets.
 - `src/bci/splitting.py`: shared stratified index operation; paper-specific session assignments stay in dataset packages.
-- `src/adaptation`: classifier contracts, supervised adaptation, and separate real/synthetic bagging comparisons. The 2019 pseudo-labelling and dynamic growth stages remain unimplemented.
+- `src/adaptation`: classifier contracts, supervised adaptation, PWKNN pseudo-labelled transductive updates, and separate real/synthetic bagging comparisons. Dynamic CSE-UAEL ensemble growth and weighted voting remain unimplemented.
 - `src/detection`: dataset-agnostic covariate-shift estimation logic.
 - `src/detection/stage1`: EWMA-based CS warning generation.
 - `src/detection/stage2`: K-S/Hotelling CS warning validation methods.

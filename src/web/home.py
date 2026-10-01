@@ -168,8 +168,11 @@ def build_home_page_model() -> dict[str, object]:
             {
                 "number": "07",
                 "title": "UAEL adaptation",
-                "detail": "PWKNN pseudo-labelling and dynamic ensembles",
-                "status": "planned",
+                "detail": (
+                    "PWKNN pseudo-labelling and confidence-gated knowledge-base "
+                    "updates implemented; dynamic ensembles remain planned"
+                ),
+                "status": "in progress",
             },
         ),
         "lineage": (
@@ -221,10 +224,11 @@ def build_home_page_model() -> dict[str, object]:
             "A modular reconstruction of cue extraction, FBCSP, PCA, EWMA warning and multivariate validation.",
             "Published-versus-computed subject results with generated diagnostics rather than hard-coded claims.",
             "Methodological ambiguity treated as an experimental variable: split, PCA retention, control limits and Stage-II interpretation.",
+            "Evaluation-label-free transductive adaptation with PWKNN confidence gating and separate offline ground-truth scoring.",
         ),
         "limitations": (
             "The default H=10 and d=20 Stage-II configuration is dimensionally ineligible because 2H − d − 1 is negative.",
             "Passing implementation tests do not establish exact agreement with published EEG warning and validation counts.",
-            "Confirmed shifts do not yet trigger refitting, detector reinitialisation or classifier adaptation.",
+            "PWKNN-triggered classifier refitting is implemented, but dynamic ensemble growth, weighted voting and end-to-end 2A/2B adaptive reproduction remain future work.",
         ),
     }
