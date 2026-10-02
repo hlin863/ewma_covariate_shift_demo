@@ -106,6 +106,7 @@ class SD_EWMA_Config:
     lambda_value: float
     variance_smoothing: float = 0.05
     control_limit_multiplier: float = 1.96
+    # Derived from the paper's alpha = 0.05 under its normal error assumptions even though L itself is not separately reported from the experimental configuration.
     variance_update_mode: str = "always"
 
     def __post_init__(self) -> None:
