@@ -2,6 +2,10 @@
 
 Research reproduction and extension project for EWMA-based covariate-shift estimation in non-stationary data, with a particular focus on the CSE and CSE-UAEL methods described by Raza et al. (2015, 2019).
 
+The repository is also maintained as a **living computational literature review**. It preserves three connected histories: the literature that motivates each method, the algorithmic changes introduced across studies, and the implementation history showing how those ideas were reconstructed, challenged, extended, or superseded in code. Historical implementations and compatibility paths are therefore retained when they carry methodological provenance rather than treated as disposable duplication.
+
+Start with [docs/living_literature_review/README.md](docs/living_literature_review/README.md) for the literature-to-code lineage.
+
 ## Project structure
 
 The active code is organised by research responsibility rather than as one flat `src` directory:
@@ -68,7 +72,7 @@ from src.detection.stage2 import validate_algorithm1_alarms
 from src.reporting.table1 import Table1Row
 ```
 
-The former flat modules such as `src.cse`, `src.fbcsp`, `src.bci_data`, `src.ewma`, and `src.table1_reproduction` are retained as compatibility shims so existing notebooks/tests do not have to migrate in one breaking change. See `docs/project_structure.md` for the responsibility boundaries and migration policy.
+The former flat modules such as `src.cse`, `src.fbcsp`, `src.bci_data`, `src.ewma`, and `src.table1_reproduction` are retained as compatibility shims so existing notebooks/tests do not have to migrate in one breaking change. They also preserve implementation lineage by showing how earlier flat research functions map onto the current responsibility-based packages. See `docs/project_structure.md` for the responsibility boundaries and [the living literature review](docs/living_literature_review/README.md) for the provenance policy.
 
 ## Implemented pipeline
 

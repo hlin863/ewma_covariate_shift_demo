@@ -1,6 +1,8 @@
 # Project structure
 
-The repository is organised by research responsibility rather than by a flat list of implementation files.
+The repository is organised by research responsibility rather than by a flat list of implementation files. This active structure coexists with a preservation layer: the repository is a living computational literature review, so historically meaningful implementations, compatibility shims, paper-specific alternatives and milestone outputs are retained when they document how the research interpretation evolved.
+
+See [Living computational literature review](living_literature_review/README.md) for the paper-to-code lineage and preservation rules.
 
 ```text
 src/
@@ -78,7 +80,7 @@ Former flat modules remain import-compatible where practical so notebooks, tests
 - `src/web`: presentation only; it consumes generated result files and does not execute EEG/CSE processing.
 - `scripts`: executable experiment orchestration.
 - `tests`: domain-grouped numerical, protocol, pipeline and regression checks; web, CLI and legacy compatibility checks are separate. See [test architecture](../tests/README.md).
-- `archive`: legacy workflows retained for reference but excluded from the active architecture.
+- `archive`: superseded research workflows retained as provenance records. They are excluded from canonical execution, but remain part of the living literature review when they document an earlier methodological interpretation, data protocol, or experiment.
 
 ## Compatibility strategy
 
@@ -91,6 +93,8 @@ from src.bci_data import BCISessionData
 ```
 
 continue to resolve through compatibility shims, while active orchestration such as `scripts/run_bci_table1_reproduction.py` uses the structured namespaces. This lets the test suite expose migration regressions without forcing every notebook and utility script to change in one commit.
+
+Compatibility shims have a second role in this repository: they are implementation-lineage markers. A shim should remain when it records a meaningful transition from an earlier research layout to a canonical package. New functionality should still target the canonical package so preservation does not create two competing active implementations.
 
 ## Why this structure
 

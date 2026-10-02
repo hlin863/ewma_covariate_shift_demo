@@ -12,3 +12,11 @@ for browser preview.
 
 The “Current - Auditable reconstruction” panel represents this repository's
 implementation stage, so it intentionally does not link to an external paper.
+
+These PDFs are the source layer of the repository's living computational
+literature review. The cross-study mapping from source paper to algorithm,
+canonical implementation, historical implementation and evidence is maintained
+in [docs/living_literature_review/studies.md](../docs/living_literature_review/studies.md).
+A paper can also be tracked in the lineage without committing its PDF, provided
+the documentation clearly marks the source as external rather than implying that
+a repository copy exists.
