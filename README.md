@@ -31,15 +31,18 @@ src/
 │           └── reference.py
 ├── adaptation/
 │   ├── classifier.py                 # common classifier contracts and linear SVM
-│   ├── supervised.py                 # supervised + PWKNN transductive adaptation
-│   ├── experiments/                  # real and synthetic bagging comparisons
+│   ├── supervised.py                 # Chowdhury-style labelled adaptation
+│   ├── pseudo_labelling.py           # PWKNN pseudo-labels and confidence
+│   ├── transductive.py               # labelled calibration / unlabelled evaluation
+│   ├── evaluation.py                 # hidden-label post-run scoring
+│   ├── experiments/                  # policy and ensemble comparisons
 │   └── ensemble/
-│       └── bagging.py                # bootstrap ensemble classifier
+│       └── bagging.py                # passive bootstrap ensemble baseline
 ├── detection/
 │   ├── core.py                       # dataset-agnostic CSE orchestration
 │   ├── preprocessing.py              # PCA fit/transform helpers
 │   ├── stage1/                    # SD/MSD EWMA and complementary PCA monitoring
-│   ├── stage2/                    # Hotelling and K–S validation APIs
+│   ├── stage2/                    # K–S + three explicit Hotelling interpretations
 │   └── baselines/                 # ICI-CDT comparison
 ├── reporting/
 │   ├── table1.py                     # Table 1 output/comparison
@@ -125,7 +128,7 @@ ground-truth shift are different observations.
    The limits use the previous EWMA state and previous error standard
    deviation. A warning is a candidate change, not statistical confirmation.
 3. **Validate a candidate.** With `validation_mode="paper_two_sample"`,
-   `src/cse_paper_stage_2.py` compares two disjoint samples in retained PCA
+   `src/detection/stage2/paper_two_sample_hotelling.py` compares two disjoint samples in retained PCA
    space using a two-sample Hotelling T-squared test. For warning index i and
    window H, the reference is `features[i-H+1:i+1]` and the current sample is
    `features[i+1:i+1+H]`. The implemented decision is `p_value < alpha`.
@@ -388,8 +391,9 @@ rollback, delayed labels and bounded-memory adaptation remain future work.
 
 ## First-step unsupervised CSE-UAEL adaptation
 
-`src/adaptation/supervised.py` now contains a separate transductive adaptation
-path alongside the supervised 2018-style loop. The learner is fitted from
+`src/adaptation/transductive.py` is now the canonical home of the transductive adaptation
+path, while `src/adaptation/supervised.py` preserves the supervised 2018-style loop and
+re-exports the historical transductive imports for compatibility. The learner is fitted from
 labelled calibration data but `run_unsupervised_adaptation(...)` does not accept
 evaluation ground-truth labels. When the selected adaptation policy triggers,
 candidate evaluation observations are pseudo-labelled from the current

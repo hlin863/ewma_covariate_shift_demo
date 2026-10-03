@@ -17,6 +17,10 @@ preferred import path for current development.
 | `src.table1_reproduction` | `src.reporting.table1` | Paper-style output separated from detector execution |
 | `src.evaluation` | `src.reporting.metrics` | Evaluation metrics separated from algorithm code |
 | `src.tssd_ewma` | `src.detection.two_stage` | Two-stage orchestration placed beside the detector stages |
+| `src.cse_algorithm1_stage_2` | `src.detection.stage2.training_reference_hotelling` | Training-reference Hotelling interpretation moved into the Stage-II namespace |
+| `src.cse_paper_stage_2` | `src.detection.stage2.paper_two_sample_hotelling` | Equal-window paper interpretation moved into the Stage-II namespace |
+| `src.multivariate_stage_2` | `src.detection.stage2.retrospective_hotelling` | General retrospective Hotelling validator moved into the Stage-II namespace |
+| transductive code inside `src.adaptation.supervised` | `src.adaptation.transductive`, `src.adaptation.pseudo_labelling`, `src.adaptation.evaluation` | Chowdhury-style supervision separated from the later Raza-2019-inspired transductive lineage |
 | flat Dataset 2A modules | `src.bci.datasets.dataset2a` | Session/split assumptions isolated as dataset protocol |
 | flat Dataset 2B modules | `src.bci.datasets.dataset2b` | Dataset 2B reproduction assumptions isolated as protocol |
 
@@ -32,10 +36,10 @@ collapsing them into one generic test:
 - paper-style equal-window two-sample Hotelling;
 - K-S validation for the univariate 2015 pathway.
 
-Some Hotelling implementations still live in flat modules and are re-exported
-through `src.detection.stage2`. This is an **incomplete structural migration**,
-not evidence that one interpretation has replaced the others. If they are moved
-later, preserve their names and methodological distinctions.
+The Hotelling implementations now live canonically under `src.detection.stage2`:
+`training_reference_hotelling.py`, `paper_two_sample_hotelling.py`, and
+`retrospective_hotelling.py`. The former flat modules remain as historical
+compatibility shims, so older notebooks still resolve to the same objects.
 
 ## Adaptation lineage
 
@@ -56,11 +60,13 @@ future label-availability studies
     delayed / sparse / pseudo / no-label regimes
 ```
 
-The current `src/adaptation/supervised.py` contains more than its historical
-filename suggests because it records this transition. A future module split is
-acceptable, but it must preserve the lineage explicitly: supervised and
-transductive paths should remain separately identifiable rather than being
-collapsed into an opaque generic learner.
+The adaptation milestone is now split without erasing its history:
+`supervised.py` is the canonical synchronous labelled pathway,
+`pseudo_labelling.py` contains PWKNN knowledge acquisition,
+`transductive.py` contains labelled-calibration/unlabelled-evaluation adaptation,
+and `evaluation.py` contains hidden-label post-run scoring. The historical
+transductive imports from `src.adaptation.supervised` are intentionally
+re-exported and verified by compatibility tests.
 
 ## Result lineage
 

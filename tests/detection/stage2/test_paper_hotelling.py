@@ -3,7 +3,7 @@ import pandas as pd
 import pytest
 
 from src.cse import CSEConfig
-from src.cse_paper_stage_2 import (
+from src.detection.stage2.paper_two_sample_hotelling import (
     PaperTwoSampleHotellingConfig,
     calculate_paper_two_sample_hotelling,
     validate_paper_two_sample_alarms,

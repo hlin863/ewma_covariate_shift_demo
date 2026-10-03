@@ -18,7 +18,7 @@ import pandas as pd
 
 from src.bci_data import load_cse_feature_file
 from src.cse import CSEConfig, run_cse
-from src.multivariate_stage_2 import (
+from src.detection.stage2.retrospective_hotelling import (
     HotellingConfig,
     validate_multivariate_alarms,
 )
