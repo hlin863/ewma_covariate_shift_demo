@@ -5,10 +5,10 @@ import pandas as pd
 import pytest
 
 from src.adaptation.policies import RetrainOnValidatedShift
-from src.adaptation.supervised import (
-    PWKNNPseudoLabeler,
+from src.adaptation.evaluation import evaluate_unsupervised_adaptation
+from src.adaptation.pseudo_labelling import PWKNNPseudoLabeler
+from src.adaptation.transductive import (
     UnsupervisedAdaptationConfig,
-    evaluate_unsupervised_adaptation,
     run_unsupervised_adaptation,
 )
 

@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-from src.cse_algorithm1_stage_2 import (
+from src.detection.stage2.training_reference_hotelling import (
     calculate_training_reference_hotelling,
     validate_algorithm1_alarms,
 )
