@@ -44,8 +44,8 @@
     <header class="home-hero">
       <div class="hero-copy">
         <p class="eyebrow">Reproducibility · non-stationary EEG · BCI</p>
-        <h1>From covariate-shift warnings to auditable evidence.</h1>
-        <p class="home-lede">A research interface for the reconstruction and extension of EWMA-based covariate-shift estimation across BCI Competition IV and clinical EEG data.</p>
+        <h1>From covariate-shift warnings to auditable adaptive learning.</h1>
+        <p class="home-lede">A research interface for reconstructing, testing and extending EWMA-based covariate-shift estimation from detector evidence through supervised and transductive adaptation.</p>
         <div class="hero-cta">
           <a class="primary-action" href="{{ url_for('dashboard') }}">Open Table 1 dashboard <span aria-hidden="true">→</span></a>
           <a class="secondary-action" href="{{ url_for('results_catalog') }}">Browse all results</a>
@@ -62,13 +62,13 @@
     </header>
 
     <section class="scope-banner" aria-label="Current project scope">
-      <div><span class="scope-marker">Current boundary</span><strong>CSE warning and validation are implemented and testable.</strong></div>
-      <p>The full CSE-UAEL loop—pseudo-labelling, dynamic ensembles and adaptation after confirmation—is future work, not a completed claim.</p>
+      <div><span class="scope-marker">Current boundary</span><strong>{{ scope.headline }}</strong></div>
+      <p>{{ scope.detail }}</p>
     </section>
 
     <section class="home-section" id="progress">
       <div class="home-section-heading">
-        <div><p class="eyebrow">Current project progress</p><h2>The research pipeline, stage by stage</h2></div>
+        <div><p class="eyebrow">Current project progress</p><h2>The research pipeline, from detection to adaptation</h2></div>
         <p>Implemented means code and automated contracts exist. It does not imply exact reproduction of published subject-level values.</p>
       </div>
       <div class="pipeline-grid">
@@ -85,7 +85,7 @@
     <section class="home-section lineage-section" id="papers">
       <div class="home-section-heading">
         <div><p class="eyebrow">Paper foundations</p><h2>How the current reconstruction fits the research lineage</h2></div>
-        <p>The project separates detector provenance, online-learning context and present implementation evidence.</p>
+        <p>The project preserves how detector, validation and adaptation ideas evolve across the source studies and current extensions.</p>
       </div>
       <div class="lineage-grid">
         {% for item in lineage %}
