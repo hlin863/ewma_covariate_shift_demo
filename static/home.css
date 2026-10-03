@@ -31,7 +31,7 @@
 .home-section-heading { display: grid; grid-template-columns: 1.25fr 0.75fr; gap: 40px; align-items: end; margin-bottom: 28px; }
 .home-section-heading h2 { max-width: 760px; font-size: clamp(2rem, 4vw, 3.2rem); letter-spacing: -0.035em; line-height: 1.05; }
 .home-section-heading > p { margin: 0; color: var(--muted); line-height: 1.6; }
-.pipeline-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 10px; }
+.pipeline-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
 .pipeline-card { min-height: 220px; padding: 18px; border: 1px solid var(--line); border-radius: 18px; background: var(--panel-alpha); }
 .pipeline-card.status-implemented { border-top: 3px solid var(--computed); }
 .pipeline-card.status-in-progress { border-top: 3px solid var(--warning); }
@@ -347,7 +347,7 @@
 .home-footer p { margin: 0; }
 
 @media (max-width: 1150px) {
-  .pipeline-grid { grid-template-columns: repeat(4, 1fr); }
+  .pipeline-grid { grid-template-columns: repeat(2, 1fr); }
   .pipeline-card { min-height: 180px; }
   .pipeline-top { margin-bottom: 25px; }
 }
