@@ -25,8 +25,8 @@ def build_home_page_model() -> dict[str, object]:
                 "title": "CSE research application",
                 "detail": (
                     "The home page is the navigation root. Evidence flows from "
-                    "dataset/protocol inspection into experiment analysis and then "
-                    "into generated results and implementation verification."
+                    "dataset/protocol inspection through detection and adaptation "
+                    "analysis into generated results and implementation verification."
                 ),
             },
             "layers": (
@@ -104,7 +104,7 @@ def build_home_page_model() -> dict[str, object]:
                         "Inspect when detector evidence should trigger model change and "
                         "how the project separates supervised from transductive updates."
                     ),
-                    "relationship": "guides adaptation",
+                    "relationship": "guides model updates",
                     "pages": (
                         {
                             "endpoint": "diethe.laboratory",
@@ -124,7 +124,7 @@ def build_home_page_model() -> dict[str, object]:
                         "Consolidate generated artifacts and verify that the code "
                         "contracts supporting those artifacts continue to pass."
                     ),
-                    "relationship": "supports interpretation",
+                    "relationship": "produces auditable evidence",
                     "pages": (
                         {
                             "endpoint": "results_catalog",
@@ -231,7 +231,7 @@ def build_home_page_model() -> dict[str, object]:
             {
                 "year": "2018",
                 "title": "Online adaptive BCI",
-                "detail": "Clinical and online-learning context for non-stationary EEG.",
+                "detail": "Two-stage shift evidence connected to synchronous supervised BCI adaptation.",
                 "paper_file": "2018-chowdhury-online-adaptive-bci.pdf",
                 "paper_title": (
                     "Online Covariate Shift Detection-Based Adaptive "
@@ -243,7 +243,7 @@ def build_home_page_model() -> dict[str, object]:
             {
                 "year": "2019",
                 "title": "CSE-UAEL",
-                "detail": "Two-stage estimation connected to unsupervised adaptive learning.",
+                "detail": "CSE, PWKNN transduction and adaptive ensemble learning for non-stationary MI-BCI.",
                 "paper_file": "2019-raza-cse-uael.pdf",
                 "paper_title": (
                     "Covariate shift estimation based adaptive ensemble learning "
