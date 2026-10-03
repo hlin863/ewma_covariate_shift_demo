@@ -7,13 +7,26 @@ def build_home_page_model() -> dict[str, object]:
     """Return the research narrative, implementation status and page catalogue."""
 
     return {
+        "scope": {
+            "headline": (
+                "Detection through confidence-gated transductive adaptation is "
+                "implemented and testable."
+            ),
+            "detail": (
+                "The repository now separates Stage-I warnings, explicit Stage-II "
+                "validation variants, supervised adaptation, PWKNN pseudo-labelling, "
+                "transductive knowledge-base updates and hidden-label post-run scoring. "
+                "Dynamic CSE-UAEL ensemble growth, weighted voting and the first full "
+                "2A/2B adaptive reproduction remain open milestones."
+            ),
+        },
         "application_map": {
             "root": {
                 "title": "CSE research application",
                 "detail": (
                     "The home page is the navigation root. Evidence flows from "
-                    "dataset/protocol inspection into experiment analysis and then "
-                    "into generated results and implementation verification."
+                    "dataset/protocol inspection through detection and adaptation "
+                    "analysis into generated results and implementation verification."
                 ),
             },
             "layers": (
@@ -57,10 +70,10 @@ def build_home_page_model() -> dict[str, object]:
                 },
                 {
                     "number": "02",
-                    "title": "Detection and experiment analysis",
+                    "title": "Detection and representation analysis",
                     "detail": (
-                        "Run and inspect the primary reproduction and complementary "
-                        "monitoring experiments built on the data-processing layer."
+                        "Inspect the primary reproduction, Stage-I/Stage-II behaviour "
+                        "and complementary score/residual monitoring experiments."
                     ),
                     "relationship": "produces evidence",
                     "pages": (
@@ -86,12 +99,32 @@ def build_home_page_model() -> dict[str, object]:
                 },
                 {
                     "number": "03",
+                    "title": "Adaptation and continual learning",
+                    "detail": (
+                        "Inspect when detector evidence should trigger model change and "
+                        "how the project separates supervised from transductive updates."
+                    ),
+                    "relationship": "guides model updates",
+                    "pages": (
+                        {
+                            "endpoint": "diethe.laboratory",
+                            "label": "Diethe policy laboratory",
+                            "kind": "Continual-learning experiment",
+                            "description": (
+                                "Compare update policies, evidence and adaptation cost "
+                                "without conflating policy choice with detector logic."
+                            ),
+                        },
+                    ),
+                },
+                {
+                    "number": "04",
                     "title": "Evidence and implementation assurance",
                     "detail": (
                         "Consolidate generated artifacts and verify that the code "
                         "contracts supporting those artifacts continue to pass."
                     ),
-                    "relationship": "supports interpretation",
+                    "relationship": "produces auditable evidence",
                     "pages": (
                         {
                             "endpoint": "results_catalog",
@@ -144,19 +177,19 @@ def build_home_page_model() -> dict[str, object]:
             {
                 "number": "03",
                 "title": "PCA",
-                "detail": "PC1 monitoring with retained components for validation",
+                "detail": "PCA score monitoring plus complementary residual-space evidence",
                 "status": "implemented",
             },
             {
                 "number": "04",
                 "title": "Stage I",
-                "detail": "SD-EWMA covariate-shift warnings (CSW)",
+                "detail": "SD/MSD-EWMA warnings with complementary score/residual monitoring",
                 "status": "implemented",
             },
             {
                 "number": "05",
                 "title": "Stage II",
-                "detail": "Multivariate validation and eligibility diagnostics",
+                "detail": "K-S plus explicit training-reference, two-sample and retrospective Hotelling paths",
                 "status": "implemented",
             },
             {
@@ -167,12 +200,20 @@ def build_home_page_model() -> dict[str, object]:
             },
             {
                 "number": "07",
-                "title": "UAEL adaptation",
+                "title": "Transductive adaptation",
                 "detail": (
-                    "PWKNN pseudo-labelling and confidence-gated knowledge-base "
-                    "updates implemented; dynamic ensembles remain planned"
+                    "PWKNN pseudo-labelling, confidence-gated knowledge-base growth "
+                    "and hidden-label post-run evaluation"
                 ),
-                "status": "in progress",
+                "status": "implemented",
+            },
+            {
+                "number": "08",
+                "title": "Dynamic ensemble",
+                "detail": (
+                    "CSE-triggered classifier growth and weighted CSE-UAEL voting"
+                ),
+                "status": "planned",
             },
         ),
         "lineage": (
@@ -190,7 +231,7 @@ def build_home_page_model() -> dict[str, object]:
             {
                 "year": "2018",
                 "title": "Online adaptive BCI",
-                "detail": "Clinical and online-learning context for non-stationary EEG.",
+                "detail": "Two-stage shift evidence connected to synchronous supervised BCI adaptation.",
                 "paper_file": "2018-chowdhury-online-adaptive-bci.pdf",
                 "paper_title": (
                     "Online Covariate Shift Detection-Based Adaptive "
@@ -202,7 +243,7 @@ def build_home_page_model() -> dict[str, object]:
             {
                 "year": "2019",
                 "title": "CSE-UAEL",
-                "detail": "Two-stage estimation connected to unsupervised adaptive learning.",
+                "detail": "CSE, PWKNN transduction and adaptive ensemble learning for non-stationary MI-BCI.",
                 "paper_file": "2019-raza-cse-uael.pdf",
                 "paper_title": (
                     "Covariate shift estimation based adaptive ensemble learning "
@@ -213,8 +254,11 @@ def build_home_page_model() -> dict[str, object]:
             },
             {
                 "year": "Current",
-                "title": "Auditable reconstruction",
-                "detail": "Explicit alternatives expose decisions hidden by methodological ambiguity.",
+                "title": "Auditable adaptive framework",
+                "detail": (
+                    "Explicit Stage-II alternatives, complementary monitoring, "
+                    "policy experiments and supervised/transductive adaptation."
+                ),
                 "paper_file": None,
                 "paper_title": None,
                 "citation": "Current repository stage",
@@ -225,10 +269,11 @@ def build_home_page_model() -> dict[str, object]:
             "Published-versus-computed subject results with generated diagnostics rather than hard-coded claims.",
             "Methodological ambiguity treated as an experimental variable: split, PCA retention, control limits and Stage-II interpretation.",
             "Evaluation-label-free transductive adaptation with PWKNN confidence gating and separate offline ground-truth scoring.",
+            "A living computational literature review linking source studies to algorithmic, implementation and evidence lineage.",
         ),
         "limitations": (
             "The default H=10 and d=20 Stage-II configuration is dimensionally ineligible because 2H − d − 1 is negative.",
             "Passing implementation tests do not establish exact agreement with published EEG warning and validation counts.",
-            "PWKNN-triggered classifier refitting is implemented, but dynamic ensemble growth, weighted voting and end-to-end 2A/2B adaptive reproduction remain future work.",
+            "PWKNN-triggered transductive refitting is implemented and regression-tested, but dynamic ensemble growth, weighted voting and the first end-to-end 2A/2B adaptive reproduction remain future work.",
         ),
     }
