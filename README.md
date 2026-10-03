@@ -6,6 +6,8 @@ The repository is also maintained as a **living computational literature review*
 
 Start with [docs/living_literature_review/README.md](docs/living_literature_review/README.md) for the literature-to-code lineage.
 
+For a current architecture map covering the top-level repository, canonical `src/` packages, compatibility layer, experiments, outputs and web views, see [docs/project_structure.md](docs/project_structure.md).
+
 ## Project structure
 
 The active code is organised by research responsibility rather than as one flat `src` directory:
