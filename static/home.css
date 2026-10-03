@@ -40,6 +40,7 @@
 .progress-status { font-weight: 850; text-transform: uppercase; letter-spacing: 0.05em; }
 .status-implemented .progress-status { color: var(--computed); }
 .status-in-progress .progress-status { color: var(--warning); }
+.status-planned .progress-status { color: var(--published); }
 .pipeline-card h3 { font-size: 1rem; }
 .pipeline-card p { margin: 10px 0 0; color: var(--muted); font-size: 0.79rem; line-height: 1.55; }
 
