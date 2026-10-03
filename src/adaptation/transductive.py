@@ -4,21 +4,17 @@ Calibration labels are known; evaluation labels are not exposed to the online
 learner. Historical names containing "unsupervised" remain available for
 compatibility with earlier project milestones.
 """
-
 from __future__ import annotations
-
 from dataclasses import dataclass
 from time import perf_counter
-
 import numpy as np
 import pandas as pd
-
 from src.adaptation._events import _python_scalar, _validation_by_time, _warning_times
 from src.adaptation.classifier import LinearSVMClassifier, RetrainableClassifier
 from src.adaptation.policies import AdaptationContext, AdaptationPolicy, RetrainOnValidatedShift
 from src.adaptation.pseudo_labelling import PseudoLabeler, PWKNNPseudoLabeler
 
-
+@dataclass(frozen=True)
 class UnsupervisedAdaptationConfig:
     """Configuration for transductive pseudo-labelled adaptation.
 
@@ -62,8 +58,6 @@ class UnsupervisedAdaptationConfig:
 
 
 @dataclass(frozen=True)
-
-
 class UnsupervisedAdaptationResult:
     """Outputs of a transductive run without evaluation ground-truth labels."""
 
@@ -92,9 +86,6 @@ class UnsupervisedAdaptationResult:
         if self.pseudo_label_events.empty:
             return float("nan")
         return float(self.pseudo_label_events["accepted"].astype(bool).mean())
-
-
-@dataclass(frozen=True)
 
 
 def _validate_unsupervised_inputs(

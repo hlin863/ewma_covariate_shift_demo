@@ -1,15 +1,11 @@
 """Post-run evaluation for label-hidden adaptation experiments."""
-
 from __future__ import annotations
-
 from dataclasses import dataclass
-
 import numpy as np
 import pandas as pd
-
 from src.adaptation.transductive import UnsupervisedAdaptationResult
 
-
+@dataclass(frozen=True)
 class UnsupervisedEvaluationResult:
     """Offline scoring kept separate from the label-free learner interface."""
 
@@ -18,9 +14,6 @@ class UnsupervisedEvaluationResult:
     accuracy: float
     pseudo_label_accuracy: float
     accepted_pseudo_label_accuracy: float
-
-
-@dataclass(frozen=True)
 
 
 def evaluate_unsupervised_adaptation(

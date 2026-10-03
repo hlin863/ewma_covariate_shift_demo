@@ -2,15 +2,12 @@
 
 The PWKNN implementation preserves the Raza et al. (2019) CSE-UAEL lineage.
 """
-
 from __future__ import annotations
-
 from dataclasses import dataclass
 from typing import Protocol
-
 import numpy as np
 
-
+@dataclass(frozen=True)
 class PseudoLabelBatch:
     """Pseudo-labels and confidence ratios for a batch of unlabelled features."""
 
@@ -130,5 +127,3 @@ class PWKNNPseudoLabeler:
             confidence=np.asarray(confidence_ratios, dtype=float),
         )
 
-
-@dataclass(frozen=True)

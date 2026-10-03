@@ -4,20 +4,16 @@ This preserves the Chowdhury et al. (2018) labelled-adaptation lineage. Later
 PWKNN/transductive functionality has dedicated canonical modules, but is
 re-exported here so historical imports continue to work.
 """
-
 from __future__ import annotations
-
 from dataclasses import dataclass
 from time import perf_counter
-
 import numpy as np
 import pandas as pd
-
 from src.adaptation._events import _python_scalar, _validation_by_time, _warning_times
 from src.adaptation.classifier import LinearSVMClassifier, RetrainableClassifier
 from src.adaptation.policies import AdaptationContext, AdaptationPolicy, RetrainOnValidatedShift
 
-
+@dataclass(frozen=True)
 class SupervisedAdaptationConfig:
     """Controls which labelled evaluation trials are added at an update."""
 
@@ -34,8 +30,6 @@ class SupervisedAdaptationConfig:
 
 
 @dataclass(frozen=True)
-
-
 class SupervisedAdaptationResult:
     """Outputs of a sequential adaptive-classification run."""
 
