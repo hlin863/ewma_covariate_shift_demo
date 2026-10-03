@@ -24,8 +24,11 @@ src/
 │           └── reference.py
 ├── adaptation/
 │   ├── classifier.py                 # classifier and retraining contracts, SVM
-│   ├── supervised.py                 # supervised + PWKNN transductive adaptation
-│   ├── experiments/                  # real and synthetic bagging comparisons
+│   ├── supervised.py                 # synchronous labelled adaptation
+│   ├── pseudo_labelling.py           # PWKNN knowledge acquisition
+│   ├── transductive.py               # unlabelled-evaluation adaptation
+│   ├── evaluation.py                 # post-run ground-truth scoring
+│   ├── experiments/                  # policy/ensemble comparisons
 │   └── ensemble/
 │       └── bagging.py                # bootstrap ensemble classifier
 ├── detection/
@@ -34,7 +37,11 @@ src/
 │   ├── stage1/
 │   │   ├── sd_ewma.py
 │   │   └── msd_ewma.py
-│   └── stage2/                       # Hotelling validation API/variants
+│   └── stage2/
+│       ├── ks.py
+│       ├── training_reference_hotelling.py
+│       ├── paper_two_sample_hotelling.py
+│       └── retrospective_hotelling.py
 ├── reporting/
 │   ├── table1.py                     # paper-style Table 1 output
 │   └── metrics.py                    # detector evaluation metrics
@@ -69,10 +76,10 @@ Former flat modules remain import-compatible where practical so notebooks, tests
 - `src/bci`: raw BCI data access, EEG preprocessing and feature construction.
 - `src/bci/datasets`: dataset-specific assumptions such as sessions, channels, cue codes, development splits and published reproduction targets.
 - `src/bci/splitting.py`: shared stratified index operation; paper-specific session assignments stay in dataset packages.
-- `src/adaptation`: classifier contracts, supervised adaptation, PWKNN pseudo-labelled transductive updates, and separate real/synthetic bagging comparisons. Dynamic CSE-UAEL ensemble growth and weighted voting remain unimplemented.
+- `src/adaptation`: classifier contracts plus distinct supervised, pseudo-labelling, transductive, evaluation, policy and ensemble responsibilities. Historical transductive imports from `supervised.py` remain compatibility shims. Dynamic CSE-UAEL ensemble growth and weighted voting remain unimplemented.
 - `src/detection`: dataset-agnostic covariate-shift estimation logic.
 - `src/detection/stage1`: EWMA-based CS warning generation.
-- `src/detection/stage2`: K-S/Hotelling CS warning validation methods.
+- `src/detection/stage2`: K-S validation plus separately named training-reference, paper two-sample and retrospective Hotelling interpretations. The former flat Hotelling modules remain provenance/compatibility shims.
 - `src/detection/two_stage.py`: reusable univariate TSSD-EWMA orchestration.
 - `src/reporting`: experiment metrics, paper-style output and published/computed comparisons.
 - `src/simulation`: synthetic generators and ground-truth labels, independent of detector configuration.
