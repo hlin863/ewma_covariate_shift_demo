@@ -10,12 +10,18 @@ def test_home_page_presents_research_scope_and_application_map() -> None:
     assert "Local RAG support layer" in html
     assert 'href="/support"' in html
     assert "Current project progress" in html
-    assert "CSE warning and validation are implemented and testable" in html
-    assert "The full CSE-UAEL loop" in html
+    assert "Detection through confidence-gated transductive adaptation is" in html
+    assert "Dynamic CSE-UAEL ensemble growth" in html
+    assert "Transductive adaptation" in html
+    assert "Dynamic ensemble" in html
+    assert "planned" in html
     assert "Application architecture" in html
     assert "Data and protocol foundation" in html
-    assert "Detection and experiment analysis" in html
+    assert "Detection and representation analysis" in html
+    assert "Adaptation and continual learning" in html
     assert "Evidence and implementation assurance" in html
+    assert "Diethe policy laboratory" in html
+    assert 'href="/diethe"' in html
     assert "reads across all layers" in html
     assert "Table 1 dashboard" in html
     assert 'href="/table-1"' in html
