@@ -1,0 +1,2 @@
+update_index,retrain_seconds,recent_accuracy,trigger_trial_index,trigger_time,stage1_warning,stage2_status,validated_shift,added_start_trial,added_end_trial,added_samples,training_size_before,training_size_after,classifier_version
+0,0.0012066,1.0,136,136,False,confirmed,True,0,136,137,120,257,1

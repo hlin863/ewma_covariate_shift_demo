@@ -1,0 +1,13 @@
+update_index,retrain_seconds,recent_accuracy,trigger_trial_index,trigger_time,stage1_warning,stage2_status,validated_shift,added_start_trial,added_end_trial,added_samples,training_size_before,training_size_after,classifier_version
+0,0.0008622,,19,19,False,,False,0,19,20,120,140,1
+1,0.0008497,1.0,39,39,False,,False,20,39,20,140,160,2
+2,0.0008646999,1.0,59,59,False,,False,40,59,20,160,180,3
+3,0.0009601001,1.0,79,79,False,,False,60,79,20,180,200,4
+4,0.0009335,1.0,99,99,False,,False,80,99,20,200,220,5
+5,0.0011963,0.9666666667,119,119,False,,False,100,119,20,220,240,6
+6,0.001326,0.9666666667,139,139,False,,False,120,139,20,240,260,7
+7,0.0010547,1.0,159,159,False,,False,140,159,20,260,280,8
+8,0.0010985,1.0,179,179,False,,False,160,179,20,280,300,9
+9,0.0011106001,1.0,199,199,False,,False,180,199,20,300,320,10
+10,0.0011999999,1.0,219,219,False,,False,200,219,20,320,340,11
+11,0.0010716,0.9333333333,239,239,False,,False,220,239,20,340,360,12

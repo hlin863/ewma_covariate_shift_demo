@@ -1,0 +1,4 @@
+alarm_time,validation_time,reference_start_time,reference_end_time,current_start_time,current_end_time,sample_size,n_features,hotelling_t_squared,f_statistic,degrees_of_freedom_1,degrees_of_freedom_2,critical_value,p_value,status,confirmed_shift
+74,94,55,74,75,94,20,3,2.7980187991,0.8835848839,3,36,2.8662655509,0.4587860573,rejected,False
+116,136,97,116,117,136,20,3,42.2833555065,13.352638581,3,36,2.8662655509,5.1586e-06,confirmed,True
+180,200,161,180,181,200,20,3,2.1323305952,0.6733675564,3,36,2.8662655509,0.574001857,rejected,False
