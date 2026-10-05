@@ -21,7 +21,7 @@ def test_home_page_presents_research_scope_and_application_map() -> None:
     assert "Adaptation and continual learning" in html
     assert "Evidence and implementation assurance" in html
     assert "Diethe policy laboratory" in html
-    assert 'href="/diethe"' in html
+    assert 'href="/results/diethe"' in html
     assert "reads across all layers" in html
     assert "Table 1 dashboard" in html
     assert 'href="/table-1"' in html
