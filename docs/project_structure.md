@@ -127,6 +127,7 @@ src/
 │
 └── web/
     ├── home.py
+    ├── bci_eda.py
     ├── dashboard.py
     ├── figure1.py
     ├── chowdhury.py
@@ -412,8 +413,8 @@ The browser interface is split across:
 - `app.py`: stable launch entry point.
 
 Current pages cover the research home, Table-1 dashboard, Dataset-2A feature
-view, Chowdhury metadata, complementary monitoring, Diethe experiments, support,
-and test-result views.
+view, local Dataset-2A/2B exploratory distributions, Chowdhury metadata,
+complementary monitoring, Diethe experiments, support, and test-result views.
 
 ## 13. Where future work should go
 

@@ -1,0 +1,430 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BCI Data Distributions · EDA</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='navigation.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='bci_eda.css') }}">
+</head>
+<body>
+  <main class="page-shell eda-page">
+    <header class="hero eda-hero">
+      <div>
+        <p class="eyebrow">BCI Competition IV · exploratory data analysis</p>
+        <h1>EEG data distributions before shift detection</h1>
+        <p class="lede">
+          A descriptive view of the local 2A/2B recordings using the same GDF loaders and
+          three-second cue-aligned trial extraction as the reproduction pipeline.
+        </p>
+      </div>
+      <div class="hero-actions">
+        <a class="nav-button" href="{{ url_for('home') }}">Home</a>
+        <a class="nav-button" href="{{ url_for('figure_1') }}">Figure 1 · A07</a>
+        <a class="nav-button" href="{{ url_for('dashboard') }}">Table 1</a>
+        <button class="theme-button" type="button" data-theme-choice="light">Light</button>
+        <button class="theme-button" type="button" data-theme-choice="dark">Dark</button>
+      </div>
+    </header>
+
+    <section class="eda-context">
+      <div>
+        <p class="eyebrow">What this page adds</p>
+        <h2>Distribution-first inspection across both benchmark datasets</h2>
+      </div>
+      <p>
+        The existing Figure 1 page focuses on A07 CSP feature geometry in μ/β bands.
+        This page broadens the inspection to subject/session-level trial amplitude,
+        channel quantiles, μ-band power, β-band power and label availability.
+        These are exploratory summaries, not Stage-I warnings or Stage-II confirmations.
+      </p>
+    </section>
+
+    <form class="eda-controls" method="get" action="{{ url_for('bci_eda.data_distributions') }}">
+      <label>
+        <span>Dataset</span>
+        <select name="dataset">
+          <option value="2a" {% if dataset == '2a' %}selected{% endif %}>BCI Competition IV 2A</option>
+          <option value="2b" {% if dataset == '2b' %}selected{% endif %}>BCI Competition IV 2B</option>
+        </select>
+      </label>
+      <label>
+        <span>Subject</span>
+        <select name="subject">
+          {% for value in subjects %}
+            <option value="{{ value }}" {% if subject == value %}selected{% endif %}>
+              {{ 'A' if dataset == '2a' else 'B' }}{{ '%02d'|format(value) }}
+            </option>
+          {% endfor %}
+        </select>
+      </label>
+      <button type="submit">Load distributions</button>
+      <div class="eda-selection">
+        <span>Current view</span>
+        <strong>{{ dataset_label }} · {{ subject_label }}</strong>
+      </div>
+    </form>
+
+    <section class="eda-inventory" aria-label="Local dataset inventory">
+      {% for item in inventory %}
+        <article class="inventory-card">
+          <div>
+            <span>{{ item.name }}</span>
+            <strong>{{ item.present }} / {{ item.expected }}</strong>
+          </div>
+          <progress value="{{ item.present }}" max="{{ item.expected }}"></progress>
+          <code>{{ item.path }}</code>
+          {% if item.missing_preview %}
+            <small>Missing example: {{ item.missing_preview|join(', ') }}</small>
+          {% else %}
+            <small>Expected files detected.</small>
+          {% endif %}
+        </article>
+      {% endfor %}
+    </section>
+
+    {% if errors %}
+      <section class="eda-errors">
+        <div>
+          <p class="eyebrow">Unavailable sessions</p>
+          <h2>The page rendered, but some local files could not be analysed</h2>
+        </div>
+        <ul>
+          {% for error in errors %}<li>{{ error }}</li>{% endfor %}
+        </ul>
+      </section>
+    {% endif %}
+
+    {% if sessions %}
+      <section class="eda-session-grid">
+        {% for session in sessions %}
+          <article class="eda-session-card">
+            <div class="session-card-heading">
+              <div>
+                <p class="eyebrow">{{ session.role }}</p>
+                <h2>{{ session.label }}</h2>
+              </div>
+              <span>{{ session.trials }} trials</span>
+            </div>
+            <dl>
+              <div><dt>Channels</dt><dd>{{ session.channels }}</dd></div>
+              <div><dt>Samples / trial</dt><dd>{{ session.samples_per_trial }}</dd></div>
+              <div><dt>Sampling</dt><dd>{{ session.sampling_frequency }} Hz</dd></div>
+              <div><dt>Duration</dt><dd>{{ session.duration_seconds }} s</dd></div>
+              <div><dt>Median RMS</dt><dd>{{ session.median_rms_uv }} µV</dd></div>
+              <div><dt>Median P–P</dt><dd>{{ session.median_p2p_uv }} µV</dd></div>
+            </dl>
+            <div class="class-strip" aria-label="Class availability">
+              {% for key, label in [('left', 'Left'), ('right', 'Right'), ('unlabelled', 'Unlabelled'), ('other', 'Other')] %}
+                {% set count = session.class_counts[key] %}
+                {% if count %}
+                  <span class="class-chip class-{{ key }}">
+                    {{ label }} {{ count }}
+                  </span>
+                {% endif %}
+              {% endfor %}
+            </div>
+          </article>
+        {% endfor %}
+      </section>
+
+      <section class="eda-chart-section">
+        <div class="eda-section-heading">
+          <div>
+            <p class="eyebrow">Trial-level distributions</p>
+            <h2>How session distributions differ before modelling</h2>
+          </div>
+          <p>Histogram y-axis is the percentage of trials in each bin, making sessions with different trial counts comparable.</p>
+        </div>
+
+        <div class="eda-chart-grid">
+          <article class="eda-chart-card">
+            <div>
+              <span>Amplitude</span>
+              <h3>Trial RMS distribution</h3>
+              <p>RMS over all selected channels and time samples in each 3-second trial.</p>
+            </div>
+            <canvas class="eda-histogram" data-metric="rms_uv" data-x-label="Trial RMS (µV)"></canvas>
+          </article>
+          <article class="eda-chart-card">
+            <div>
+              <span>μ band · 8–12 Hz</span>
+              <h3>μ-band power distribution</h3>
+              <p>Windowed spectral power averaged across the selected EEG channels.</p>
+            </div>
+            <canvas class="eda-histogram" data-metric="mu_db" data-x-label="Band power (dB re 1 µV²)"></canvas>
+          </article>
+          <article class="eda-chart-card">
+            <div>
+              <span>β band · 16–24 Hz</span>
+              <h3>β-band power distribution</h3>
+              <p>Same descriptive spectral estimate, focused on the β band used in the project literature.</p>
+            </div>
+            <canvas class="eda-histogram" data-metric="beta_db" data-x-label="Band power (dB re 1 µV²)"></canvas>
+          </article>
+        </div>
+      </section>
+
+      <section class="eda-channel-section">
+        <div class="eda-section-heading">
+          <div>
+            <p class="eyebrow">Channel-level distributions</p>
+            <h2>Median and interquartile spread by EEG channel</h2>
+          </div>
+          <p>
+            Each line is one session. Points are channel medians; vertical whiskers span the
+            25th–75th percentiles of all cue-aligned samples for that channel.
+          </p>
+        </div>
+        <article class="eda-channel-card">
+          <canvas id="channel-summary-canvas" aria-label="Channel distribution summary"></canvas>
+        </article>
+      </section>
+
+      <section class="eda-reading-grid">
+        <article>
+          <p class="eyebrow">Interpretation boundary</p>
+          <h3>EDA can reveal where to look, not certify a shift</h3>
+          <p>
+            Visible displacement, wider tails or session-specific channel spread can motivate a
+            formal detector analysis. A descriptive difference is not equivalent to rejecting a
+            statistical null hypothesis, and it does not establish that P(Y|X) stayed unchanged.
+          </p>
+        </article>
+        <article>
+          <p class="eyebrow">Pipeline relationship</p>
+          <h3>Raw trials → FBCSP → PCA → EWMA / Hotelling</h3>
+          <p>
+            This page sits before the detector. It makes the empirical input distributions inspectable
+            before FBCSP and PCA compress them into the monitored representation used by the CSE pipeline.
+          </p>
+        </article>
+      </section>
+    {% else %}
+      <section class="empty-state">
+        <h2>No analyzable local sessions were found for {{ subject_label }}</h2>
+        <p>
+          Keep the BCI Competition IV recordings in the repository's ignored
+          <code>data/raw</code> folders, then reload this page. The raw datasets are intentionally
+          not committed to GitHub.
+        </p>
+      </section>
+    {% endif %}
+  </main>
+
+  <script>
+    (() => {
+      const saved = localStorage.getItem('dashboard-theme');
+      const preferred = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+      document.documentElement.dataset.theme = saved || preferred;
+      document.querySelectorAll('[data-theme-choice]').forEach((button) => {
+        button.addEventListener('click', () => {
+          document.documentElement.dataset.theme = button.dataset.themeChoice;
+          localStorage.setItem('dashboard-theme', button.dataset.themeChoice);
+          window.dispatchEvent(new Event('resize'));
+        });
+      });
+    })();
+  </script>
+
+  {% if sessions %}
+  <script>
+    const edaData = {{ chart_payload|tojson }};
+
+    function css(name) {
+      return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    }
+
+    function palette() {
+      return [
+        css('--eda-series-1'),
+        css('--eda-series-2'),
+        css('--eda-series-3'),
+        css('--eda-series-4'),
+        css('--eda-series-5')
+      ];
+    }
+
+    function prepCanvas(canvas, minHeight = 320) {
+      const ratio = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      const width = Math.max(rect.width, 320);
+      const height = Math.max(width * 0.5, minHeight);
+      canvas.width = Math.round(width * ratio);
+      canvas.height = Math.round(height * ratio);
+      canvas.style.height = height + 'px';
+      const ctx = canvas.getContext('2d');
+      ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+      ctx.clearRect(0, 0, width, height);
+      return {ctx, width, height};
+    }
+
+    function drawAxes(ctx, width, height, margin, xLabel, yLabel) {
+      const plotW = width - margin.left - margin.right;
+      const plotH = height - margin.top - margin.bottom;
+      ctx.fillStyle = css('--eda-plot-bg');
+      ctx.fillRect(margin.left, margin.top, plotW, plotH);
+      ctx.strokeStyle = css('--line');
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(margin.left, margin.top);
+      ctx.lineTo(margin.left, margin.top + plotH);
+      ctx.lineTo(margin.left + plotW, margin.top + plotH);
+      ctx.stroke();
+
+      ctx.fillStyle = css('--muted');
+      ctx.font = '12px Inter, system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(xLabel, margin.left + plotW / 2, height - 12);
+      ctx.save();
+      ctx.translate(14, margin.top + plotH / 2);
+      ctx.rotate(-Math.PI / 2);
+      ctx.fillText(yLabel, 0, 0);
+      ctx.restore();
+      return {plotW, plotH};
+    }
+
+    function drawHistogram(canvas, metric) {
+      const payload = edaData.histograms[metric];
+      if (!payload || !payload.centres.length) return;
+      const {ctx, width, height} = prepCanvas(canvas);
+      const margin = {left: 56, right: 20, top: 26, bottom: 52};
+      const {plotW, plotH} = drawAxes(
+        ctx, width, height, margin, canvas.dataset.xLabel, 'Trials per bin (%)'
+      );
+      const xs = payload.centres;
+      const maxY = Math.max(
+        1,
+        ...payload.series.flatMap(series => series.values)
+      );
+      const xmin = xs[0];
+      const xmax = xs[xs.length - 1];
+      const sx = x => margin.left + ((x - xmin) / Math.max(xmax - xmin, 1e-9)) * plotW;
+      const sy = y => margin.top + plotH - (y / maxY) * plotH;
+      const colors = palette();
+
+      payload.series.forEach((series, index) => {
+        ctx.strokeStyle = colors[index % colors.length];
+        ctx.lineWidth = 2.2;
+        ctx.beginPath();
+        series.values.forEach((value, pointIndex) => {
+          const x = sx(xs[pointIndex]);
+          const y = sy(value);
+          if (pointIndex === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+
+        ctx.fillStyle = colors[index % colors.length];
+        series.values.forEach((value, pointIndex) => {
+          ctx.beginPath();
+          ctx.arc(sx(xs[pointIndex]), sy(value), 2.2, 0, Math.PI * 2);
+          ctx.fill();
+        });
+      });
+
+      ctx.fillStyle = css('--muted');
+      ctx.font = '11px Inter, system-ui, sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText(xmin.toFixed(2), margin.left, margin.top + plotH + 18);
+      ctx.textAlign = 'right';
+      ctx.fillText(xmax.toFixed(2), margin.left + plotW, margin.top + plotH + 18);
+      ctx.textAlign = 'left';
+      payload.series.forEach((series, index) => {
+        const x = margin.left + 10;
+        const y = margin.top + 16 + index * 17;
+        ctx.fillStyle = colors[index % colors.length];
+        ctx.fillRect(x, y - 8, 16, 3);
+        ctx.fillStyle = css('--text');
+        ctx.fillText(series.label, x + 23, y - 4);
+      });
+    }
+
+    function drawChannelSummary() {
+      const canvas = document.getElementById('channel-summary-canvas');
+      if (!canvas || !edaData.sessions.length) return;
+      const {ctx, width, height} = prepCanvas(canvas, 360);
+      const margin = {left: 62, right: 20, top: 32, bottom: 66};
+      const {plotW, plotH} = drawAxes(
+        ctx, width, height, margin, 'EEG channel', 'Amplitude (µV)'
+      );
+      const channels = edaData.sessions[0].channel_summaries.map(item => item.channel);
+      const all = edaData.sessions.flatMap(session =>
+        session.channel_summaries.flatMap(item => [item.q25, item.median, item.q75])
+      );
+      let ymin = Math.min(...all);
+      let ymax = Math.max(...all);
+      const pad = Math.max((ymax - ymin) * 0.12, 0.5);
+      ymin -= pad;
+      ymax += pad;
+      const sx = index =>
+        margin.left + ((index + 0.5) / Math.max(channels.length, 1)) * plotW;
+      const sy = value =>
+        margin.top + plotH - ((value - ymin) / Math.max(ymax - ymin, 1e-9)) * plotH;
+      const colors = palette();
+
+      edaData.sessions.forEach((session, seriesIndex) => {
+        const color = colors[seriesIndex % colors.length];
+        ctx.strokeStyle = color;
+        ctx.fillStyle = color;
+        ctx.lineWidth = 1.8;
+        ctx.beginPath();
+        session.channel_summaries.forEach((item, index) => {
+          const x = sx(index);
+          const y = sy(item.median);
+          if (index === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+
+        session.channel_summaries.forEach((item, index) => {
+          const x = sx(index);
+          ctx.strokeStyle = color;
+          ctx.lineWidth = 1.4;
+          ctx.beginPath();
+          ctx.moveTo(x, sy(item.q25));
+          ctx.lineTo(x, sy(item.q75));
+          ctx.stroke();
+          ctx.fillStyle = color;
+          ctx.beginPath();
+          ctx.arc(x, sy(item.median), 3.2, 0, Math.PI * 2);
+          ctx.fill();
+        });
+      });
+
+      ctx.fillStyle = css('--muted');
+      ctx.font = '11px Inter, system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      channels.forEach((channel, index) => {
+        ctx.fillText(channel, sx(index), margin.top + plotH + 20);
+      });
+
+      ctx.textAlign = 'left';
+      edaData.sessions.forEach((session, index) => {
+        const x = margin.left + 8;
+        const y = margin.top + 16 + index * 17;
+        ctx.fillStyle = colors[index % colors.length];
+        ctx.fillRect(x, y - 8, 16, 3);
+        ctx.fillStyle = css('--text');
+        ctx.fillText(session.label, x + 23, y - 4);
+      });
+    }
+
+    function drawAll() {
+      document.querySelectorAll('.eda-histogram').forEach(canvas => {
+        drawHistogram(canvas, canvas.dataset.metric);
+      });
+      drawChannelSummary();
+    }
+
+    let timer;
+    window.addEventListener('resize', () => {
+      clearTimeout(timer);
+      timer = setTimeout(drawAll, 80);
+    });
+    drawAll();
+  </script>
+  {% endif %}
+</body>
+</html>

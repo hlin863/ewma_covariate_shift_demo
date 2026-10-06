@@ -49,6 +49,15 @@ def build_home_page_model() -> dict[str, object]:
                             ),
                         },
                         {
+                            "endpoint": "bci_eda.data_distributions",
+                            "label": "BCI data distributions",
+                            "kind": "Exploratory data analysis",
+                            "description": (
+                                "Compare cue-aligned amplitude, channel and μ/β "
+                                "power distributions across local 2A/2B sessions."
+                            ),
+                        },
+                        {
                             "endpoint": "figure_1",
                             "label": "Figure 1 · A07",
                             "kind": "Signal visualisation",

@@ -60,6 +60,7 @@ src/
 │   └── rag.py                        # local repository/proposal RAG support layer
 └── web/
     ├── home.py                       # paper-grounded home-page model
+    ├── bci_eda.py                    # local 2A/2B exploratory distribution view
     ├── support.py                    # local Llama support route
     ├── dashboard.py                  # Flask routes and result presentation
     ├── figure1.py                    # real 2A feature-distribution view
@@ -329,7 +330,7 @@ Open `/` for the research home page. It maps the paper lineage, implementation p
 
 The three source papers behind the 2015, 2018 and 2019 lineage panels are stored under `papers/`. Selecting a paper panel opens the repository PDF through `/papers/<filename>` for an inline browser preview. Bibliographic details and file mappings are documented in `papers/README.md`.
 
-Open `/figure-1` for the real Dataset 2A A07 feature-distribution view (class-aware only when official evaluation labels are installed), `/chowdhury-demographics` for the included participant metadata, and `/tests` for a local JUnit XML report. The `/results/complementary-bci` page reads exported complementary-monitoring traces and synthetic summaries. Its real EEG view reports alarm counts and trajectories without ground-truth shift or detector accuracy claims. The `/results/paper2015-d2/ks-validation` page inspects generated K–S Stage-II evidence.
+Open `/data-distributions` for interactive local Dataset 2A/2B exploratory distributions (trial RMS, channel quantiles and μ/β band power). Open `/figure-1` for the real Dataset 2A A07 feature-distribution view (class-aware only when official evaluation labels are installed), `/chowdhury-demographics` for the included participant metadata, and `/tests` for a local JUnit XML report. The `/results/complementary-bci` page reads exported complementary-monitoring traces and synthetic summaries. Its real EEG view reports alarm counts and trajectories without ground-truth shift or detector accuracy claims. The `/results/paper2015-d2/ks-validation` page inspects generated K–S Stage-II evidence.
 
 Open `/results` in the same Flask app to inspect the broader generated-result catalogue. That page groups the BCI Table 1 reproduction, Dataset 2B diagnostics, Dataset 2B control-limit sensitivity, synthetic lambda sensitivity and Raza 2015 D2/Table III outputs, including live CSV previews, tracked result fields and generated figure thumbnails when the corresponding files exist under `outputs/`.
 
