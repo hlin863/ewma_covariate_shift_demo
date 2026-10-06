@@ -54,6 +54,9 @@ def test_data_distributions_page_handles_missing_local_raw_data(tmp_path: Path) 
         template_folder=str(project_root / "templates"),
         static_folder=str(project_root / "static"),
     )
+    app.add_url_rule("/", endpoint="home", view_func=lambda: "home")
+    app.add_url_rule("/figure-1", endpoint="figure_1", view_func=lambda: "figure")
+    app.add_url_rule("/table-1", endpoint="dashboard", view_func=lambda: "table")
     app.register_blueprint(bci_eda_bp)
     app.config.update(
         TESTING=True,
