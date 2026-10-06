@@ -5,7 +5,10 @@ Chowdhury et al. (2018), then PWKNN/transductive knowledge acquisition toward
 Raza et al. (2019), with post-run evaluation kept separate from learner input.
 """
 
-from src.adaptation.classifier import Classifier, LinearSVMClassifier, RetrainableClassifier
+from src.adaptation.classifier import (
+    Classifier, DecisionTreeClassifier, KNNClassifier, LinearSVMClassifier,
+    RetrainableClassifier,
+)
 from src.adaptation.ensemble import BaggingClassifier
 from src.adaptation.evaluation import (
     TransductiveEvaluationResult, UnsupervisedEvaluationResult,
@@ -25,7 +28,7 @@ from src.adaptation.transductive import (
 
 __all__ = [
     "AdaptationContext", "AdaptationPolicy", "BaggingClassifier", "Classifier",
-    "LinearSVMClassifier", "NeverUpdate", "PeriodicRetrain", "PseudoLabelBatch",
+    "DecisionTreeClassifier", "KNNClassifier", "LinearSVMClassifier", "NeverUpdate", "PeriodicRetrain", "PseudoLabelBatch",
     "PseudoLabeler", "PWKNNPseudoLabeler", "RetrainOnValidatedShift",
     "RetrainOnWarning", "RetrainableClassifier", "SupervisedAdaptationConfig",
     "SupervisedAdaptationResult", "TransductiveAdaptationConfig",
