@@ -124,6 +124,15 @@ def build_home_page_model() -> dict[str, object]:
                                 "without conflating policy choice with detector logic."
                             ),
                         },
+                        {
+                            "endpoint": "decision_models.explorer",
+                            "label": "BCI decision model explorer",
+                            "kind": "Classifier and pseudo-labelling evidence",
+                            "description": (
+                                "Trace Decision Tree, KNN, PWKNN and linear-SVM "
+                                "decisions on the same saved FBCSP trial evidence."
+                            ),
+                        },
                     ),
                 },
                 {

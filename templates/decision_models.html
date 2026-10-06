@@ -1,0 +1,166 @@
+{% macro render_tree(node, active_nodes) -%}
+<li class="tree-node{% if node.node_id in active_nodes %} active-node{% endif %}">
+  <div class="node-card">
+    {% if node.kind == 'leaf' %}
+      <strong>Leaf {{ node.node_id }}</strong>
+      <span>Predict {{ node.prediction_label }}</span>
+      <small>{{ node.samples }} training samples</small>
+    {% else %}
+      <strong>{{ node.feature }}</strong>
+      <span>≤ {{ '%.4f'|format(node.threshold) }}</span>
+      <small>Node {{ node.node_id }} · {{ node.samples }} training samples</small>
+    {% endif %}
+  </div>
+  {% if node.kind != 'leaf' %}
+  <ul>
+    {{ render_tree(node.left, active_nodes) }}
+    {{ render_tree(node.right, active_nodes) }}
+  </ul>
+  {% endif %}
+</li>
+{%- endmacro %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BCI decision model explorer</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='decision_models.css') }}">
+</head>
+<body>
+<main class="decision-shell">
+  <nav>
+    <a href="{{ url_for('home') }}">← Research hub</a>
+    <a href="{{ url_for('results_catalog') }}">All results</a>
+    <a href="{{ url_for('bci_eda.data_distributions') }}">BCI distributions</a>
+  </nav>
+  <header>
+    <p class="eyebrow">Classification and pseudo-labelling · separate from shift detection</p>
+    <h1>How does each model make a BCI decision?</h1>
+    <p class="lead">Follow one FBCSP trial through an interpretable tree path, nearest-neighbour evidence, PWKNN confidence and the linear-SVM margin.</p>
+  </header>
+
+  <section class="boundary-grid">
+    <article><span>01 · Monitor</span><h2>EWMA / Stage I</h2><p>Asks whether the monitored feature stream looks unusual.</p></article>
+    <article><span>02 · Validate</span><h2>K-S / Hotelling</h2><p>Tests whether a candidate shift has statistical support.</p></article>
+    <article><span>03 · Decide class</span><h2>Tree / KNN / SVM</h2><p>Maps one prepared BCI feature vector to left or right motor imagery.</p></article>
+    <article><span>04 · Acquire knowledge</span><h2>PWKNN</h2><p>Assigns a pseudo-label plus confidence for transductive adaptation. It is not the same role as the final classifier.</p></article>
+  </section>
+
+  <section>
+    <h2>What becomes a tree node?</h2>
+    <p><strong>The datasets are not the tree nodes.</strong> A subject/session supplies observations. Each observation is an FBCSP feature vector, and the fitted tree learns threshold nodes such as <code>10_14Hz_csp_high_1 ≤ threshold</code>. A trial follows those thresholds until it reaches a left/right leaf.</p>
+  </section>
+
+  {% if error %}<section class="notice"><strong>Evidence note</strong><p>{{ error }}</p></section>{% endif %}
+
+  {% if data_available %}
+  <section>
+    <form method="get" class="controls">
+      <label>Dataset / subject
+        <select id="subject-choice">
+          {% for dataset, subject in options %}
+          <option value="{{ dataset }}|{{ subject }}" {% if selected == (dataset, subject) %}selected{% endif %}>{{ dataset }} · {{ subject }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>Explained trial
+        <select name="trial">
+          {% for item in examples %}
+          <option value="{{ item.trial_index }}" {% if example and item.trial_index == example.trial_index %}selected{% endif %}>Trial {{ item.trial_index }} · truth {{ item.truth_label }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <input type="hidden" name="dataset" id="dataset-input" value="{{ selected[0] }}">
+      <input type="hidden" name="subject" id="subject-input" value="{{ selected[1] }}">
+      <button type="submit">Inspect decision</button>
+    </form>
+    <p class="source-note">Saved evidence: <code>{{ metrics_path }}</code>. This page reads exported experiment artifacts; it does not silently rerun the EEG pipeline.</p>
+  </section>
+
+  <section>
+    <h2>Method comparison for {{ selected[1] }}</h2>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Method</th><th>Role</th><th>Accuracy</th><th>Correct</th><th>Fit ms</th><th>Predict ms</th></tr></thead>
+      <tbody>{% for row in metrics %}<tr>
+        <td>{{ row.method.replace('_',' ') }}</td><td>{{ row.role }}</td>
+        <td>{{ '%.1f%%'|format(100 * row.accuracy) }}</td>
+        <td>{{ row.correct_predictions }} / {{ row.testing_trials }}</td>
+        <td>{{ '%.2f'|format(1000 * row.fit_seconds) }}</td>
+        <td>{{ '%.2f'|format(1000 * row.predict_seconds) }}</td>
+      </tr>{% endfor %}</tbody>
+    </table></div>
+  </section>
+
+  {% if detail and example %}
+  {% set active_nodes = example.decision_tree.path|map(attribute='node_id')|list %}
+  <section>
+    <div class="section-heading">
+      <div><p class="eyebrow">Decision Tree</p><h2>Trial {{ example.trial_index }} threshold path</h2></div>
+      <strong class="prediction">{{ example.decision_tree.prediction_label }}</strong>
+    </div>
+    <div class="path-list">
+      {% for step in example.decision_tree.path %}
+      <article>
+        {% if step.kind == 'split' %}
+        <span>Node {{ step.node_id }} · {{ step.feature }}</span>
+        <strong>{{ '%.4f'|format(step.value) }} {{ step.operator }} {{ '%.4f'|format(step.threshold) }}</strong>
+        <small>Take {{ step.branch }} branch · {{ step.samples }} training samples reached this node.</small>
+        {% else %}
+        <span>Leaf {{ step.node_id }}</span>
+        <strong>Predict {{ step.prediction_label }}</strong>
+        <small>{{ step.samples }} training samples reached this leaf.</small>
+        {% endif %}
+      </article>
+      {% endfor %}
+    </div>
+    <details>
+      <summary>Show the whole fitted tree</summary>
+      <div class="tree-scroll"><ul class="tree-root">{{ render_tree(detail.tree, active_nodes) }}</ul></div>
+    </details>
+  </section>
+
+  <section class="evidence-grid">
+    <article>
+      <p class="eyebrow">KNN</p><h2>Majority of nearby labelled trials</h2>
+      <p>Prediction: <strong>{{ example.knn.prediction_label }}</strong></p>
+      <ul>{% for n in example.knn.neighbours %}<li>#{{ n.training_index }} · {{ n.label_name }} · distance {{ '%.4f'|format(n.distance) }}</li>{% endfor %}</ul>
+    </article>
+    <article>
+      <p class="eyebrow">PWKNN</p><h2>Weighted pseudo-label evidence</h2>
+      <p>Prediction: <strong>{{ example.pwknn.prediction_label }}</strong> · confidence {{ '%.3f'|format(example.pwknn.confidence) }}</p>
+      <ul>{% for n in example.pwknn.neighbours %}<li>#{{ n.training_index }} · {{ n.label_name }} · distance {{ '%.4f'|format(n.distance) }} · weight {{ '%.4f'|format(n.weight) }}</li>{% endfor %}</ul>
+    </article>
+    <article>
+      <p class="eyebrow">Linear SVM</p><h2>Signed contribution to the margin</h2>
+      <p>Prediction: <strong>{{ example.linear_svm.prediction_label }}</strong> · score {{ '%.4f'|format(example.linear_svm.decision_score) }}</p>
+      <ul>{% for c in example.linear_svm.top_contributions %}<li>{{ c.feature }} · contribution {{ '%+.4f'|format(c.contribution) }}</li>{% endfor %}</ul>
+    </article>
+  </section>
+
+  <section>
+    <h2>What this means for continual learning</h2>
+    <p>A detector event can trigger an adaptation policy, but the model that makes the class decision remains replaceable. The repository can therefore compare a transparent tree, KNN or SVM under the same update policy, while PWKNN remains the separate knowledge-acquisition mechanism for unlabelled observations.</p>
+  </section>
+  {% endif %}
+  {% else %}
+  <section class="empty-state">
+    <h2>No decision-model evidence has been generated yet</h2>
+    <p>Run:</p><pre>python -m scripts.run_bci_decision_models</pre>
+    <p>For a 2B-only run that needs no external 2A label directory:</p><pre>python -m scripts.run_bci_decision_models --datasets 2b</pre>
+  </section>
+  {% endif %}
+</main>
+<script>
+const choice = document.getElementById('subject-choice');
+if (choice) {
+  choice.addEventListener('change', () => {
+    const [dataset, subject] = choice.value.split('|');
+    document.getElementById('dataset-input').value = dataset;
+    document.getElementById('subject-input').value = subject;
+  });
+}
+</script>
+</body>
+</html>

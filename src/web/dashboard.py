@@ -101,6 +101,51 @@ RESULT_DEFINITIONS = (
         ],
     },
     {
+        "id": "bci-decision-models",
+        "title": "Interpretable BCI decision model comparison",
+        "domain": "bci",
+        "domain_label": "Decision-model experiment",
+        "datasets": [
+            "BCI Competition IV Dataset 2A",
+            "BCI Competition IV Dataset 2B",
+        ],
+        "methods": [
+            "FBCSP",
+            "Decision Tree",
+            "KNN",
+            "PWKNN",
+            "Linear SVM",
+        ],
+        "purpose": (
+            "Compare how interchangeable classifiers and the PWKNN pseudo-labeller "
+            "use the same FBCSP observations. The saved detail evidence exposes "
+            "tree threshold paths, nearest neighbours, PWKNN confidence and "
+            "linear-SVM margin contributions without conflating classification "
+            "with EWMA/Hotelling shift detection."
+        ),
+        "detail_endpoint": "decision_models.explorer",
+        "detail_label": "Explore trial decision paths",
+        "command": "python -m scripts.run_bci_decision_models",
+        "primary_artifact": "metrics/bci_decision_models.csv",
+        "preview_columns": [
+            "dataset",
+            "subject",
+            "evaluation_scope",
+            "method",
+            "role",
+            "training_trials",
+            "testing_trials",
+            "feature_count",
+            "accuracy",
+            "correct_predictions",
+            "fit_seconds",
+            "predict_seconds",
+        ],
+        "artifacts": [
+            ("metrics/bci_decision_models.csv", "Subject-level model comparison"),
+        ],
+    },
+    {
         "id": "bagging-bci-real",
         "title": "Bagging evaluation on BCI Competition IV 2A/2B",
         "domain": "bci",

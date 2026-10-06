@@ -97,6 +97,7 @@ src/
 │
 ├── adaptation/
 │   ├── classifier.py
+│   ├── decision_support.py
 │   ├── policies.py
 │   ├── supervised.py
 │   ├── pseudo_labelling.py
@@ -107,6 +108,7 @@ src/
 │   └── experiments/
 │       ├── bagging_bci.py
 │       ├── bagging_synthetic_bci.py
+│       ├── decision_models_bci.py
 │       └── diethe.py
 │
 ├── experiments/
@@ -132,6 +134,7 @@ src/
     ├── figure1.py
     ├── chowdhury.py
     ├── data_processing.py
+    ├── decision_models.py
     ├── diethe.py
     ├── support.py
     └── test_results.py
@@ -288,6 +291,11 @@ evaluation.py
 `policies.py` is orthogonal to those information regimes: it decides *when*
 an update should be attempted.
 
+`classifier.py` exposes interchangeable linear-SVM, KNN and decision-tree
+classifiers under the same feature-matrix/retraining contract. `decision_support.py`
+adds model-specific explanations without moving classification into the detector
+layer. PWKNN remains a pseudo-labeller, not a final classifier.
+
 `ensemble/bagging.py` is a passive classifier-comparison baseline. It should
 not be described as the still-unimplemented dynamic CSE-UAEL ensemble.
 
@@ -354,6 +362,7 @@ run_bci_2b_l_sensitivity.py
 run_cse_lambda_sweep.py
 run_complementary_monitoring.py
 run_complementary_bci.py
+run_bci_decision_models.py
 run_bagging_bci.py
 run_bagging_bci_synthetic.py
 run_diethe_experiment.py
