@@ -76,6 +76,24 @@ class PeriodicRetrain:
 
 
 @dataclass(frozen=True)
+class ContinuousRetrain:
+    """Passive continual-update policy.
+
+    Updates whenever the configured number of new observations has
+    arrived. No covariate-shift warning or validation is required.
+    """
+
+    batch_size: int = 1
+
+    def __post_init__(self) -> None:
+        if self.batch_size <= 0:
+            raise ValueError("batch_size must be positive.")
+
+    def should_update(self, context: AdaptationContext) -> bool:
+        return context.trials_since_update >= self.batch_size
+
+
+@dataclass(frozen=True)
 class RetrainOnPerformanceDrop:
     """Experimental labelled-performance rule, not an algorithm from Diethe.
 
