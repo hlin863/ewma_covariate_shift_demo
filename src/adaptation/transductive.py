@@ -349,6 +349,7 @@ def run_unsupervised_adaptation(
                             "attempt_index": adaptation_attempt_index,
                             "trigger_trial_index": index,
                             "trigger_time": context.time,
+                            "trials_since_update": context.trials_since_update,
                             "stage1_warning": stage1_warning,
                             "stage2_status": (
                                 validation_record.get("status")
@@ -414,6 +415,7 @@ def run_unsupervised_adaptation(
                     else classifier_version
                 ),
                 "training_size_before": training_size_before,
+                "trials_since_update": context.trials_since_update,
                 "adaptation_triggered": adaptation_triggered,
                 "pseudo_label_candidates": candidate_count,
                 "pseudo_labels_accepted": accepted_count,
