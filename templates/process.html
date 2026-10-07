@@ -42,7 +42,7 @@
         <h2>{{ dimension.title }}</h2>
         <p class="dimension-question">{{ dimension.question }}</p>
         <ul>
-          {% for item in dimension.items %}
+          {% for item in dimension['items'] %}
           <li>
             <div><strong>{{ item.name }}</strong><span>{{ item.detail }}</span></div>
             <small class="dimension-status {{ 'planned' if item.status == 'planned' else 'implemented' }}">{{ item.status }}</small>

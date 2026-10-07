@@ -316,6 +316,13 @@ outputs/metrics/bci_table1_comparison.csv
 
 `bci_table1_reproduction.md` contains computed subject rows and the mean row in the grouped Dataset 2A / Dataset 2B layout. `bci_table1_comparison.csv` contains published values, computed values, and CSW/CSV differences for calibration and reproducibility analysis.
 
+## Published research hub
+
+Browse the [GitHub Pages research hub](https://hlin863.github.io/ewma_covariate_shift_demo/).
+The site exports the existing dashboard, interactive browser charts and committed
+result evidence on pushes to `main`. New experiments and local Ollama support run
+through Flask. See [deployment and export details](docs/github_pages.md).
+
 ## Flask visualisation dashboard
 
 The web interface uses `src/web/home.py` for the paper-grounded research overview and `src/web/dashboard.py` for Flask routes and result presentation; root `app.py` remains a stable launch/compatibility entry point.

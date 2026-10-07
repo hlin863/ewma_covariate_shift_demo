@@ -9,6 +9,7 @@ def _app(project_root: Path) -> Flask:
     app=Flask(__name__,template_folder=str(project_root/"templates"),static_folder=str(project_root/"static"))
     app.add_url_rule("/",endpoint="home",view_func=lambda:"home")
     app.add_url_rule("/results",endpoint="results_catalog",view_func=lambda:"results")
+    app.add_url_rule("/results/transductive-adaptation", endpoint="process.transductive_results", view_func=lambda: "transductive results")
     stub=Blueprint("bci_eda",__name__)
     stub.add_url_rule("/data-distributions",endpoint="data_distributions",view_func=lambda:"eda")
     app.register_blueprint(stub)
