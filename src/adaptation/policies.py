@@ -63,7 +63,11 @@ class RetrainOnValidatedShift:
 
 @dataclass(frozen=True)
 class PeriodicRetrain:
-    """Passive baseline that retrains every ``interval`` evaluation trials."""
+    """Periodic passive-adaptation baseline.
+
+    Updates independently of drift detection after ``interval`` new
+    observations have accumulated since the preceding model update.
+    """
 
     interval: int = 10
 
@@ -72,15 +76,15 @@ class PeriodicRetrain:
             raise ValueError("interval must be positive.")
 
     def should_update(self, context: AdaptationContext) -> bool:
-        return (context.trial_index + 1) % self.interval == 0
+        return context.trials_since_update >= self.interval
 
 
 @dataclass(frozen=True)
 class ContinuousRetrain:
-    """Passive continual-update policy.
+    """Passive continual-adaptation policy.
 
-    Updates whenever the configured number of new observations has
-    arrived. No covariate-shift warning or validation is required.
+    Updates after each ``batch_size`` newly arrived observations,
+    independently of drift warnings or validation.
     """
 
     batch_size: int = 1
