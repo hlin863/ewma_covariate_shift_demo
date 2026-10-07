@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Transductive adaptation evidence · CSE Research</title>
+  <script>document.documentElement.dataset.theme = localStorage.getItem('dashboard-theme') || (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');</script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='navigation.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='process.css') }}">
+</head>
+<body><main class="page-shell process-shell">
+  <nav class="process-nav" aria-label="Page navigation">
+    <a class="theme-button nav-link" href="{{ url_for('home') }}">Home</a>
+    {% include '_research_navigation.html' %}
+    <button class="theme-button" type="button" data-theme-option="light">Light</button>
+    <button class="theme-button" type="button" data-theme-option="dark">Dark</button>
+  </nav>
+
+  <header class="process-hero">
+    <p class="eyebrow">Continual learning · implementation evidence</p>
+    <h1>Transductive adaptation event sequence</h1>
+    <p class="lede">Follow what the online learner records when a validated shift triggers PWKNN pseudo-labelling, confidence-gated knowledge acquisition and classifier retraining.</p>
+  </header>
+
+  <section class="process-boundaries" aria-label="Evidence boundary">
+    <article><p class="eyebrow">Implemented</p><p>The learner accepts labelled calibration data and unlabelled evaluation features. Evaluation truth is not exposed to the online adaptation API.</p></article>
+    <article><p class="eyebrow">Not yet a scientific result</p><p>The first full BCI Competition IV 2A/2B transductive adaptive run has not yet been preserved as a repository result. This page documents the implemented event evidence and the next experiment.</p></article>
+  </section>
+
+  <section class="continual-architecture" aria-label="Online learning event sequence">
+    <div class="continual-heading">
+      <p class="eyebrow">Online event sequence</p>
+      <h2>Prediction first, adaptation second</h2>
+      <p>The chronological boundary is explicit: the current model predicts before any update triggered at that same trial. A successful update only changes subsequent predictions.</p>
+    </div>
+    <div class="continual-dimensions">
+      <article class="dimension-card"><p class="eyebrow">01</p><h2>Predict</h2><p class="dimension-question">Use the current classifier before revealing or synthesising new training knowledge.</p></article>
+      <article class="dimension-card"><p class="eyebrow">02</p><h2>Read detector evidence</h2><p class="dimension-question">Record the Stage-I warning and any Stage-II decision available at this trial.</p></article>
+      <article class="dimension-card"><p class="eyebrow">03</p><h2>Select candidates</h2><p class="dimension-question">Use current_trial, since_last_update or all_seen without admitting the same evaluation observation twice.</p></article>
+      <article class="dimension-card"><p class="eyebrow">04</p><h2>Pseudo-label</h2><p class="dimension-question">PWKNN returns one label and confidence value for each candidate observation.</p></article>
+      <article class="dimension-card"><p class="eyebrow">05</p><h2>Gate knowledge</h2><p class="dimension-question">Only candidates strictly above the configured confidence threshold can enter the knowledge base.</p></article>
+      <article class="dimension-card"><p class="eyebrow">06</p><h2>Retrain</h2><p class="dimension-question">Accepted pseudo-labelled observations grow the training set, increment the classifier version and affect future trials.</p></article>
+    </div>
+  </section>
+
+  <section>
+    <div class="continual-heading">
+      <p class="eyebrow">Recorded evidence</p>
+      <h2>Three event tables support an auditable run</h2>
+    </div>
+    <div class="continual-dimensions">
+      {% for group in event_groups %}
+      <article class="dimension-card">
+        <h2>{{ group.title }}</h2>
+        <p class="dimension-question">{{ group.purpose }}</p>
+        <ul>
+          {% for field in group.fields %}<li><div><strong><code>{{ field }}</code></strong></div></li>{% endfor %}
+        </ul>
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="process-boundaries" aria-label="Implementation status">
+    <article><p class="eyebrow">Implemented and testable</p><h2>Current transductive path</h2><ul>{% for item in implemented %}<li>{{ item }}</li>{% endfor %}</ul></article>
+    <article><p class="eyebrow">Next evidence</p><h2>Remaining continual-learning work</h2><ul>{% for item in future %}<li>{{ item }}</li>{% endfor %}</ul></article>
+  </section>
+
+  <aside class="active-boundary">
+    <p class="eyebrow">Evidence boundary</p>
+    <h2>Implementation evidence is not model-performance evidence</h2>
+    <p>Regression tests establish ordering, label exclusion, confidence gating and duplicate-admission protection. A saved end-to-end dataset run is still required before claiming adaptive benefit on real EEG or predictive-maintenance data.</p>
+  </aside>
+
+  <section class="process-tools"><h2>Continue the investigation</h2>
+    <a class="theme-button nav-link" href="{{ url_for('process.overview', stage='adaptive-learning') }}">Adaptive-learning architecture →</a>
+    <a class="theme-button nav-link" href="{{ url_for('diethe.laboratory') }}">Policy laboratory →</a>
+    <a class="theme-button nav-link" href="{{ url_for('decision_models.explorer') }}">Decision model explorer →</a>
+  </section>
+</main>
+<script>document.querySelectorAll('[data-theme-option]').forEach(button => button.addEventListener('click', () => { document.documentElement.dataset.theme = button.dataset.themeOption; localStorage.setItem('dashboard-theme', button.dataset.themeOption); }));</script>
+</body></html>
