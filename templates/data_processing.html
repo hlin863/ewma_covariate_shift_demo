@@ -18,7 +18,7 @@
   <main class="page-shell processing-shell">
     <nav class="processing-nav" aria-label="Page navigation">
       <a href="{{ url_for('home') }}">← Research hub</a>
-      {% include '_data_menu.html' %}
+      {% include '_research_navigation.html' %}
       <div><a href="{{ url_for('results_catalog') }}">Results</a><a href="{{ url_for('dashboard') }}">Table 1</a></div>
       <div class="theme-switcher" role="group" aria-label="Colour theme">
         <button class="theme-button" type="button" data-theme-option="light">Light</button>
@@ -86,19 +86,7 @@
     </section>
 
     <section class="atlas-section" id="observed">
-      <div class="section-heading"><span class="chapter">03 / Observed</span><div><h2>Numbers from the run</h2><p>Computed values are kept beside published targets and their run provenance.</p></div></div>
-      <div class="observed-grid">
-        <article class="observation-card"><span class="label">B01 · CSE diagnostic</span><h3>Warnings and confirmations</h3><div class="count-pair"><div><small>CSW</small><strong>{{ diagnostic.computed_csw }}</strong><span>computed / {{ diagnostic.published_csw }} published</span></div><div><small>CSV</small><strong>{{ diagnostic.computed_csv }}</strong><span>computed / {{ diagnostic.published_csv }} published</span></div></div><p>Mode: <code>{{ diagnostic.mode }}</code>. Counts here are from the dedicated 2B diagnostic, not the two-sample Table 1 runner.</p><small>{{ diagnostic_source }}</small></article>
-        <article class="observation-card"><span class="label">Classifier comparison</span><h3>Mean accuracy by dataset</h3>{% for dataset, mean in accuracy_means.items() %}<div class="mean-row"><strong>{{ dataset }} · {{ mean.subjects }} subjects</strong><span>Single {{ '%.2f'|format(mean.single * 100) }}%</span><span>Bagged {{ '%.2f'|format(mean.bagged * 100) }}%</span></div>{% endfor %}<p>These are classification results from the displayed run, not CSE-UAEL adaptation results.</p><small>{{ accuracy_source }}</small></article>
-      </div>
-      <div class="accuracy-section"><div class="chart-heading"><div><h3>Subject-level accuracy</h3><p>Dots compare the single SVM and bagged SVM on the same holdout for each subject.</p></div><div class="dataset-switch" role="group" aria-label="Accuracy dataset"><button type="button" data-dataset="2A" aria-pressed="true">2A</button><button type="button" data-dataset="2B" aria-pressed="false">2B</button></div></div>
-        {% if accuracy_error %}<p class="data-error">{{ accuracy_error }}</p>{% endif %}
-        <div class="chart-legend"><span><i class="single-dot"></i> Single linear SVM</span><span><i class="bagged-dot"></i> Bagged linear SVM</span></div>
-        <div class="accuracy-chart">{% for row in accuracy_rows %}<div class="accuracy-line" data-accuracy-dataset="{{ row.dataset }}" {% if row.dataset != '2A' %}hidden{% endif %}><b>{{ row.subject }}</b><div class="accuracy-track" aria-label="{{ row.subject }}: single {{ '%.1f'|format(row.single * 100) }} percent, bagged {{ '%.1f'|format(row.bagged * 100) }} percent; {{ row.scope }}"><span class="track-fill" style="width:{{ row.single * 100 }}%"></span><span class="single-dot" style="left:{{ row.single * 100 }}%"></span><span class="bagged-dot" style="left:{{ row.bagged * 100 }}%"></span></div><span>{{ '%+.1f'|format((row.bagged - row.single) * 100) }} pp</span></div>{% endfor %}</div>
-        <div class="axis"><span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span></div>
-        {% for dataset, scopes in accuracy_scopes.items() %}<p class="scope-line" data-scope-dataset="{{ dataset }}" {% if dataset != '2A' %}hidden{% endif %}>Evaluation: {{ scopes|join(', ') }}</p>{% endfor %}
-        <small class="provenance">{{ accuracy_source }}</small>
-      </div>
+      <div class="section-heading"><span class="chapter">03 / Results</span><div><h2>View the run evidence separately</h2><p>Diagnostic counts and classifier accuracy are collected on the results page.</p><a href="{{ url_for('process.processing_results') }}">Open data-processing run results →</a></div></div>
     </section>
 
     <section class="atlas-section" id="paper-map">

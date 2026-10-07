@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en" data-theme="dark"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Data-processing run results · CSE Research</title>
+<script>document.documentElement.dataset.theme = localStorage.getItem('dashboard-theme') || (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');</script>
+<link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='navigation.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='data_processing.css') }}">
+</head><body><main class="page-shell processing-shell">
+<nav class="processing-nav" aria-label="Page navigation"><a href="{{ url_for('home') }}">Home</a>{% include '_research_navigation.html' %}<a href="{{ url_for('data_processing_page') }}">Data preparation and protocols</a><button class="theme-button" type="button" data-theme-option="light">Light</button><button class="theme-button" type="button" data-theme-option="dark">Dark</button></nav>
+<header class="hero"><div><p class="eyebrow">Saved run evidence</p><h1>Data-processing run results</h1><p class="lede">Diagnostic warnings and confirmations, classifier accuracy and the recorded evaluation scope.</p></div></header>
+{% include '_processing_observed.html' %}
+</main><script>
+document.querySelectorAll('[data-theme-option]').forEach(button => button.addEventListener('click', () => { document.documentElement.dataset.theme = button.dataset.themeOption; localStorage.setItem('dashboard-theme', button.dataset.themeOption); }));
+const datasetButtons = [...document.querySelectorAll('[data-dataset]')];
+datasetButtons.forEach(button => button.addEventListener('click', () => { const name = button.dataset.dataset; datasetButtons.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.dataset === name))); document.querySelectorAll('[data-accuracy-dataset]').forEach(row => { row.hidden = row.dataset.accuracyDataset !== name; }); document.querySelectorAll('[data-scope-dataset]').forEach(line => { line.hidden = line.dataset.scopeDataset !== name; }); }));
+</script></body></html>

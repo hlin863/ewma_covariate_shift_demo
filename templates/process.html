@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ process.title }} · CSE Research Process</title>
+  <script>document.documentElement.dataset.theme = localStorage.getItem('dashboard-theme') || (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');</script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='navigation.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='process.css') }}">
+</head>
+<body><main class="page-shell process-shell">
+  <nav class="process-nav" aria-label="Page navigation">
+    <a class="theme-button nav-link" href="{{ url_for('home') }}">Home</a>
+    {% include '_research_navigation.html' %}
+    <button class="theme-button" type="button" data-theme-option="light">Light</button>
+    <button class="theme-button" type="button" data-theme-option="dark">Dark</button>
+  </nav>
+  <header class="process-hero"><p class="eyebrow">Research process · {{ process.number }}</p>
+    <h1>{{ process.title }}</h1><p class="lede">{{ process.question }}</p>
+  </header>
+  <nav class="process-tabs" aria-label="Process sequence">
+    {% for page in process_navigation %}<a href="{{ page.url }}"{% if page.active %} aria-current="page"{% endif %}>{{ page.number }} · {{ page.title }}</a>{% endfor %}
+  </nav>
+  <section class="process-boundaries" aria-label="Inputs and outputs">
+    <article><p class="eyebrow">Input</p><p>{{ process.input }}</p></article>
+    <article><p class="eyebrow">Output</p><p>{{ process.output }}</p></article>
+  </section>
+  <section class="process-steps" aria-label="Method steps">
+    {% for title, detail in process.steps %}<article><span>{{ loop.index }}</span><div><h2>{{ title }}</h2><p>{{ detail }}</p></div></article>{% endfor %}
+  </section>
+  <aside class="process-note"><h2>Interpretation</h2><p>{{ process.note }}</p></aside>
+  <section class="process-tools"><h2>Continue the process</h2>
+    {% for page in process_links %}<a class="theme-button nav-link" href="{{ page.url }}">{{ page.label }} →</a>{% endfor %}
+    {% for page in process_navigation if page.key == process.next %}<a class="theme-button nav-link" href="{{ page.url }}">Next: {{ page.title }} →</a>{% endfor %}
+  </section>
+  <footer class="process-results-link"><div><h2>View the results</h2><p>Saved plots, counts, diagnostic tests and classifier comparisons have their own results pages.</p></div><a class="theme-button nav-link" href="{{ url_for('results_catalog') }}">Open results catalogue →</a></footer>
+</main>
+<script>document.querySelectorAll('[data-theme-option]').forEach(button => button.addEventListener('click', () => { document.documentElement.dataset.theme = button.dataset.themeOption; localStorage.setItem('dashboard-theme', button.dataset.themeOption); }));</script>
+</body></html>

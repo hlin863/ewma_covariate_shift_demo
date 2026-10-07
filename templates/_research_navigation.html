@@ -1,0 +1,24 @@
+{% include '_data_menu.html' %}
+{% if process_navigation %}
+<details class="nav-menu data-menu process-menu">
+  <summary class="theme-button nav-link">Process ▾</summary>
+  <nav class="nav-menu-panel" aria-label="Research processes">
+    {% for page in process_navigation %}
+      <a href="{{ page.url }}"{% if page.active %} aria-current="page"{% endif %}>{{ page.number }} · {{ page.title }}</a>
+    {% endfor %}
+    <a href="{{ url_for('data_processing_page') }}">Data preparation and protocols</a>
+  </nav>
+</details>
+<details class="nav-menu data-menu results-menu">
+  <summary class="theme-button nav-link">Results ▾</summary>
+  <nav class="nav-menu-panel" aria-label="Saved results">
+    <a href="{{ url_for('results_catalog') }}"{% if request.endpoint == 'results_catalog' %} aria-current="page"{% endif %}>Research results catalogue</a>
+    {% for group in result_navigation_groups %}
+      <span class="nav-menu-heading">{{ group.title }}</span>
+      {% for page in group.pages %}
+        <a href="{{ page.url }}"{% if page.active %} aria-current="page"{% endif %}>{{ page.label }}</a>
+      {% endfor %}
+    {% endfor %}
+  </nav>
+</details>
+{% endif %}

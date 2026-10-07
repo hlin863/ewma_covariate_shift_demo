@@ -20,10 +20,9 @@
     <nav class="home-nav" aria-label="Primary navigation">
       <a class="home-brand" href="{{ url_for('home') }}"><span>CSE</span> Research hub</a>
       <div class="home-nav-links">
-        {% include '_data_menu.html' %}
+        {% include '_research_navigation.html' %}
         <a href="#progress">Progress</a>
-        <a href="#papers">Paper lineage</a>
-        <a href="#pages">Explore pages</a>
+        <a href="#pages">Workflow</a>
         <div class="theme-switcher" role="group" aria-label="Colour theme">
           <button class="theme-button" type="button" data-theme-option="light" aria-pressed="false" aria-label="Switch to light theme">
             <svg class="icon icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -48,9 +47,8 @@
         <h1>From covariate-shift warnings to auditable adaptive learning.</h1>
         <p class="home-lede">A research interface for reconstructing, testing and extending EWMA-based covariate-shift estimation from detector evidence through supervised and transductive adaptation.</p>
         <div class="hero-cta">
-          <a class="primary-action" href="{{ url_for('dashboard') }}">Open Table 1 dashboard <span aria-hidden="true">→</span></a>
+          <a class="primary-action" href="#pages">Follow the process <span aria-hidden="true">→</span></a>
           <a class="secondary-action" href="{{ url_for('results_catalog') }}">Browse all results</a>
-          <a class="secondary-action" href="{{ url_for('diethe.laboratory') }}">Diethe policy laboratory</a>
         </div>
       </div>
       <aside class="problem-card" aria-label="Research problem">
@@ -67,7 +65,30 @@
       <p>{{ scope.detail }}</p>
     </section>
 
-    <section class="home-section" id="progress">
+    <section class="home-section workflow-section" id="pages" aria-label="Research workflow">
+      <div class="home-section-heading">
+        <div><p class="eyebrow">Research process</p><h2>Prepare, detect, validate, adapt.</h2></div>
+        <p>Choose a process to see its inputs, decisions and next steps. Saved experiment evidence is collected under Results.</p>
+      </div>
+      <section class="foundation-strip" aria-label="Data foundation">
+        <div><p class="eyebrow">Before detection</p><h3>Data and protocols</h3></div>
+        <a href="{{ url_for('data_structures.overview') }}">Data structures →</a>
+        <a href="{{ url_for('data_processing_page') }}">Data preparation and protocols →</a>
+      </section>
+      <div class="process-card-grid">
+        {% for process in processes %}
+        <a class="home-process-card" id="{{ process.key }}" href="{{ url_for('process.overview', stage=process.key) }}">
+          <span class="eyebrow">{{ process.number }} · Process</span>
+          <h3>{{ process.title }}</h3><p class="process-question">{{ process.question }}</p>
+          <p>{{ process.description }}</p><strong>Explore process →</strong>
+        </a>
+        {% endfor %}
+      </div>
+      <div class="home-support"><div><h3>{{ support.label }}</h3><p>{{ support.description }}</p></div><a href="{{ url_for(support.endpoint) }}">Open support →</a></div>
+    </section>
+
+    <details class="home-section home-disclosure" id="progress">
+      <summary>Current project progress</summary>
       <div class="home-section-heading">
         <div><p class="eyebrow">Current project progress</p><h2>The research pipeline, from detection to adaptation</h2></div>
         <p>Implemented means code and automated contracts exist. It does not imply exact reproduction of published subject-level values.</p>
@@ -81,9 +102,10 @@
           </article>
         {% endfor %}
       </div>
-    </section>
+    </details>
 
-    <section class="home-section lineage-section" id="papers">
+    <details class="home-section lineage-section home-disclosure" id="papers">
+      <summary>Paper lineage</summary>
       <div class="home-section-heading">
         <div><p class="eyebrow">Paper foundations</p><h2>How the current reconstruction fits the research lineage</h2></div>
         <p>The project preserves how detector, validation and adaptation ideas evolve across the source studies and current extensions.</p>
@@ -115,76 +137,10 @@
           {% endif %}
         {% endfor %}
       </div>
-    </section>
+    </details>
 
-    <section class="home-section application-section" id="pages">
-      <div class="home-section-heading">
-        <div>
-          <p class="eyebrow">Application architecture</p>
-          <h2>Follow how evidence moves through the research application</h2>
-        </div>
-        <p>
-          The map separates data foundations, detection analysis, adaptation,
-          evidence assurance and the cross-cutting local support layer.
-        </p>
-      </div>
-
-      <div class="application-map" aria-label="Hierarchical application architecture">
-        <div class="application-main-flow">
-          <article class="application-root">
-            <span class="map-kicker">Research hub</span>
-            <div>
-              <h3>{{ application_map.root.title }}</h3>
-              <p>{{ application_map.root.detail }}</p>
-            </div>
-          </article>
-
-          {% for layer in application_map.layers %}
-            <div class="map-relationship" aria-hidden="true">
-              <span>{{ layer.relationship }}</span>
-            </div>
-
-            <section class="application-layer" aria-labelledby="application-layer-{{ layer.number }}">
-              <header class="application-layer-heading">
-                <span class="layer-number">{{ layer.number }}</span>
-                <div>
-                  <p class="eyebrow">Application layer</p>
-                  <h3 id="application-layer-{{ layer.number }}">{{ layer.title }}</h3>
-                  <p>{{ layer.detail }}</p>
-                </div>
-              </header>
-
-              <div class="application-layer-pages">
-                {% for page in layer.pages %}
-                  <a class="architecture-card" href="{{ url_for(page.endpoint) }}">
-                    <span>{{ layer.number }}.{{ loop.index }} · {{ page.kind }}</span>
-                    <h4>{{ page.label }}</h4>
-                    <p>{{ page.description }}</p>
-                    <strong>Open page <span aria-hidden="true">↗</span></strong>
-                  </a>
-                {% endfor %}
-              </div>
-            </section>
-          {% endfor %}
-        </div>
-
-        <aside class="application-support-rail" aria-label="Cross-cutting support layer">
-          <div class="support-rail-line" aria-hidden="true"></div>
-          <div class="support-rail-label">reads across all layers</div>
-          <a class="support-architecture-card" href="{{ url_for(application_map.support.endpoint) }}">
-            <span>{{ application_map.support.kind }}</span>
-            <h3>{{ application_map.support.label }}</h3>
-            <p>{{ application_map.support.description }}</p>
-            <div class="support-boundary-note">
-              <strong>Boundary</strong>
-              <p>{{ application_map.support.boundary }}</p>
-            </div>
-            <strong class="support-open">Open support layer <span aria-hidden="true">↗</span></strong>
-          </a>
-        </aside>
-      </div>
-    </section>
-
+    <details class="home-disclosure contribution-disclosure">
+      <summary>Contributions and open questions</summary>
     <section class="evidence-grid">
       <article class="evidence-card">
         <p class="eyebrow">What this work contributes</p>
@@ -197,6 +153,8 @@
         <ul>{% for limitation in limitations %}<li>{{ limitation }}</li>{% endfor %}</ul>
       </article>
     </section>
+
+    </details>
 
     <footer class="home-footer">
       <p><strong>Reproducibility and Extension of EWMA-Based Covariate Shift Estimation for Non-Stationary EEG-Based BCI</strong></p>

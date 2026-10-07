@@ -15,7 +15,7 @@
       <p class="lede">{{ selected.description if selected else 'Choose a dataset to see its source format, loaded structure and exploratory summaries.' }}</p>
     </div>
     <div class="hero-actions"><a class="theme-button nav-link" href="{{ url_for('home') }}">Home</a>
-      {% include '_data_menu.html' %}
+      {% include '_research_navigation.html' %}
       <button class="theme-button" type="button" data-theme-option="light">Light</button>
       <button class="theme-button" type="button" data-theme-option="dark">Dark</button>
     </div>

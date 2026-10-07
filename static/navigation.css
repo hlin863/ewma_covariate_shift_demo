@@ -59,6 +59,8 @@
 .data-menu .nav-menu-panel a[aria-current] { background: var(--panel-2, #28364a); }
 .data-menu .nav-menu-panel a:hover { background: var(--panel-2, #28364a); }
 .data-menu > summary:focus-visible { outline: 2px solid var(--computed, #38bdf8); outline-offset: 3px; }
+.nav-menu-heading { display: block; padding: 14px 12px 5px; color: var(--muted); font-size: .7rem; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; }
+.results-menu .nav-menu-panel { max-height: min(75vh, 620px); overflow-y: auto; }
 
 @media (max-width: 720px) {
   .nav-menu-panel {

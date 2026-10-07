@@ -17,16 +17,9 @@
         <p class="lede">A07 is generated from the same BCI Competition IV GDF loading, 3-second trial extraction, band-pass filtering and CSP implementation used by the reproduction code. No scatter coordinates or ellipse locations are synthetic.</p>
       </div>
       <div class="hero-actions">
-        {% include '_data_menu.html' %}
+        {% include '_research_navigation.html' %}
         <a class="nav-button" href="{{ url_for('home') }}">Home</a>
         <a class="nav-button" href="{{ url_for('dashboard') }}">Table 1</a>
-        <details class="nav-menu">
-          <summary class="nav-button">Research ▾</summary>
-          <div class="nav-menu-panel">
-            <a href="{{ url_for('results_catalog') }}">Research results</a>
-            <a href="{{ url_for('test_results.test_results') }}">Test cases</a>
-          </div>
-        </details>
         <button class="theme-button" type="button" data-theme-choice="light">Light</button>
         <button class="theme-button" type="button" data-theme-choice="dark">Dark</button>
       </div>

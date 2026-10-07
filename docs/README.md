@@ -4,6 +4,7 @@ This directory contains the methodological record for the repository.
 
 ## Start here
 
+- [Research process and results navigation](page_navigation.md) - the home-page workflow and separate results pages.
 - [Living computational literature review](living_literature_review/README.md) - the paper → algorithm → implementation → evidence lineage.
 - [Study tracker](living_literature_review/studies.md) - study-by-study implementation status.
 - [Implementation lineage](living_literature_review/implementation_lineage.md) - how functions and modules moved or changed over time.

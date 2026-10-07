@@ -16,14 +16,23 @@ def test_page_shows_split_and_paper_boundaries_without_generated_files(tmp_path:
     assert "280 fit · 70%" in html
     assert "120 validation · 30%" in html
     assert "320 held out" in html
-    assert "User-provided PowerShell run transcript" in html
-    assert "17" in html and "5" in html
+    assert "Numbers from the run" not in html
+    assert "Subject-level accuracy" not in html
+    assert 'href="/results/data-processing"' in html
     assert "§4.1.2 and §4.3" in html
     assert "Dataset 2A development" in html
     assert "10.1007/s00500-015-1937-5" in html
     assert "does not implement that published selection/evaluation sequence" in html
     assert 'href="/papers/2019-raza-cse-uael.pdf"' in html
     assert 'role="tablist"' in html
+
+    results = app.test_client().get("/results/data-processing")
+    assert results.status_code == 200
+    results_html = results.get_data(as_text=True)
+    assert "User-provided PowerShell run transcript" in results_html
+    assert "Warnings and confirmations" in results_html
+    assert "Subject-level accuracy" in results_html
+    assert "17" in results_html and "5" in results_html
 
 
 def test_page_uses_new_local_artifacts_when_present(tmp_path: Path) -> None:

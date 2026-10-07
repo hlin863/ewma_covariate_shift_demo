@@ -5,6 +5,7 @@ from src.web.bci_eda import bci_eda_bp
 from src.web.data_structures import data_structures_bp
 from src.web.decision_models import decision_models_bp
 from src.web.diethe import diethe_bp
+from src.web.process import process_bp
 from src.web.test_results import (
     DEFAULT_TEST_REFRESH_SECONDS,
     DEFAULT_TEST_REPORT_PATH,
@@ -33,6 +34,10 @@ if "support" not in app.blueprints:
 
 if "test_results" not in app.blueprints:
     app.register_blueprint(test_results_bp)
+
+
+if "process" not in app.blueprints:
+    app.register_blueprint(process_bp)
 
 
 if "diethe" not in app.blueprints:
