@@ -170,7 +170,7 @@ def transductive_results():
             "fields": (
                 "trial_index", "time", "predicted_label", "stage1_warning",
                 "stage2_status", "stage2_p_value", "validated_shift",
-                "classifier_version", "training_size_before",
+                "classifier_version", "training_size_before", "trials_since_update",
                 "adaptation_triggered", "pseudo_label_candidates",
                 "pseudo_labels_accepted", "retrained_after_trial",
             ),
@@ -188,7 +188,7 @@ def transductive_results():
             "title": "Update events",
             "purpose": "What changed when enough confidence-gated pseudo-labels were admitted.",
             "fields": (
-                "trigger_trial_index", "validated_shift", "candidate_samples",
+                "trigger_trial_index", "trials_since_update", "validated_shift", "candidate_samples",
                 "accepted_samples", "rejected_samples", "mean_accepted_confidence",
                 "training_size_before", "training_size_after",
                 "knowledge_base_size_after", "retrain_seconds", "classifier_version",
