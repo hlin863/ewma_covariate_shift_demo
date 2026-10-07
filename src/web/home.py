@@ -139,6 +139,18 @@ def build_home_page_model() -> dict[str, object]:
                 "citation": "Raza et al. · Neurocomputing",
             },
             {
+                "year": "2023",
+                "title": "Continual learning for predictive maintenance",
+                "detail": (
+                    "Hurtado et al. frame classical adaptation as active drift-triggered "
+                    "updates versus passive continual updates and motivate realistic "
+                    "non-stationary predictive-maintenance benchmarks."
+                ),
+                "paper_file": None,
+                "paper_title": None,
+                "citation": "Hurtado et al. · Intelligent Systems with Applications",
+            },
+            {
                 "year": "Current",
                 "title": "Auditable adaptive framework",
                 "detail": (
