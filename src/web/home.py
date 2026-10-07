@@ -16,10 +16,11 @@ def build_home_page_model() -> dict[str, object]:
             ),
             "detail": (
                 "The repository now separates Stage-I warnings, explicit Stage-II "
-                "validation variants, supervised adaptation, PWKNN pseudo-labelling, "
-                "transductive knowledge-base updates and hidden-label post-run scoring. "
-                "Dynamic CSE-UAEL ensemble growth, weighted voting and the first full "
-                "2A/2B adaptive reproduction remain open milestones."
+                "validation variants, non-adaptive/passive/active update policies, "
+                "supervised adaptation, PWKNN pseudo-labelling, transductive knowledge-base "
+                "updates and hidden-label post-run scoring. Dynamic CSE-UAEL ensemble growth, "
+                "bounded-memory continual learning and the first full 2A/2B adaptive "
+                "reproduction remain open milestones."
             ),
         },
         "processes": PROCESS_PAGES,
@@ -67,15 +68,33 @@ def build_home_page_model() -> dict[str, object]:
             },
             {
                 "number": "07",
-                "title": "Transductive adaptation",
+                "title": "Update policy",
                 "detail": (
-                    "PWKNN pseudo-labelling, confidence-gated knowledge-base growth "
-                    "and hidden-label post-run evaluation"
+                    "Never-update control; periodic/continuous passive adaptation; "
+                    "warning, validated-shift and performance-drop active triggers"
                 ),
                 "status": "implemented",
             },
             {
                 "number": "08",
+                "title": "Label acquisition",
+                "detail": (
+                    "Supervised labels and confidence-bearing PWKNN pseudo-labels; "
+                    "active-learning query scoring remains a separate utility"
+                ),
+                "status": "implemented",
+            },
+            {
+                "number": "09",
+                "title": "Transductive adaptation",
+                "detail": (
+                    "Confidence-gated knowledge-base growth, classifier versioning "
+                    "and hidden-label post-run evaluation"
+                ),
+                "status": "implemented",
+            },
+            {
+                "number": "10",
                 "title": "Dynamic ensemble",
                 "detail": (
                     "CSE-triggered classifier growth and weighted CSE-UAEL voting"
