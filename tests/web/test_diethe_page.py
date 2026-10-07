@@ -12,6 +12,11 @@ def test_page_empty_state_and_real_run():
     assert b'performance_drop' in page.data
     assert b'not EEG' in page.data
     assert b'Download complete evidence JSON' in page.data
+    assert b'Policy family' in page.data
+    assert b'non-adaptive' in page.data
+    assert b'passive' in page.data
+    assert b'active' in page.data
+    assert b'Trials since previous update' in page.data
 
 
 def test_bad_inputs_do_not_run_unbounded_experiment():
