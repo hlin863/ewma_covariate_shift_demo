@@ -24,4 +24,6 @@ def test_validation_decision_time_and_prediction_before_update():
     assert result.trial_results.predicted_label.tolist() == [0, 0, 0, 1]
     assert result.update_events.trigger_time.tolist() == [2]
     assert result.update_events.added_samples.tolist() == [3]
+    assert result.update_events.trials_since_update.tolist() == [3]
+    assert result.trial_results.trials_since_update.tolist() == [1, 2, 3, 1]
     assert result.trial_results.classifier_version.tolist() == [0, 0, 0, 1]

@@ -28,6 +28,39 @@
   <section class="process-steps" aria-label="Method steps">
     {% for title, detail in process.steps %}<article><span>{{ loop.index }}</span><div><h2>{{ title }}</h2><p>{{ detail }}</p></div></article>{% endfor %}
   </section>
+  {% if process.dimensions %}
+  <section class="continual-architecture" aria-label="Continual learning dimensions">
+    <div class="continual-heading">
+      <p class="eyebrow">Continual-learning architecture</p>
+      <h2>Four dimensions keep adaptation decisions explicit</h2>
+      <p>Read across the cards rather than treating continual learning as one monolithic algorithm. Each dimension maps to a separate responsibility already represented in the repository.</p>
+    </div>
+    <div class="continual-dimensions">
+      {% for dimension in process.dimensions %}
+      <article class="dimension-card">
+        <p class="eyebrow">{{ dimension.label }}</p>
+        <h2>{{ dimension.title }}</h2>
+        <p class="dimension-question">{{ dimension.question }}</p>
+        <ul>
+          {% for item in dimension.items %}
+          <li>
+            <div><strong>{{ item.name }}</strong><span>{{ item.detail }}</span></div>
+            <small class="dimension-status {{ 'planned' if item.status == 'planned' else 'implemented' }}">{{ item.status }}</small>
+          </li>
+          {% endfor %}
+        </ul>
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+  {% if process.active_learning_boundary %}
+  <aside class="active-boundary">
+    <p class="eyebrow">Terminology boundary</p>
+    <h2>Active adaptation ≠ active learning</h2>
+    <p>{{ process.active_learning_boundary }}</p>
+  </aside>
+  {% endif %}
+  {% endif %}
   <aside class="process-note"><h2>Interpretation</h2><p>{{ process.note }}</p></aside>
   <section class="process-tools"><h2>Continue the process</h2>
     {% for page in process_links %}<a class="theme-button nav-link" href="{{ page.url }}">{{ page.label }} →</a>{% endfor %}

@@ -32,11 +32,11 @@ function render() {
   const body = document.getElementById('event-rows');body.replaceChildren();
   run.updates.forEach(e => {
     const row = document.createElement('tr');
-    [e.trigger_trial_index,e.trigger_time,e.added_samples,e.training_size_after,e.classifier_version,(1000*e.retrain_seconds).toFixed(2)].forEach(v => {
+    [e.trigger_trial_index,e.trigger_time,e.trials_since_update,e.added_samples,e.training_size_after,e.classifier_version,(1000*e.retrain_seconds).toFixed(2)].forEach(v => {
       const cell=document.createElement('td');cell.textContent=v;row.appendChild(cell);
     });body.appendChild(row);
   });
-  if (!run.updates.length) {const row=document.createElement('tr');const cell=document.createElement('td');cell.colSpan=6;cell.textContent='No updates for this policy.';row.appendChild(cell);body.appendChild(row);}
+  if (!run.updates.length) {const row=document.createElement('tr');const cell=document.createElement('td');cell.colSpan=7;cell.textContent='No updates for this policy.';row.appendChild(cell);body.appendChild(row);}
 }
 select.addEventListener('change',render);render();
 document.getElementById('download').addEventListener('click', () => {

@@ -9,8 +9,13 @@ def test_matched_policy_runs_and_lossless_export(tmp_path):
     rows = {r['policy']: r for r in result['summary']}
     assert rows['never']['update_count'] == 0
     assert rows['periodic']['update_count'] == 4
+    assert rows['never']['policy_family'] == 'non-adaptive'
+    assert rows['periodic']['policy_family'] == 'passive'
+    assert rows['validated']['policy_family'] == 'active'
+    assert rows['periodic']['trigger'] == '20 new trials since previous update'
     assert rows['never']['final_training_size'] == 120
     assert rows['periodic']['final_training_size'] == 200
+    assert [event['trials_since_update'] for event in result['runs']['periodic']['updates']] == [20, 20, 20, 20]
     labels = [r['true_label'] for r in result['runs']['never']['trials']]
     for run in result['runs'].values():
         assert [r['true_label'] for r in run['trials']] == labels

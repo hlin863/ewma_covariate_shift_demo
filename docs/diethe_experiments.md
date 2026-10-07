@@ -11,10 +11,29 @@ not supply the five-policy algorithm implemented here.
 | --- | --- | --- |
 | Has the feature distribution changed? (§4.1) | Existing CSE detector, warnings and complete Stage-II records | Mean-shift evidence in retained PCA space; not all distribution changes |
 | Did prediction quality change? (§4.2) | Per-trial correctness and full-window rolling accuracy | Immediate trustworthy labels assumed |
-| When should a model update? (§5.2) | Never, periodic, warning, validated, performance-drop rules | No learned optimal policy or expected-utility claim |
+| When should a model update? (§5.2) | Five-policy laboratory: non-adaptive never-update, passive periodic retraining, and active warning/validated/performance-drop rules | No learned optimal policy or expected-utility claim; `ContinuousRetrain` exists as a passive primitive but is outside this five-policy comparison |
 | Which data enter training? (§5, horizon) | Current trial or all trials since last update | Both append to historical data; no forgetting or bounded reservoir |
 | What does adaptation cost? (§5) | Initial fit, cumulative retraining, prediction timing, update counts and final training size | Measured wall time varies; memory/energy not measured |
 | Can a decision be audited? (§3.3) | Configuration, validation windows, labels/predictions, versions and update events | Versions do not persist models; no rollback or acceptance gate |
+
+## Policy families
+
+The page now makes the update taxonomy explicit:
+
+- **Non-adaptive:** `NeverUpdate`.
+- **Passive:** `PeriodicRetrain`, which updates after `interval` newly arrived
+  observations since the preceding model update and does not require drift
+  evidence. `ContinuousRetrain` provides per-observation or mini-batch passive
+  updating elsewhere in the policy module but is not added to the historical
+  five-policy laboratory.
+- **Active:** `RetrainOnWarning`, `RetrainOnValidatedShift`, and
+  `RetrainOnPerformanceDrop`, each of which requires evidence before an
+  update is allowed.
+
+This active/passive distinction follows the classical adaptation taxonomy
+reviewed by Hurtado et al. (2023). Active adaptation is separate from
+**active learning**: the former decides *when the model updates*, while the
+latter decides *which observations should be queried for labels*.
 
 ## Controlled synthetic scenarios
 
@@ -47,8 +66,10 @@ ineligible records remain separate. An update at the final trial still costs
 computation but cannot improve a future prediction within that run.
 
 Initial model fitting and updating use the same linear SVM contract as the
-existing supervised pathway. Original policy defaults remain unchanged.
-The performance context and timing fields are additive.
+existing supervised pathway. Trial and update records now retain
+`trials_since_update`, allowing the page and exported evidence to show the
+actual passive/performance cooldown horizon rather than inferring it from the
+absolute trial number. The performance context and timing fields are additive.
 
 ## Running and preserving experiments
 
@@ -68,7 +89,7 @@ The CLI creates a new `outputs/diethe/<UTC timestamp>/` directory. An existing
 output directory is rejected to prevent accidental overwrites. It writes:
 
 - `experiment.json`: full run, settings, source commit if available and provenance.
-- `summary.csv`: accuracy, gain versus never-update, update count, timing and size.
+- `summary.csv`: policy family/trigger, accuracy, gain versus never-update, update count, timing and size.
 - `warnings.csv` and `validations.csv`: complete detector evidence.
 - `<policy>_trials.csv` and `<policy>_updates.csv`: predictions and update history.
 

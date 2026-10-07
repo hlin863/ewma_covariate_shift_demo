@@ -25,5 +25,25 @@
 .result-navigation-grid a:hover { color: var(--computed); }
 .result-navigation-grid small { display: block; line-height: 1.5; color: var(--muted); margin-top: 6px; }
 .process-shell a:focus-visible, .result-navigation-grid a:focus-visible { outline: 2px solid var(--computed); outline-offset: 3px; }
-@media (max-width: 1000px) { .result-navigation-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 600px) { .process-boundaries, .result-navigation-grid { grid-template-columns: 1fr; } .process-tabs a { width: 100%; } }
+
+.continual-architecture { margin: 40px 0 28px; }
+.continual-heading { max-width: 860px; margin-bottom: 20px; }
+.continual-heading > h2 { font-size: clamp(1.7rem, 3vw, 2.4rem); }
+.continual-heading > p:last-child { color: var(--muted); margin: 0; }
+.continual-dimensions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.dimension-card { padding: 24px; background: var(--panel); border: 1px solid var(--line); border-radius: 18px; }
+.dimension-card h2 { font-size: 1.25rem; }
+.dimension-question { color: var(--muted); margin: 0 0 18px; }
+.dimension-card ul { list-style: none; margin: 0; padding: 0; }
+.dimension-card li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 14px; align-items: start; padding: 14px 0; border-top: 1px solid var(--line); }
+.dimension-card li div { min-width: 0; }
+.dimension-card li strong, .dimension-card li span { display: block; }
+.dimension-card li span { color: var(--muted); margin-top: 5px; line-height: 1.5; }
+.dimension-status { white-space: nowrap; padding: 5px 8px; border: 1px solid var(--line); border-radius: 999px; text-transform: uppercase; letter-spacing: .05em; font-size: .66rem; }
+.dimension-status.implemented { color: var(--computed); border-color: color-mix(in srgb, var(--computed) 45%, var(--line)); }
+.dimension-status.planned { color: var(--muted); }
+.active-boundary { margin: 0 0 28px; padding: 24px; border: 1px solid var(--computed); border-radius: 18px; background: var(--panel-2); }
+.active-boundary h2 { margin-bottom: 8px; }
+.active-boundary p:last-child { color: var(--muted); margin: 0; }
+@media (max-width: 1000px) { .result-navigation-grid, .continual-dimensions { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 600px) { .process-boundaries, .result-navigation-grid, .continual-dimensions { grid-template-columns: 1fr; } .process-tabs a { width: 100%; } .dimension-card li { grid-template-columns: 1fr; } .dimension-status { justify-self: start; } }

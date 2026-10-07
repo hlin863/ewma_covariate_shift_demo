@@ -181,6 +181,7 @@ def run_supervised_adaptation(
                 ),
                 "classifier_version": classifier_version,
                 "training_size_before": model.training_size,
+                "trials_since_update": context.trials_since_update,
                 "retrained_after_trial": should_update,
             }
         )
@@ -210,6 +211,7 @@ def run_supervised_adaptation(
                 "recent_accuracy": recent_accuracy,
                 "trigger_trial_index": index,
                 "trigger_time": context.time,
+                "trials_since_update": context.trials_since_update,
                 "stage1_warning": stage1_warning,
                 "stage2_status": (
                     validation_record.get("status")

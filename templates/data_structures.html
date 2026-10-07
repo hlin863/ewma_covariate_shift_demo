@@ -47,6 +47,14 @@
   {% else %}
   <section class="structure-metrics" aria-label="Loaded data summary">{% for label, value in view.metrics %}<article><span>{{ label }}</span><strong>{{ '{:,}'.format(value) }}</strong></article>{% endfor %}</section>
   <section class="structure-notes"><h2>How to read this data</h2>{% for note in view.notes %}<p>{{ note }}</p>{% endfor %}</section>
+  {% if selected.key == 'turbofan' %}
+  <section class="structure-notes">
+    <p class="eyebrow">Continual-learning bridge</p>
+    <h2>From C-MAPSS inspection to adaptation experiments</h2>
+    <p>This page stops at source-data inspection. The next research layer is to compare static, passive and evidence-triggered update policies on a chronological predictive-maintenance stream; that end-to-end PdM continual-learning experiment remains planned.</p>
+    <p><a class="theme-button nav-link" href="{{ url_for('process.overview', stage='adaptive-learning') }}">Open the adaptive-learning architecture →</a></p>
+  </section>
+  {% endif %}
   {% if view.schema %}
   <section class="structure-section"><h2>Source column schema</h2><div class="structure-table"><table><thead><tr><th>Field</th><th>Loaded type</th><th>Missing values</th></tr></thead><tbody>{% for row in view.schema %}<tr><th>{{ row.field }}</th><td>{{ row.type }}</td><td>{{ row.missing }}</td></tr>{% endfor %}</tbody></table></div></section>
   {% endif %}

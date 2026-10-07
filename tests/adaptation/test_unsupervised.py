@@ -63,6 +63,8 @@ def test_validated_shift_pseudo_labels_seen_trials_and_retrains():
 
     assert result.update_count == 1
     assert result.update_events["accepted_samples"].tolist() == [2]
+    assert result.update_events["trials_since_update"].tolist() == [2]
+    assert result.trial_results["trials_since_update"].tolist() == [1, 2, 1]
     assert result.final_classifier.training_size == 6
     assert result.pseudo_label_events["accepted"].all()
     assert "true_label" not in result.trial_results.columns
