@@ -39,7 +39,7 @@ PROCESS_PAGES = (
     {
         "key": "adaptive-learning", "number": "03", "title": "Adaptive learning",
         "question": "When and how should the model update?",
-        "description": "Use four explicit dimensions to separate update timing, label acquisition, retention and model evolution.",
+        "description": "Use Hurtado et al. (2023)'s active/passive adaptation distinction inside four explicit dimensions: update timing, label acquisition, retention and model evolution.",
         "input": "Validated drift evidence, current predictions and the labels or memory allowed by the protocol.",
         "output": "An update decision, an updated knowledge base/model and a separate evaluation record.",
         "steps": (
