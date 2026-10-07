@@ -1,5 +1,11 @@
 # Repository structure overview
 
+Dataset inspection is now grouped under **Data structures** at
+`/data-structures`, with separate navigation for BCI 2A/2B, Turbofan,
+Chowdhury metadata, algae and synthetic inputs. See
+[Dataset navigation and inspection](data_structures.md) for the page map
+and local source configuration.
+
 This document is the architectural map of the current repository. It reflects
 the responsibility-based refactor merged at `ea531f6` and explains how the
 active implementation, literature lineage, experiments, evidence, presentation,

@@ -12,7 +12,7 @@
   <main class="page-shell eda-page">
     <header class="hero eda-hero">
       <div>
-        <p class="eyebrow">BCI Competition IV · exploratory data analysis</p>
+        <p class="eyebrow"><a href="{{ url_for('data_structures.overview') }}">Data structures</a> / {{ dataset_label }}</p>
         <h1>EEG data distributions before shift detection</h1>
         <p class="lede">
           A descriptive view of the local 2A/2B recordings using the same GDF loaders and
@@ -20,6 +20,7 @@
         </p>
       </div>
       <div class="hero-actions">
+        {% include '_data_menu.html' %}
         <a class="nav-button" href="{{ url_for('home') }}">Home</a>
         <a class="nav-button" href="{{ url_for('figure_1') }}">Figure 1 · A07</a>
         <a class="nav-button" href="{{ url_for('dashboard') }}">Table 1</a>

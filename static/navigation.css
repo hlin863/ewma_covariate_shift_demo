@@ -52,6 +52,14 @@
   outline-offset: 2px;
 }
 
+.data-menu { flex-shrink: 0; }
+.data-menu > summary { cursor: pointer; padding: 10px 14px; border: 1px solid var(--line, #384559); border-radius: 10px; color: var(--text, #e8edf5); background: var(--panel, #172233); font: inherit; font-size: .82rem; font-weight: 750; white-space: nowrap; }
+.data-menu .nav-menu-panel { display: block; min-width: min(280px, calc(100vw - 40px)); max-width: calc(100vw - 40px); background: var(--panel, #172233); border-color: var(--line, #384559); }
+.data-menu .nav-menu-panel a { color: var(--text, #e8edf5); }
+.data-menu .nav-menu-panel a[aria-current] { background: var(--panel-2, #28364a); }
+.data-menu .nav-menu-panel a:hover { background: var(--panel-2, #28364a); }
+.data-menu > summary:focus-visible { outline: 2px solid var(--computed, #38bdf8); outline-offset: 3px; }
+
 @media (max-width: 720px) {
   .nav-menu-panel {
     left: 0;

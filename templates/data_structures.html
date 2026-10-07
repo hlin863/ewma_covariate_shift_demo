@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ selected.name if selected else 'Data structures' }} · CSE Research</title>
+  <script>document.documentElement.dataset.theme = localStorage.getItem('dashboard-theme') || (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');</script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='navigation.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='data_structures.css') }}">
+</head>
+<body><main class="page-shell structures-page">
+  <header class="hero">
+    <div><p class="eyebrow">Source datasets · exploratory inspection</p>
+      <h1>{{ selected.name if selected else 'Data structures' }}</h1>
+      <p class="lede">{{ selected.description if selected else 'Choose a dataset to see its source format, loaded structure and exploratory summaries.' }}</p>
+    </div>
+    <div class="hero-actions"><a class="theme-button nav-link" href="{{ url_for('home') }}">Home</a>
+      {% include '_data_menu.html' %}
+      <button class="theme-button" type="button" data-theme-option="light">Light</button>
+      <button class="theme-button" type="button" data-theme-option="dark">Dark</button>
+    </div>
+  </header>
+  {% if not selected %}
+  <section class="dataset-grid" aria-label="Datasets">
+    {% for item in datasets %}
+    <a class="dataset-card" href="{{ item.url }}">
+      <span class="eyebrow">{{ item.kind }}</span><h2>{{ item.name }}</h2>
+      <p>{{ item.description }}</p>
+      <dl><div><dt>Source format</dt><dd>{{ item.format }}</dd></div>
+          <div><dt>Loaded structure</dt><dd>{{ item.structure }}</dd></div></dl>
+      <strong>Explore dataset <span aria-hidden="true">→</span></strong>
+    </a>
+    {% endfor %}
+  </section>
+  {% else %}
+  <nav class="dataset-tabs" aria-label="Choose dataset">
+    <a href="{{ url_for('data_structures.overview') }}">Overview</a>
+    {% for item in datasets %}<a href="{{ item.url }}"{% if item.key == selected.key %} aria-current="page"{% endif %}>{{ item.name }}</a>{% endfor %}
+  </nav>
+  {% if selected.key == 'turbofan' %}
+  <form class="dataset-controls" method="get"><label>Subset <select name="subset">{% for subset in ['FD001','FD002','FD003','FD004'] %}<option{% if view.get('subset', request.args.get('subset', 'FD001')) == subset %} selected{% endif %}>{{ subset }}</option>{% endfor %}</select></label><button class="theme-button" type="submit">Load subset</button></form>
+  {% elif selected.key == 'algae' and not error %}
+  <form class="dataset-controls" method="get"><label>Raceway <select name="raceway">{% for number in view.raceways %}<option value="{{ number }}"{% if number == view.raceway %} selected{% endif %}>{{ number }}</option>{% endfor %}</select></label><button class="theme-button" type="submit">Inspect raceway</button></form>
+  {% endif %}
+  {% if error %}
+  <section class="empty-state" role="status"><h2>Source data could not be loaded</h2><p>{{ error }}</p><p>Check the local dataset files, then reload this view.</p></section>
+  {% else %}
+  <section class="structure-metrics" aria-label="Loaded data summary">{% for label, value in view.metrics %}<article><span>{{ label }}</span><strong>{{ '{:,}'.format(value) }}</strong></article>{% endfor %}</section>
+  <section class="structure-notes"><h2>How to read this data</h2>{% for note in view.notes %}<p>{{ note }}</p>{% endfor %}</section>
+  {% if view.schema %}
+  <section class="structure-section"><h2>Source column schema</h2><div class="structure-table"><table><thead><tr><th>Field</th><th>Loaded type</th><th>Missing values</th></tr></thead><tbody>{% for row in view.schema %}<tr><th>{{ row.field }}</th><td>{{ row.type }}</td><td>{{ row.missing }}</td></tr>{% endfor %}</tbody></table></div></section>
+  {% endif %}
+  {% for preview in view.previews or [] %}
+  <section class="structure-section"><h2>{{ preview.title }}</h2><p>First six observations. Scroll horizontally to inspect all fields.</p><div class="structure-table" tabindex="0" role="region" aria-label="{{ preview.title }}"><table><thead><tr>{% for column in preview.columns %}<th>{{ column }}</th>{% endfor %}</tr></thead><tbody>{% for row in preview.rows %}<tr>{% for value in row %}<td>{{ value }}</td>{% endfor %}</tr>{% endfor %}</tbody></table></div></section>
+  {% endfor %}
+  {% if view.summaries %}
+  <section class="structure-section"><h2>Settings and sensor distributions</h2><div class="structure-table"><table><thead><tr><th>Field</th><th>Training min</th><th>Training median</th><th>Training max</th><th>Test median</th></tr></thead><tbody>{% for row in view.summaries %}<tr><th>{{ row.field }}</th>{% for key in ['train_min','train_median','train_max','test_median'] %}<td>{{ '%.4g'|format(row[key]) }}</td>{% endfor %}</tr>{% endfor %}</tbody></table></div></section>
+  {% endif %}
+  {% if view.variables %}
+  <section class="structure-section"><h2>MAT file structure</h2><div class="structure-table"><table><thead><tr><th>Variable</th><th>Shape</th><th>MATLAB type</th></tr></thead><tbody>{% for row in view.variables %}<tr><th>{{ row.field }}</th><td>{{ row.shape }}</td><td>{{ row.type }}</td></tr>{% endfor %}</tbody></table></div></section>
+  <section class="structure-section"><h2>Raceway {{ view.raceway }} measurement fields</h2><div class="structure-table"><table><thead><tr><th>Field</th><th>Numeric values</th><th>Shape</th><th>Missing / non-finite</th><th>Start day</th><th>End day</th></tr></thead><tbody>{% for row in view.signals %}<tr><th>{{ row.field }}</th><td>{{ '{:,}'.format(row['values']) }}</td><td>{{ row.shape }}</td><td>{{ row.missing }}</td><td>{{ '%.2f'|format(row.start) if row.start is not none else 'Unavailable' }}</td><td>{{ '%.2f'|format(row.end) if row.end is not none else 'Unavailable' }}</td></tr>{% endfor %}</tbody></table></div></section>
+  {% endif %}
+  {% endif %}
+  {% endif %}
+</main>
+<script>document.querySelectorAll('[data-theme-option]').forEach(button => button.addEventListener('click', () => { document.documentElement.dataset.theme = button.dataset.themeOption; localStorage.setItem('dashboard-theme', button.dataset.themeOption); }));</script>
+</body></html>

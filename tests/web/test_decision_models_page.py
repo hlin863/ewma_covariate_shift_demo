@@ -3,6 +3,7 @@ from pathlib import Path
 import pandas as pd
 from flask import Blueprint, Flask
 from src.web.decision_models import decision_models_bp
+from src.web.data_structures import data_structures_bp
 
 def _app(project_root: Path) -> Flask:
     app=Flask(__name__,template_folder=str(project_root/"templates"),static_folder=str(project_root/"static"))
@@ -12,6 +13,7 @@ def _app(project_root: Path) -> Flask:
     stub.add_url_rule("/data-distributions",endpoint="data_distributions",view_func=lambda:"eda")
     app.register_blueprint(stub)
     app.register_blueprint(decision_models_bp)
+    app.register_blueprint(data_structures_bp)
     return app
 
 def test_decision_model_page_reads_saved_evidence(tmp_path: Path):

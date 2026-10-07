@@ -2,9 +2,9 @@
 <html lang="en">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Diethe policy laboratory · CSE Research</title>
-<link rel="stylesheet" href="{{ url_for('static', filename='diethe.css') }}"></head>
+<link rel="stylesheet" href="{{ url_for('static', filename='diethe.css') }}"><link rel="stylesheet" href="{{ url_for('static', filename='navigation.css') }}"></head>
 <body><main>
-<nav><a href="{{ url_for('home') }}">← Research hub</a><a href="{{ url_for('results_catalog') }}">All results</a><a href="{{ url_for('complementary_results') }}">Complementary monitoring</a></nav>
+<nav><a href="{{ url_for('home') }}">← Research hub</a><a href="{{ url_for('results_catalog') }}">All results</a><a href="{{ url_for('complementary_results') }}">Complementary monitoring</a>{% include '_data_menu.html' %}</nav>
 <header><p class="eyebrow">Continual Learning in Practice · Diethe et al. (2019)</p>
 <h1>When should a model adapt?</h1><p class="lead">Compare five update policies on the same stream. Inspect the evidence, predictions and cost behind each decision.</p>
 <p class="boundary">Experimental application of the paper’s architecture, not a reproduction of a Diethe algorithm. Interactive runs use synthetic feature vectors, not EEG recordings.</p></header>

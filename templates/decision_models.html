@@ -27,13 +27,14 @@
   <title>BCI decision model explorer</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='decision_models.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='navigation.css') }}">
 </head>
 <body>
 <main class="decision-shell">
   <nav>
     <a href="{{ url_for('home') }}">← Research hub</a>
     <a href="{{ url_for('results_catalog') }}">All results</a>
-    <a href="{{ url_for('bci_eda.data_distributions') }}">BCI distributions</a>
+    {% include '_data_menu.html' %}
   </nav>
   <header>
     <p class="eyebrow">Classification and pseudo-labelling · separate from shift detection</p>

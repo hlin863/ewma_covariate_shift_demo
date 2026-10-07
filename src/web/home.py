@@ -49,12 +49,12 @@ def build_home_page_model() -> dict[str, object]:
                             ),
                         },
                         {
-                            "endpoint": "bci_eda.data_distributions",
-                            "label": "BCI data distributions",
+                            "endpoint": "data_structures.overview",
+                            "label": "Data structures",
                             "kind": "Exploratory data analysis",
                             "description": (
-                                "Compare cue-aligned amplitude, channel and μ/β "
-                                "power distributions across local 2A/2B sessions."
+                                "Choose BCI 2A/2B, Turbofan, algae, clinical metadata "
+                                "or synthetic data to inspect loaded structures and distributions."
                             ),
                         },
                         {

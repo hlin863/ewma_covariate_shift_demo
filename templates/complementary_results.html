@@ -5,10 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Complementary BCI monitoring · CSE Research</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='complementary_results.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='navigation.css') }}">
 </head>
 <body>
   <main class="shell">
     <nav>
+      {% include '_data_menu.html' %}
       <a href="{{ url_for('home') }}">← Research hub</a>
       <a href="{{ url_for('results_catalog') }}">All results</a>
       <div class="theme-switcher" role="group" aria-label="Colour theme">

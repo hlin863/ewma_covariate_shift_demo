@@ -362,6 +362,7 @@
   .evidence-grid { grid-template-columns: 1fr; }
 }
 @media (max-width: 600px) {
+  .home-nav, .home-nav-links { flex-wrap: wrap; gap: 12px; }
   .home-shell { width: min(100% - 26px, 1320px); }
   .home-brand { font-size: 0.86rem; }
   .home-nav .theme-button { padding: 7px 9px; }

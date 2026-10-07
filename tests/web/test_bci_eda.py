@@ -5,6 +5,7 @@ import numpy as np
 from flask import Flask
 
 from src.web.bci_eda import _summarise_trials, bci_eda_bp
+from src.web.data_structures import data_structures_bp
 
 
 def _synthetic_trials() -> SimpleNamespace:
@@ -58,6 +59,7 @@ def test_data_distributions_page_handles_missing_local_raw_data(tmp_path: Path) 
     app.add_url_rule("/figure-1", endpoint="figure_1", view_func=lambda: "figure")
     app.add_url_rule("/table-1", endpoint="dashboard", view_func=lambda: "table")
     app.register_blueprint(bci_eda_bp)
+    app.register_blueprint(data_structures_bp)
     app.config.update(
         TESTING=True,
         DATASET_2A_PATH=str(tmp_path / "2a"),

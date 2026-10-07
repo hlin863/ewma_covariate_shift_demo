@@ -25,6 +25,7 @@
         <p class="lede">A single view of the generated evidence across BCI reproduction, detector diagnostics, sensitivity studies and the Raza 2015 D2 / Table III experiments.</p>
       </div>
       <div class="hero-actions">
+        {% include '_data_menu.html' %}
         <a class="theme-button nav-link" href="{{ url_for('home') }}">Home</a>
         <a class="theme-button nav-link" href="{{ url_for('dashboard') }}">Table 1 dashboard</a>
         <details class="nav-menu" open>
@@ -33,7 +34,6 @@
             <a class="active" href="{{ url_for('results_catalog') }}">Research results</a>
             <a href="{{ url_for('diethe.laboratory') }}">Diethe policy laboratory</a>
             <a href="{{ url_for('data_processing_page') }}">Data processing atlas</a>
-            <a href="{{ url_for('chowdhury_demographics') }}">Chowdhury cohort</a>
             <a href="{{ url_for('test_results.test_results') }}">Test cases</a>
           </div>
         </details>

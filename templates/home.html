@@ -20,6 +20,7 @@
     <nav class="home-nav" aria-label="Primary navigation">
       <a class="home-brand" href="{{ url_for('home') }}"><span>CSE</span> Research hub</a>
       <div class="home-nav-links">
+        {% include '_data_menu.html' %}
         <a href="#progress">Progress</a>
         <a href="#papers">Paper lineage</a>
         <a href="#pages">Explore pages</a>

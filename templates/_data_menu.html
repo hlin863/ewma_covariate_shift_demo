@@ -1,0 +1,10 @@
+<details class="nav-menu data-menu">
+  <summary class="theme-button nav-link">Data structures ▾</summary>
+  <nav class="nav-menu-panel" aria-label="Dataset subpages">
+    <a href="{{ url_for('data_structures.overview') }}"{% if request.path == '/data-structures' %} aria-current="page"{% endif %}>Dataset overview</a>
+    {% for item in dataset_navigation %}
+      <a href="{{ item.url }}"{% if item.active %} aria-current="page"{% endif %}>{{ item.name }}</a>
+    {% endfor %}
+  </nav>
+</details>
+<script src="{{ url_for('static', filename='dataset_navigation.js') }}" defer></script>

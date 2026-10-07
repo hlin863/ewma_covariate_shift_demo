@@ -12,11 +12,13 @@
   </script>
   <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='data_processing.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='navigation.css') }}">
 </head>
 <body>
   <main class="page-shell processing-shell">
     <nav class="processing-nav" aria-label="Page navigation">
       <a href="{{ url_for('home') }}">← Research hub</a>
+      {% include '_data_menu.html' %}
       <div><a href="{{ url_for('results_catalog') }}">Results</a><a href="{{ url_for('dashboard') }}">Table 1</a></div>
       <div class="theme-switcher" role="group" aria-label="Colour theme">
         <button class="theme-button" type="button" data-theme-option="light">Light</button>
