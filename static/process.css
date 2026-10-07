@@ -25,8 +25,6 @@
 .result-navigation-grid a:hover { color: var(--computed); }
 .result-navigation-grid small { display: block; line-height: 1.5; color: var(--muted); margin-top: 6px; }
 .process-shell a:focus-visible, .result-navigation-grid a:focus-visible { outline: 2px solid var(--computed); outline-offset: 3px; }
-@media (max-width: 1000px) { .result-navigation-grid, .continual-dimensions { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 600px) { .process-boundaries, .result-navigation-grid, .continual-dimensions { grid-template-columns: 1fr; } .process-tabs a { width: 100%; } .dimension-card li { grid-template-columns: 1fr; } .dimension-status { justify-self: start; } }
 
 .continual-architecture { margin: 40px 0 28px; }
 .continual-heading { max-width: 860px; margin-bottom: 20px; }
@@ -47,3 +45,5 @@
 .active-boundary { margin: 0 0 28px; padding: 24px; border: 1px solid var(--computed); border-radius: 18px; background: var(--panel-2); }
 .active-boundary h2 { margin-bottom: 8px; }
 .active-boundary p:last-child { color: var(--muted); margin: 0; }
+@media (max-width: 1000px) { .result-navigation-grid, .continual-dimensions { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 600px) { .process-boundaries, .result-navigation-grid, .continual-dimensions { grid-template-columns: 1fr; } .process-tabs a { width: 100%; } .dimension-card li { grid-template-columns: 1fr; } .dimension-status { justify-self: start; } }
