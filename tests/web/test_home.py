@@ -12,6 +12,8 @@ def test_home_page_presents_research_scope_and_process_navigation() -> None:
     assert "Current project progress" in html
     assert "Detection through confidence-gated transductive adaptation is" in html
     assert "Dynamic CSE-UAEL ensemble growth" in html
+    assert "Update policy" in html
+    assert "Label acquisition" in html
     assert "Transductive adaptation" in html
     assert "Dynamic ensemble" in html
     assert "planned" in html
@@ -45,11 +47,28 @@ def test_process_pages_and_results_have_separate_destinations() -> None:
         assert 'href="/results"' in html
         assert "Published CSV mean" not in html
         assert "Subject-level accuracy" not in html
+        if stage == "adaptive-learning":
+            assert 'aria-label="Continual learning dimensions"' in html
+            assert "Active adaptation ≠ active learning" in html
+            assert "PeriodicRetrain" in html
+            assert "ContinuousRetrain" in html
+            assert "RetrainOnValidatedShift" in html
+            assert 'href="/results/transductive-adaptation"' in html
     assert client.get("/process/unknown").status_code == 404
     results = client.get("/results").get_data(as_text=True)
     assert 'aria-label="Result pages by process"' in results
     assert 'href="/results/paper2015-d2/ks-validation"' in results
+    assert 'href="/results/diethe"' in results
+    assert 'href="/results/transductive-adaptation"' in results
+    assert "Continual learning and classifier evidence" in results
     assert 'href="/results/data-processing"' in results
+
+    transductive = client.get("/results/transductive-adaptation")
+    assert transductive.status_code == 200
+    transductive_html = transductive.get_data(as_text=True)
+    assert "Transductive adaptation event sequence" in transductive_html
+    assert "Implementation evidence is not model-performance evidence" in transductive_html
+    assert "pseudo_label_candidates" in transductive_html
 
 
 
