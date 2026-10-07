@@ -116,6 +116,36 @@ def run_policy_comparison(*, training_features, training_labels,
         'performance_drop': RetrainOnPerformanceDrop(
             reference_accuracy, config.accuracy_drop, config.interval),
     }
+    policy_meta = {
+        'never': {
+            'policy_family': 'non-adaptive',
+            'trigger': 'No update',
+            'update_horizon': 'Not applicable',
+        },
+        'periodic': {
+            'policy_family': 'passive',
+            'trigger': f'{config.interval} new trials since previous update',
+            'update_horizon': config.update_scope,
+        },
+        'warning': {
+            'policy_family': 'active',
+            'trigger': 'Stage-I warning',
+            'update_horizon': config.update_scope,
+        },
+        'validated': {
+            'policy_family': 'active',
+            'trigger': 'Available Stage-II confirmation',
+            'update_horizon': config.update_scope,
+        },
+        'performance_drop': {
+            'policy_family': 'active',
+            'trigger': (
+                f'Rolling accuracy drop after {config.performance_window} trials '
+                f'with {config.interval}-trial cooldown'
+            ),
+            'update_horizon': config.update_scope,
+        },
+    }
     runs, summaries = {}, []
     for name, policy in policies.items():
         result = run_supervised_adaptation(
@@ -129,7 +159,8 @@ def run_policy_comparison(*, training_features, training_labels,
         retrain_seconds = (float(result.update_events.retrain_seconds.sum())
                            if not result.update_events.empty else 0.0)
         summaries.append(dict(
-            policy=name, accuracy=result.accuracy, update_count=result.update_count,
+            policy=name, **policy_meta[name],
+            accuracy=result.accuracy, update_count=result.update_count,
             initial_fit_seconds=result.initial_fit_seconds,
             retrain_seconds=retrain_seconds,
             prediction_seconds=float(trials.prediction_seconds.sum()),
