@@ -9,10 +9,10 @@ from app import app
 
 def test_overview_links_to_each_dataset():
     html = app.test_client().get('/data-structures').get_data(as_text=True)
-    assert html.count('class="dataset-card"') == 6
+    assert html.count('class="dataset-card"') == 7
     for link in ['/data-distributions?dataset=2a', '/data-distributions?dataset=2b',
                  '/data-structures/turbofan', '/data-structures/algae',
-                 '/chowdhury-demographics', '/data-structures/synthetic']:
+                 '/chowdhury-demographics', '/data-structures/park', '/data-structures/synthetic']:
         assert f'href="{link}"' in html
 
 
@@ -89,3 +89,15 @@ def test_invalid_dataset_and_subset_do_not_load_other_sources():
     client = app.test_client()
     assert client.get('/data-structures/unknown').status_code == 404
     assert client.get('/data-structures/turbofan?subset=FD005').status_code == 400
+
+def test_dataset_menu_grouped_without_route_changes():
+    html = app.test_client().get('/').get_data(as_text=True)
+    assert 'aria-label="Dataset subpages"' in html
+    for group in ('BCI Competition IV', 'Research papers',
+                  'Industrial and biological data', 'Synthetic benchmarks'):
+        assert group in html
+    assert html.count('class="dataset-submenu"') == 4
+    assert 'href="/data-distributions?dataset=2a"' in html
+    assert 'href="/data-distributions?dataset=2b"' in html
+    assert 'href="/data-structures/park"' in html
+    assert 'href="/data-structures/synthetic"' in html
