@@ -8,6 +8,9 @@ from flask import Blueprint, abort, current_app, render_template, request, url_f
 from scipy.io import loadmat, whosmat
 
 from src.pdm.datasets.turbofan import load_turbofan_dataset
+from src.detection.multivariate_inspection import (
+    demonstration_stream, describe_windows, load_multivariate_csv,
+)
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -34,6 +37,10 @@ DATASETS = (
      "format": "MATLAB MAT", "structure": "Nested structures for three raceways",
      "description": "Inspect measurement fields, sampling counts and time ranges without aligning the signals.",
      "endpoint": "data_structures.inspect_dataset", "args": {"dataset": "algae"}},
+    {"key": "park", "name": "Park (2023) · Multivariate structure", "kind": "WP2 structural-change inspection",
+     "format": "Multivariate CSV or generated demonstration", "structure": "Ordered sensor channels, mean/variance/correlation windows",
+     "description": "Explore changes in cross-channel dependence without claiming an implemented wavelet/CUSUM detector.",
+     "endpoint": "data_structures.inspect_dataset", "args": {"dataset": "park"}},
     {"key": "synthetic", "name": "Synthetic Gaussian mean shift", "kind": "Controlled detector input",
      "format": "CSV", "structure": "Time, scalar observation and known regime metadata",
      "description": "Inspect the generated input stream and its simulation ground truth.",
@@ -140,6 +147,35 @@ def _algae_view():
             }
 
 
+
+def _park_view():
+    """Read-only Park-inspired source inspection, not paper reproduction."""
+    csv_path = current_app.config.get("PARK_MULTIVARIATE_DATA_PATH")
+    frame = load_multivariate_csv(csv_path) if csv_path else demonstration_stream()
+    try:
+        window = int(request.args.get("window", "40"))
+    except (TypeError, ValueError):
+        abort(400, description="Window must be an integer.")
+    if window < 4 or window > len(frame):
+        abort(400, description="Window must range from 4 to the sample count.")
+    rows = describe_windows(frame, window_size=window)
+    return {
+        "metrics": [("Observations", len(frame)), ("Sensor channels", len(frame.columns) - 1),
+                    ("Complete windows", len(rows))],
+        "window": window, "windows": rows,
+        "schema": _schema(frame),
+        "previews": [_preview(frame, "Multivariate source observations")],
+        "notes": [
+            "Source: user-configured CSV" if csv_path else
+            "Source: deterministic synthetic demonstration; not data or results from Park et al. (2023).",
+            "Rows remain in recorded time order. The inspection does not align, interpolate, resample or concatenate trial boundaries.",
+            "Non-overlapping windows summarise pooled channel means, average channel variance and sensor 1–2 correlation.",
+            "These descriptive summaries are not aggregated CUSUM, locally stationary wavelet spectral matrices, dynamic PCA, or confirmed change points.",
+            "For EEG, extract and align cue-locked trials through the existing BCI dataset modules; keep subject/session/trial boundaries and labels separate.",
+        ],
+    }
+
+
 def _synthetic_view():
     path = current_app.config.get(
         "SYNTHETIC_DATA_PATH", PROJECT_ROOT / "data/raw/gaussian_mean_shift.csv"
@@ -152,7 +188,7 @@ def _synthetic_view():
 
 @data_structures_bp.get("/data-structures/<dataset>")
 def inspect_dataset(dataset):
-    readers = {"turbofan": _turbofan_view, "algae": _algae_view, "synthetic": _synthetic_view}
+    readers = {"turbofan": _turbofan_view, "algae": _algae_view, "synthetic": _synthetic_view, "park": _park_view}
     if dataset not in readers:
         abort(404)
     selected = next(item for item in DATASETS if item["key"] == dataset)
