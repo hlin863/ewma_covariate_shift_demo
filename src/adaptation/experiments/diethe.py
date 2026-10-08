@@ -12,6 +12,7 @@ from time import perf_counter
 import numpy as np
 import pandas as pd
 
+from src.adaptation.evidence_value import EvidenceValuePolicy
 from src.adaptation.classifier import LinearSVMClassifier
 from src.adaptation.policies import (
     NeverUpdate, PeriodicRetrain, RetrainOnWarning, RetrainOnValidatedShift,
@@ -31,6 +32,10 @@ class DietheConfig:
     performance_window: int = 30
     accuracy_drop: float = 0.10
     update_scope: str = 'since_last_update'
+    evidence_samples: int = 10
+    evidence_sample_cost: float = 0.001
+    evidence_delay_cost: float = 0.001
+    evidence_consequence_weight: float = 1.0
 
     def __post_init__(self):
         if self.scenario not in {'none', 'feature_shift', 'relationship_shift'}:
@@ -46,6 +51,9 @@ class DietheConfig:
         if not np.isfinite(self.accuracy_drop) or not 0 < self.accuracy_drop <= 1:
             raise ValueError('Accuracy drop must be in (0, 1].')
         SupervisedAdaptationConfig(self.update_scope, self.performance_window)
+        EvidenceValuePolicy(self.evidence_samples, self.evidence_sample_cost,
+                            self.evidence_delay_cost, self.evidence_consequence_weight,
+                            self.accuracy_drop, self.interval)
 
 
 def synthetic_features(config):
@@ -115,6 +123,10 @@ def run_policy_comparison(*, training_features, training_labels,
         'warning': RetrainOnWarning(), 'validated': RetrainOnValidatedShift(),
         'performance_drop': RetrainOnPerformanceDrop(
             reference_accuracy, config.accuracy_drop, config.interval),
+        'evidence_value': EvidenceValuePolicy(
+            config.evidence_samples, config.evidence_sample_cost,
+            config.evidence_delay_cost, config.evidence_consequence_weight,
+            config.accuracy_drop, config.interval),
     }
     policy_meta = {
         'never': {
@@ -137,6 +149,11 @@ def run_policy_comparison(*, training_features, training_labels,
             'trigger': 'Available Stage-II confirmation',
             'update_horizon': config.update_scope,
         },
+        'evidence_value': {
+            'policy_family': 'active (experimental)',
+            'trigger': 'Precision-gain proxy versus sampling and delay costs',
+            'update_horizon': config.update_scope,
+        },
         'performance_drop': {
             'policy_family': 'active',
             'trigger': (
@@ -154,6 +171,7 @@ def run_policy_comparison(*, training_features, training_labels,
             evaluation_times=times, validation_results=detection.validation_results,
             warning_results=detection.warning_results, policy=policy,
             config=SupervisedAdaptationConfig(config.update_scope, config.performance_window),
+            evidence_reference_accuracy=reference_accuracy,
         )
         trials = result.trial_results
         retrain_seconds = (float(result.update_events.retrain_seconds.sum())
@@ -168,7 +186,8 @@ def run_policy_comparison(*, training_features, training_labels,
             post_change_accuracy=(float(trials.correct.iloc[change_index:].mean())
                                   if change_index is not None else None),
         ))
-        runs[name] = dict(trials=_records(trials), updates=_records(result.update_events))
+        runs[name] = dict(trials=_records(trials), updates=_records(result.update_events),
+                          evidence_decisions=_records(result.evidence_decisions))
     baseline_accuracy = summaries[0]['accuracy']
     for row in summaries:
         row['accuracy_gain_pp'] = 100 * (row['accuracy'] - baseline_accuracy)
@@ -215,4 +234,6 @@ def export_experiment(result, output):
     for policy, records in result['runs'].items():
         pd.DataFrame(records['trials']).to_csv(output / f'{policy}_trials.csv', index=False)
         pd.DataFrame(records['updates']).to_csv(output / f'{policy}_updates.csv', index=False)
+        if policy == 'evidence_value':
+            pd.DataFrame(records['evidence_decisions']).to_csv(output / 'evidence_value_decisions.csv', index=False)
     return output

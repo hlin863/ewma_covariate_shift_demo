@@ -12,6 +12,7 @@ import pandas as pd
 from src.adaptation._events import _python_scalar, _validation_by_time, _warning_times
 from src.adaptation.classifier import LinearSVMClassifier, RetrainableClassifier
 from src.adaptation.policies import AdaptationContext, AdaptationPolicy, RetrainOnValidatedShift
+from src.adaptation.evidence_value import EvidenceValuePolicy, EvidenceDecisionContext, DecisionAction
 
 @dataclass(frozen=True)
 class SupervisedAdaptationConfig:
@@ -37,6 +38,7 @@ class SupervisedAdaptationResult:
     update_events: pd.DataFrame
     final_classifier: RetrainableClassifier
     initial_fit_seconds: float = 0.0
+    evidence_decisions: pd.DataFrame | None = None
 
     @property
     def accuracy(self) -> float:
@@ -93,6 +95,7 @@ def run_supervised_adaptation(
     classifier: RetrainableClassifier | None = None,
     policy: AdaptationPolicy | None = None,
     config: SupervisedAdaptationConfig | None = None,
+    evidence_reference_accuracy: float | None = None,
 ) -> SupervisedAdaptationResult:
     """Run sequential classification and supervised append-and-retrain updates.
 
@@ -119,6 +122,8 @@ def run_supervised_adaptation(
     model.fit(x_cal, y_cal)
     initial_fit_seconds = perf_counter() - started
     trigger_policy = policy or RetrainOnValidatedShift()
+    if isinstance(trigger_policy, EvidenceValuePolicy) and evidence_reference_accuracy is None:
+        raise ValueError('Evidence-value policy requires a held-out reference accuracy.')
     adaptation_config = config or SupervisedAdaptationConfig()
 
     validations = _validation_by_time(validation_results)
@@ -129,6 +134,8 @@ def run_supervised_adaptation(
     last_update_end = 0
     classifier_version = 0
     correctness: list[bool] = []
+    evidence_decisions: list[dict[str, object]] = []
+    evidence_wait_until: int | None = None
 
     for index, (features, label, time_value) in enumerate(zip(x_eval, y_eval, times)):
         started = perf_counter()
@@ -136,6 +143,9 @@ def run_supervised_adaptation(
         prediction_seconds = perf_counter() - started
         correctness.append(bool(prediction == label))
         window = adaptation_config.performance_window
+        if isinstance(trigger_policy, EvidenceValuePolicy) and evidence_wait_until is not None:
+            elapsed = max(0, index - (evidence_wait_until - trigger_policy.additional_samples))
+            window = min(len(correctness), adaptation_config.performance_window + elapsed)
         recent_accuracy = (
             float(np.mean(correctness[-window:]))
             if len(correctness) >= window
@@ -152,7 +162,40 @@ def run_supervised_adaptation(
             recent_accuracy=recent_accuracy,
             trials_since_update=index + 1 - last_update_end,
         )
-        should_update = bool(trigger_policy.should_update(context))
+        if isinstance(trigger_policy, EvidenceValuePolicy):
+            decision = trigger_policy.decide(EvidenceDecisionContext(
+                recent_accuracy=recent_accuracy,
+                reference_accuracy=evidence_reference_accuracy,
+                observed_samples=window,
+                trials_since_update=context.trials_since_update,
+            ))
+            action = decision.action
+            if evidence_wait_until is not None:
+                if index < evidence_wait_until:
+                    action = DecisionAction.COLLECT_MORE_EVIDENCE
+                else:
+                    action = (DecisionAction.UPDATE_NOW
+                              if decision.performance_deficit is not None
+                              and decision.performance_deficit >= trigger_policy.min_deficit
+                              and context.trials_since_update >= trigger_policy.min_trials_between_updates
+                              else DecisionAction.NO_UPDATE)
+                    evidence_wait_until = None
+            elif action == DecisionAction.COLLECT_MORE_EVIDENCE and recent_accuracy is not None:
+                evidence_wait_until = index + trigger_policy.additional_samples
+            should_update = action == DecisionAction.UPDATE_NOW
+            evidence_decisions.append({
+                "trial_index": index, "time": context.time,
+                "action": action.value,
+                "performance_deficit": decision.performance_deficit,
+                "current_standard_error": decision.current_standard_error,
+                "projected_standard_error": decision.projected_standard_error,
+                "precision_value": decision.precision_value,
+                "collection_cost": decision.collection_cost,
+                "delay_cost": decision.delay_cost,
+                "net_collection_value": decision.net_collection_value,
+            })
+        else:
+            should_update = bool(trigger_policy.should_update(context))
 
         trial_records.append(
             {
@@ -237,6 +280,7 @@ def run_supervised_adaptation(
         update_events=pd.DataFrame(update_records),
         final_classifier=model,
         initial_fit_seconds=initial_fit_seconds,
+        evidence_decisions=pd.DataFrame(evidence_decisions),
     )
 
 
