@@ -38,7 +38,19 @@
     {% for item in datasets %}<a href="{{ item.url }}"{% if item.key == selected.key %} aria-current="page"{% endif %}>{{ item.name }}</a>{% endfor %}
   </nav>
   {% if selected.key == 'park' %}
-  <form class="dataset-controls" method="get"><label>Window size <input name="window" type="number" min="4" value="{{ view.get('window', 40) if not error else 40 }}" required></label><button class="theme-button" type="submit">Inspect windows</button></form>
+  <form class="dataset-controls" method="get">
+    <label>Source <select name="source" id="park-source">
+      <option value="demo"{% if view.get('source','demo') == 'demo' %} selected{% endif %}>Synthetic demonstration</option>
+      <option value="2a"{% if view.get('source') == '2a' %} selected{% endif %}>BCI IV 2A</option>
+      <option value="2b"{% if view.get('source') == '2b' %} selected{% endif %}>BCI IV 2B</option>
+      <option value="csv"{% if view.get('source') == 'csv' %} selected{% endif %}>Configured CSV</option>
+    </select></label>
+    <label>Subject <select name="subject">{% for n in range(1,10) %}<option value="{{ n }}"{% if view.get('subject',1) == n %} selected{% endif %}>{{ '%02d'|format(n) }}</option>{% endfor %}</select></label>
+    <label>Session <select name="session">{% for n in range(1,6) %}<option value="{{ n }}"{% if view.get('session',1) == n %} selected{% endif %}>{{ n }}</option>{% endfor %}</select></label>
+    <label>Window size <input name="window" type="number" min="4" value="{{ view.get('window', 40) }}" required></label>
+    <label>Min. segment <input name="min_segment" type="number" min="2" value="{{ view.get('min_segment',8) }}" required></label>
+    <button class="theme-button" type="submit">Analyse mean changes</button>
+  </form>
   {% elif selected.key == 'turbofan' %}
   <form class="dataset-controls" method="get"><label>Subset <select name="subset">{% for subset in ['FD001','FD002','FD003','FD004'] %}<option{% if view.get('subset', request.args.get('subset', 'FD001')) == subset %} selected{% endif %}>{{ subset }}</option>{% endfor %}</select></label><button class="theme-button" type="submit">Load subset</button></form>
   {% elif selected.key == 'algae' and not error %}
@@ -56,6 +68,27 @@
     <p>This page stops at source-data inspection. The next research layer is to compare static, passive and evidence-triggered update policies on a chronological predictive-maintenance stream; that end-to-end PdM continual-learning experiment remains planned.</p>
     <p><a class="theme-button nav-link" href="{{ url_for('process.overview', stage='adaptive-learning') }}">Open the adaptive-learning architecture →</a></p>
   </section>
+  {% endif %}
+  {% if selected.key == 'park' and view.cusum %}
+  <section class="structure-section" aria-label="Park Section 2.1 mean change analysis">
+    <p class="eyebrow">Park et al. (2023) · Section 2.1</p>
+    <h2>Aggregated CUSUM · Candidate mean-change locations</h2>
+    <p>{{ view.source_label }}. Each horizontal coordinate is a <strong>candidate split between observations</strong>, not a confirmed shift.</p>
+    <div class="structure-metrics" aria-label="CUSUM peak estimates">
+      <article><span>Maximum aggregation, b-max</span><strong>{{ view.cusum.b_max }}</strong></article>
+      <article><span>Average aggregation, b-avg</span><strong>{{ view.cusum.b_avg }}</strong></article>
+      <article><span>Candidate separation</span><strong>{{ view.cusum.agreement_gap }}</strong></article>
+    </div>
+    <div class="park-cusum-chart" aria-label="CUSUM maximum and average curves" role="img">
+      <svg id="park-cusum-svg" viewBox="0 0 820 270" preserveAspectRatio="xMidYMid meet" style="width:100%;height:auto;min-height:180px"></svg>
+    </div>
+    <div class="park-cusum-legend"><span><i class="park-line-max"></i> Pointwise maximum</span><span><i class="park-line-avg"></i> Pointwise average</span></div>
+    <script id="park-cusum-data" type="application/json">{{ view.cusum|tojson }}</script>
+    <p>For each variable, the normalised CUSUM contrasts weighted sums before and after each candidate time, using the channel's sample mean as denominator. The multivariate curves are the pointwise maximum and average across variables; their peaks estimate possible change locations.</p>
+    <p><strong>Research boundary:</strong> The paper's additional unimodality and peak-agreement decision checks, and calibrated statistical significance, are not included. Raw mean-centred EEG would violate this implementation's positive-mean requirement; BCI inputs use trial-level positive μ/β power and RMS instead.</p>
+    <p>See <a href="https://doi.org/10.29220/CSAM.2023.30.4.369" rel="noopener noreferrer" target="_blank">Park, Im and Lim (2023), Section 2.1</a> for the paper's complete methodology.</p>
+  </section>
+  <script src="{{ url_for('static', filename='park_cusum_chart.js') }}" defer></script>
   {% endif %}
   {% if selected.key == 'park' and view.windows %}
   <section class="structure-section"><p class="eyebrow">Park et al. (2023) · WP2 research inspiration</p><h2>Time-varying multivariate descriptors</h2>
