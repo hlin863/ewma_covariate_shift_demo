@@ -4,10 +4,30 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class ActiveLearningConfig:
+    """Configuration for active learning query strategy.
+    
+    Controls the trade-off between selecting uncertain samples and diverse samples,
+    and limits the number of samples to label per batch.
+    """
     alpha: float = 0.7
+    """Weighting factor for uncertainty vs. diversity trade-off.
+    
+    - alpha=1.0: prioritize uncertainty (query boundary-crossing samples)
+    - alpha=0.0: prioritize diversity (query representative spread)
+    - alpha=0.7 (default): 70% uncertainty, 30% diversity
+    
+    Must be in [0, 1].
+    """
+    
     query_budget: int = 10
+    """Maximum number of samples to select for labeling per batch.
+    
+    The algorithm will select min(query_budget, n_available_samples) examples.
+    Must be non-negative (0 means no samples are selected).
+    """
 
     def __post_init__(self) -> None:
+        """Validate configuration parameters after initialization."""
         if not 0.0 <= self.alpha <= 1.0:
             raise ValueError("alpha must be between 0 and 1.")
 
