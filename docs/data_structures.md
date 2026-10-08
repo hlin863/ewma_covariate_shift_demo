@@ -12,6 +12,7 @@ instead of appearing as a single BCI entry on the home-page architecture.
 | Chowdhury stroke cohort | Existing participant metadata and cohort distributions |
 | NASA Algae Raceway | MAT variables and per-raceway measurement shapes, sample counts, missing values and time ranges |
 | Synthetic Gaussian mean shift | CSV schema and source observations |
+| Park et al. (2023) · Multivariate structure | Demonstration or CSV-loaded time-ordered sensor channels, window mean/variance/correlation; **not** the paper's CUSUM/wavelet/dynamic PCA detector |
 
 The submenu is shared across the research pages. The original BCI
 `/data-distributions` URL and its subject selector remain supported.
@@ -25,9 +26,12 @@ The new source inspectors use these optional Flask configuration keys:
 | `TURBOFAN_DATA_PATH` | `data/raw/turbofan_engine_degradation/` |
 | `ALGAE_DATA_PATH` | `data/raw/Algae Raceway/algae.mat` |
 | `SYNTHETIC_DATA_PATH` | `data/raw/gaussian_mean_shift.csv` |
+| `PARK_MULTIVARIATE_DATA_PATH` | Unset: deterministic synthetic multivariate demonstration |
 
 Inspection is read-only. Turbofan uses the validated data loader and
 displays RUL as offline target information. Algae signals retain their
 separate timestamps; this page does not align sampling rates or define
 classification labels. Descriptive summaries do not run the shift detector
 or retrain models.
+
+See [Park-inspired multivariate inspection](park_multivariate_inspection.md) for the input contract, temporal-dependence research motivation, mathematical boundaries, and planned WP2 work. The view preserves the existing source-data menu and does not refit BCI transformations or modify adaptation policies.
