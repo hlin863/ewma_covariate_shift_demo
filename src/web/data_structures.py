@@ -56,9 +56,28 @@ def _catalogue():
             for item in DATASETS if item["endpoint"] in current_app.view_functions]
 
 
+def _navigation_groups(items):
+    """Research-source groups used by the shared dropdown; keep URLs unchanged."""
+    specifications = (
+        ("BCI Competition IV", "EEG benchmark datasets", ("2a", "2b")),
+        ("Research papers", "Paper-linked sources", ("chowdhury", "park")),
+        ("Industrial and biological data", "Applied monitoring datasets", ("turbofan", "algae")),
+        ("Synthetic benchmarks", "Controlled distributions", ("synthetic",)),
+    )
+    indexed = {item["key"]: item for item in items}
+    return [
+        {"title": title, "subtitle": subtitle,
+         "items": [indexed[key] for key in keys if key in indexed],
+         "active": any(indexed[key]["active"] for key in keys if key in indexed)}
+        for title, subtitle, keys in specifications
+        if any(key in indexed for key in keys)
+    ]
+
+
 @data_structures_bp.app_context_processor
 def dataset_navigation():
-    return {"dataset_navigation": _catalogue()}
+    items = _catalogue()
+    return {"dataset_navigation": items, "dataset_navigation_groups": _navigation_groups(items)}
 
 
 @data_structures_bp.get("/data-structures")
