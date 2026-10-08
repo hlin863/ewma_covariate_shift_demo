@@ -8,6 +8,7 @@ from flask import Blueprint, abort, current_app, render_template, request, url_f
 from scipy.io import loadmat, whosmat
 
 from src.pdm.datasets.turbofan import load_turbofan_dataset
+from src.detection.stage1.park_mean_cusum import mean_cusum_curves
 from src.detection.multivariate_inspection import (
     demonstration_stream, describe_windows, load_multivariate_csv,
 )
@@ -167,30 +168,82 @@ def _algae_view():
 
 
 
+def _park_bci_features(dataset: str, subject: int, session_index: int) -> tuple[pd.DataFrame, str]:
+    """Build positive trial-level inputs using existing BCI EDA loaders.
+
+    Never combine separate sessions into one sequence. No labels are used.
+    """
+    from src.web.bci_eda import _load_dataset_2a, _load_dataset_2b
+    sessions, errors = (_load_dataset_2a(subject) if dataset == "2a"
+                        else _load_dataset_2b(subject))
+    name = ("Session I" if session_index == 1 else "Session II") if dataset == "2a" else f"Session {session_index}"
+    selected = next((s for s in sessions if str(s["label"]).startswith(name)), None)
+    if selected is None:
+        raise ValueError(f"Unable to load {dataset.upper()} subject {subject:02d} {name}: " + "; ".join(errors))
+    metrics = selected["_metrics"]
+    # µ and β are logged in dB relative to µV²; convert back to strictly
+    # positive band-power values before Eq (2.2) mean normalisation.
+    frame = pd.DataFrame({
+        "time": np.arange(len(metrics["rms_uv"]), dtype=float),
+        "mu_power_uv2": np.power(10., np.asarray(metrics["mu_db"]) / 10.),
+        "beta_power_uv2": np.power(10., np.asarray(metrics["beta_db"]) / 10.),
+        "rms_uv": np.asarray(metrics["rms_uv"], dtype=float),
+    })
+    return frame, f"BCI IV {dataset.upper()} · Subject {subject:02d} · {name}"
+
+
 def _park_view():
-    """Read-only Park-inspired source inspection, not paper reproduction."""
-    csv_path = current_app.config.get("PARK_MULTIVARIATE_DATA_PATH")
-    frame = load_multivariate_csv(csv_path) if csv_path else demonstration_stream()
+    """Separate Park-inspired window summaries and Section 2.1 mean-CUSUM."""
+    source = request.args.get("source", "demo").strip().lower()
+    if source not in {"demo", "2a", "2b", "csv"}:
+        abort(400, description="Choose demo, 2a, 2b, or csv.")
     try:
+        subject = int(request.args.get("subject", "1"))
+        session_index = int(request.args.get("session", "1"))
         window = int(request.args.get("window", "40"))
+        min_segment = int(request.args.get("min_segment", "8"))
     except (TypeError, ValueError):
-        abort(400, description="Window must be an integer.")
+        abort(400, description="Subject, session and window must be integers.")
+    if not 1 <= subject <= 9:
+        abort(400, description="Subject must range from 1 to 9.")
+    if source in {"2a", "2b"} and not 1 <= session_index <= (2 if source == "2a" else 5):
+        abort(400, description="Session is outside the dataset's available range.")
+    if source == "demo":
+        frame = demonstration_stream()
+        # Demo sensor values are signed and near mean zero. Squared positive
+        # amplitudes are descriptive inputs, not the paper's spectral method.
+        for channel in ("sensor_1", "sensor_2", "sensor_3"):
+            frame[channel] = frame[channel].to_numpy() ** 2 + 1.0
+        source_label = "Synthetic demonstration · positive squared amplitudes"
+    elif source == "csv":
+        path = current_app.config.get("PARK_MULTIVARIATE_DATA_PATH")
+        if not path:
+            raise ValueError("Configure PARK_MULTIVARIATE_DATA_PATH before selecting CSV.")
+        frame = load_multivariate_csv(path)
+        source_label = "Configured multivariate CSV"
+    else:
+        frame, source_label = _park_bci_features(source, subject, session_index)
     if window < 4 or window > len(frame):
         abort(400, description="Window must range from 4 to the sample count.")
     rows = describe_windows(frame, window_size=window)
+    features = frame.drop(columns=["time"]).to_numpy(dtype=float)
+    cusum = mean_cusum_curves(features, min_segment=min_segment)
+    cusum["variables"] = [str(col) for col in frame.columns if col != "time"]
     return {
-        "metrics": [("Observations", len(frame)), ("Sensor channels", len(frame.columns) - 1),
+        "metrics": [("Observations", len(frame)), ("Variables", len(frame.columns) - 1),
                     ("Complete windows", len(rows))],
         "window": window, "windows": rows,
+        "cusum": cusum, "source": source, "subject": subject,
+        "session": session_index, "min_segment": min_segment,
+        "source_label": source_label,
         "schema": _schema(frame),
-        "previews": [_preview(frame, "Multivariate source observations")],
+        "previews": [_preview(frame, "Ordered multivariate observations")],
         "notes": [
-            "Source: user-configured CSV" if csv_path else
-            "Source: deterministic synthetic demonstration; not data or results from Park et al. (2023).",
-            "Rows remain in recorded time order. The inspection does not align, interpolate, resample or concatenate trial boundaries.",
-            "Non-overlapping windows summarise pooled channel means, average channel variance and sensor 1–2 correlation.",
-            "These descriptive summaries are not aggregated CUSUM, locally stationary wavelet spectral matrices, dynamic PCA, or confirmed change points.",
-            "For EEG, extract and align cue-locked trials through the existing BCI dataset modules; keep subject/session/trial boundaries and labels separate.",
+            "Source: " + source_label + ". One selected BCI session is analysed at a time.",
+            "For BCI IV, each observation is a cue-aligned trial, not a continuous raw EEG sample. Features are positive µ/β power (µV²) and RMS amplitude (µV).",
+            "Section 2.1 candidate peaks are retrospective positions in this selected sequence; unimodality/peak-agreement rules and hypothesis-test calibration are NOT implemented.",
+            "A candidate mean change is not confirmed covariate shift, adaptation utility or a published Park reproduction.",
+            "These descriptive results do not retrain FBCSP, PCA or SVM models. Trial boundaries are not concatenated.",
         ],
     }
 
