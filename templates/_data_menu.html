@@ -4,9 +4,9 @@
     <a class="data-overview-link" href="{{ url_for('data_structures.overview') }}"{% if request.path == '/data-structures' %} aria-current="page"{% endif %}>Dataset overview</a>
     {% for group in dataset_navigation_groups %}
     <details class="dataset-submenu"{% if group.active %} open{% endif %}>
-      <summary aria-label="{{ group.title }} datasets"><span>{{ group.title }}</span><span class="dataset-group-count">{{ group.items|length }}</span></summary>
+      <summary aria-label="{{ group.title }} datasets"><span>{{ group.title }}</span><span class="dataset-group-count">{{ group['items']|length }}</span></summary>
       <div class="dataset-submenu-links">
-        {% for item in group.items %}
+        {% for item in group['items'] %}
         <a href="{{ item.url }}"{% if item.active %} aria-current="page"{% endif %}>{{ item.name }}</a>
         {% endfor %}
       </div>
