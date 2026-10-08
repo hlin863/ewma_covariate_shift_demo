@@ -42,3 +42,26 @@ BCI IV 2A/2B continue to use the existing GDF/session loaders and cue-aligned tr
 - `tests/detection/test_multivariate_inspection.py`: loader/descriptor regression tests.
 - `tests/web/test_park_data_structures.py`: route checks.
 
+
+## Section 2.1: mean-change CUSUM explorer (added 8 October 2026)
+
+`/data-structures/park` now permits `?source=demo|2a|2b|csv&subject=1&session=1&min_segment=8&window=40`. BCI sources use **one existing subject/session at a time** via the existing EDA loader and trial extractor. To avoid passing zero-centred signed EEG to Park's mean-normalised equation, we use **positive per-trial µ-band power, β-band power (µV²) and RMS amplitude (µV)**. This is a clearly labelled experimental mapping; it is not Park et al.'s financial-data procedure or EEG wavelet spectral method. The demo transforms signed sensor values to positive squared amplitudes before calculating CUSUM.
+
+For `n` ordered trials and variable `d`, Section 2.1 equation (2.2) is operationalised as:
+
+```text
+nu_d(t) = | sqrt((n-t)/(n*t)) * sum_{u<t} X[u,d]
+            - sqrt(t/(n*(n-t))) * sum_{u>=t} X[u,d] | / mean(X[:,d])
+
+nu_max(t) = max_d nu_d(t)
+nu_avg(t) = mean_d nu_d(t)
+b_max = argmax_t nu_max(t); b_avg = argmax_t nu_avg(t)
+```
+
+Valid candidate splits exclude `min_segment` observations at both ends. Curves and candidate peaks are displayed with a lightweight local SVG plot. **This is retrospective analysis of the selected session** and does not report an online warning or paper-confirmed change.
+
+**Important incomplete paper step:** the original method further checks unimodality and peak-agreement tolerance `delta` to confirm a mean change. Neither that decision logic nor stream-wise false-alarm calibration is implemented. Peaks on the page must therefore be interpreted solely as candidate estimates, including under no-change streams. The feature choice, band-power conversion, min-segment constraint, and omission of full paper decision logic are documented departures from a literal reproduction.
+
+Tests: `tests/detection/test_park_mean_cusum.py`. Source: `src/detection/stage1/park_mean_cusum.py`.
+
+**Future WP2:** verify the exact unimodality and agreement rules in Park Section 2.1, specify `delta` and reference distributions on held-out synthetic streams, audit nuisance event boundaries, then compare against the existing EWMA and Hotelling detector using identical feature streams and event-matching rules.
