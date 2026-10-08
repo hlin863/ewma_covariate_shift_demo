@@ -11,7 +11,7 @@ not supply the five-policy algorithm implemented here.
 | --- | --- | --- |
 | Has the feature distribution changed? (§4.1) | Existing CSE detector, warnings and complete Stage-II records | Mean-shift evidence in retained PCA space; not all distribution changes |
 | Did prediction quality change? (§4.2) | Per-trial correctness and full-window rolling accuracy | Immediate trustworthy labels assumed |
-| When should a model update? (§5.2) | Five-policy laboratory: non-adaptive never-update, passive periodic retraining, and active warning/validated/performance-drop rules | No learned optimal policy or expected-utility claim; `ContinuousRetrain` exists as a passive primitive but is outside this five-policy comparison |
+| When should a model update? (§5.2) | Six-policy laboratory: non-adaptive never-update, passive periodic retraining, and active warning/validated/performance-drop rules | No learned optimal policy or expected-utility claim; `ContinuousRetrain` exists as a passive primitive but is outside this six-policy comparison |
 | Which data enter training? (§5, horizon) | Current trial or all trials since last update | Both append to historical data; no forgetting or bounded reservoir |
 | What does adaptation cost? (§5) | Initial fit, cumulative retraining, prediction timing, update counts and final training size | Measured wall time varies; memory/energy not measured |
 | Can a decision be audited? (§3.3) | Configuration, validation windows, labels/predictions, versions and update events | Versions do not persist models; no rollback or acceptance gate |
@@ -25,9 +25,9 @@ The page now makes the update taxonomy explicit:
   observations since the preceding model update and does not require drift
   evidence. `ContinuousRetrain` provides per-observation or mini-batch passive
   updating elsewhere in the policy module but is not added to the historical
-  five-policy laboratory.
+  six-policy laboratory.
 - **Active:** `RetrainOnWarning`, `RetrainOnValidatedShift`, and
-  `RetrainOnPerformanceDrop`, each of which requires evidence before an
+  `RetrainOnPerformanceDrop`, and experimental `EvidenceValuePolicy`, each of which requires evidence before an
   update is allowed.
 
 This active/passive distinction follows the classical adaptation taxonomy
@@ -48,7 +48,7 @@ latter decides *which observations should be queried for labels*.
 Synthetic data are generated feature vectors, not simulated raw EEG. Training
 (120 observations), validation (80) and evaluation are separate draws. The
 initial linear SVM's validation accuracy is frozen as the performance reference.
-The feature representation and detector are fixed across all five policies.
+The feature representation and detector are fixed across all six policies.
 
 ## Temporal protocol
 
@@ -142,3 +142,32 @@ Run the targeted checks with:
 ```bash
 python -m pytest tests/adaptation/test_policies.py tests/adaptation/test_supervised.py tests/adaptation/experiments/test_diethe.py tests/web/test_diethe_page.py -q
 ```
+
+## Sixth experimental policy: evidence_value
+
+Inspired by Epanomeritakis & Viviano (2026), *When is the statistical evidence strong enough?* The paper defines an A-value in a minimax-regret welfare problem. This laboratory does **not** implement or claim their welfare-optimal A-value. Instead it adds a transparent accuracy-equivalent *precision-gain proxy* to explore whether waiting for additional labelled observations can justify its sampling and delay costs.
+
+`src/adaptation/evidence_value.py` introduces an independent three-action `EvidenceActionPolicy.decide` protocol: `update_now`, `collect_more_evidence`, `no_update`. The existing Boolean `AdaptationPolicy.should_update` implementations and Stage-II p-values remain unchanged.
+
+The experiment estimates the recent Bernoulli-correctness standard error `sqrt(p(1-p)/n)`. The *projected* standard error for another `m` observations uses `sqrt(p(1-p)/(n+m))`; this is a plug-in approximation, not a calibrated prediction of classification gain. It defines:
+
+```text
+precision_value = consequence_weight * (current_se - projected_se)
+sample_cost = additional_samples * cost_per_sample
+delay_cost = additional_samples * cost_per_delay_trial
+net_collection_value = precision_value - sample_cost - delay_cost
+```
+
+A model update is considered after a full rolling labelled-accuracy window, an accuracy deficit at least `accuracy_drop`, and the `interval` cooldown. Positive net collection value triggers a bounded wait for `evidence_samples` subsequent observed labels. At the horizon the model reassesses the enlarged evidence window and either updates or retains its current state. No oracle labels are available before the corresponding prediction; this is still an **immediate-after-prediction supervised** experiment. When a trial lacks a full window, `collect_more_evidence` denotes incomplete evidence, not a calculated positive value of collecting.
+
+Cost units are dimensionless accuracy-equivalent weights, not money, welfare costs, or calibrated BCI treatment outcomes. Costs represent user hypotheses, not measured experimental expenditure. Repeated streaming decisions share observations and are not independent significance tests.
+
+Run:
+```bash
+python -m scripts.run_diethe_experiment --scenario relationship_shift --seed 42 \
+  --evidence-samples 10 --evidence-sample-cost 0.001 \
+  --evidence-delay-cost 0.001 --evidence-consequence-weight 1.0
+python -m pytest tests/adaptation/experiments/test_evidence_value.py -q
+```
+
+In addition to the historical CSVs, each export includes `evidence_value_decisions.csv`. The dashboard shows the latest thirty decisions and the three action totals; the downloadable JSON includes the complete event history. The analysis must distinguish this *cost-sensitive heuristic* from formal value-of-information optimization and the paper's A-value.
