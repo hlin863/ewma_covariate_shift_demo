@@ -75,7 +75,7 @@ def test_waiting_collects_bounded_future_evidence_before_action():
     train_x = np.array([[-3.], [-2.], [2.], [3.]])
     train_y = np.array([0, 0, 1, 1])
     eval_x = np.tile(np.array([[-2.], [2.]]), (20, 1))
-    eval_y = np.where(eval_x[:, 0] > 0, 0, 1)
+    eval_y = np.tile(np.array([1, 1, 0, 0]), 10)  # Mixed correctness keeps sampling uncertainty nonzero.
     policy = EvidenceValuePolicy(additional_samples=3,
                                  cost_per_sample=0,
                                  cost_per_delay_trial=0,
