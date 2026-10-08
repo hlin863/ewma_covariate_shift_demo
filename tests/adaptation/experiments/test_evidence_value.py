@@ -65,3 +65,38 @@ def test_cost_sensitivity_comparison():
     assert [r["policy"] for r in low["summary"]][:5] == [
         "never", "periodic", "warning", "validated", "performance_drop"
     ]
+
+def test_waiting_collects_bounded_future_evidence_before_action():
+    import numpy as np
+    import pandas as pd
+    from src.adaptation.supervised import run_supervised_adaptation, SupervisedAdaptationConfig
+
+    # The classifier starts on a deliberately reversed linear decision boundary.
+    train_x = np.array([[-3.], [-2.], [2.], [3.]])
+    train_y = np.array([0, 0, 1, 1])
+    eval_x = np.tile(np.array([[-2.], [2.]]), (20, 1))
+    eval_y = np.where(eval_x[:, 0] > 0, 0, 1)
+    policy = EvidenceValuePolicy(additional_samples=3,
+                                 cost_per_sample=0,
+                                 cost_per_delay_trial=0,
+                                 consequence_weight=10,
+                                 min_deficit=.1,
+                                 min_trials_between_updates=1)
+    result = run_supervised_adaptation(
+        calibration_features=train_x,
+        calibration_labels=train_y,
+        evaluation_features=eval_x,
+        evaluation_labels=eval_y,
+        evaluation_times=np.arange(len(eval_y)),
+        validation_results=pd.DataFrame(columns=["alarm_time", "validation_time", "confirmed_shift"]),
+        policy=policy,
+        config=SupervisedAdaptationConfig("since_last_update", 5),
+        evidence_reference_accuracy=1.0,
+    )
+    records = result.evidence_decisions
+    waits = records.loc[records.action == "collect_more_evidence", "trial_index"].to_list()
+    updates = records.loc[records.action == "update_now", "trial_index"].to_list()
+    assert waits
+    assert updates
+    assert min(updates) >= min(waits) + policy.additional_samples
+    assert result.update_count == len(updates)
