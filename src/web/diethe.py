@@ -12,9 +12,9 @@ def laboratory():
     result, error = None, None
     if request.method == 'POST':
         try:
-            for key in ('seed', 'trials', 'interval', 'performance_window'):
+            for key in ('seed', 'trials', 'interval', 'performance_window', 'evidence_samples'):
                 values[key] = int(request.form.get(key, values[key]))
-            for key in ('magnitude', 'accuracy_drop'):
+            for key in ('magnitude', 'accuracy_drop', 'evidence_sample_cost', 'evidence_delay_cost', 'evidence_consequence_weight'):
                 values[key] = float(request.form.get(key, values[key]))
             for key in ('scenario', 'update_scope'):
                 values[key] = request.form.get(key, values[key])
