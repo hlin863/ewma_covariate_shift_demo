@@ -135,6 +135,7 @@ def run_supervised_adaptation(
     classifier_version = 0
     correctness: list[bool] = []
     evidence_decisions: list[dict[str, object]] = []
+    evidence_wait_until: int | None = None
 
     for index, (features, label, time_value) in enumerate(zip(x_eval, y_eval, times)):
         started = perf_counter()
@@ -142,6 +143,9 @@ def run_supervised_adaptation(
         prediction_seconds = perf_counter() - started
         correctness.append(bool(prediction == label))
         window = adaptation_config.performance_window
+        if isinstance(trigger_policy, EvidenceValuePolicy) and evidence_wait_until is not None:
+            elapsed = max(0, index - (evidence_wait_until - trigger_policy.additional_samples))
+            window = min(len(correctness), adaptation_config.performance_window + elapsed)
         recent_accuracy = (
             float(np.mean(correctness[-window:]))
             if len(correctness) >= window
@@ -165,10 +169,23 @@ def run_supervised_adaptation(
                 observed_samples=window,
                 trials_since_update=context.trials_since_update,
             ))
-            should_update = decision.action == DecisionAction.UPDATE_NOW
+            action = decision.action
+            if evidence_wait_until is not None:
+                if index < evidence_wait_until:
+                    action = DecisionAction.COLLECT_MORE_EVIDENCE
+                else:
+                    action = (DecisionAction.UPDATE_NOW
+                              if decision.performance_deficit is not None
+                              and decision.performance_deficit >= trigger_policy.min_deficit
+                              and context.trials_since_update >= trigger_policy.min_trials_between_updates
+                              else DecisionAction.NO_UPDATE)
+                    evidence_wait_until = None
+            elif action == DecisionAction.COLLECT_MORE_EVIDENCE and recent_accuracy is not None:
+                evidence_wait_until = index + trigger_policy.additional_samples
+            should_update = action == DecisionAction.UPDATE_NOW
             evidence_decisions.append({
                 "trial_index": index, "time": context.time,
-                "action": decision.action.value,
+                "action": action.value,
                 "performance_deficit": decision.performance_deficit,
                 "current_standard_error": decision.current_standard_error,
                 "projected_standard_error": decision.projected_standard_error,
