@@ -37,7 +37,9 @@
     <a href="{{ url_for('data_structures.overview') }}">Overview</a>
     {% for item in datasets %}<a href="{{ item.url }}"{% if item.key == selected.key %} aria-current="page"{% endif %}>{{ item.name }}</a>{% endfor %}
   </nav>
-  {% if selected.key == 'turbofan' %}
+  {% if selected.key == 'park' %}
+  <form class="dataset-controls" method="get"><label>Window size <input name="window" type="number" min="4" value="{{ view.get('window', 40) if not error else 40 }}" required></label><button class="theme-button" type="submit">Inspect windows</button></form>
+  {% elif selected.key == 'turbofan' %}
   <form class="dataset-controls" method="get"><label>Subset <select name="subset">{% for subset in ['FD001','FD002','FD003','FD004'] %}<option{% if view.get('subset', request.args.get('subset', 'FD001')) == subset %} selected{% endif %}>{{ subset }}</option>{% endfor %}</select></label><button class="theme-button" type="submit">Load subset</button></form>
   {% elif selected.key == 'algae' and not error %}
   <form class="dataset-controls" method="get"><label>Raceway <select name="raceway">{% for number in view.raceways %}<option value="{{ number }}"{% if number == view.raceway %} selected{% endif %}>{{ number }}</option>{% endfor %}</select></label><button class="theme-button" type="submit">Inspect raceway</button></form>
@@ -53,6 +55,13 @@
     <h2>From C-MAPSS inspection to adaptation experiments</h2>
     <p>This page stops at source-data inspection. The next research layer is to compare static, passive and evidence-triggered update policies on a chronological predictive-maintenance stream; that end-to-end PdM continual-learning experiment remains planned.</p>
     <p><a class="theme-button nav-link" href="{{ url_for('process.overview', stage='adaptive-learning') }}">Open the adaptive-learning architecture →</a></p>
+  </section>
+  {% endif %}
+  {% if selected.key == 'park' and view.windows %}
+  <section class="structure-section"><p class="eyebrow">Park et al. (2023) · WP2 research inspiration</p><h2>Time-varying multivariate descriptors</h2>
+    <p>Consecutive, non-overlapping windows expose changes in channel mean, variance and cross-channel correlation. This is an exploratory data-loading inspection—not the published CUSUM, locally stationary wavelet or dynamic PCA algorithm.</p>
+    <div class="structure-table" tabindex="0" role="region" aria-label="Park-inspired window descriptors"><table><thead><tr><th>Window</th><th>Start time</th><th>End time</th><th>Mean (pooled)</th><th>Variance (average)</th><th>Sensor 1–2 correlation</th></tr></thead><tbody>{% for row in view.windows %}<tr><th>{{ row.window }}</th><td>{{ row.start }}</td><td>{{ row.end }}</td><td>{{ row.mean }}</td><td>{{ row.variance }}</td><td>{{ row.corr_12 if row.corr_12 is not none else 'Undefined' }}</td></tr>{% endfor %}</tbody></table></div>
+    <p><a href="https://doi.org/10.29220/CSAM.2023.30.4.369" target="_blank" rel="noopener noreferrer">Park, Im &amp; Lim (2023) — source paper ↗</a></p>
   </section>
   {% endif %}
   {% if view.schema %}
