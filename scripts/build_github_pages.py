@@ -16,7 +16,6 @@ from pathlib import Path
 import subprocess
 from urllib.parse import parse_qsl, quote, unquote, urlencode, urljoin, urlsplit
 
-from bs4 import BeautifulSoup
 from flask import render_template
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -64,6 +63,7 @@ def page_path(url: str) -> str:
 
 
 def export(base_path: str, destination: Path) -> dict:
+    from bs4 import BeautifulSoup
     from src.web import app
 
     if destination.exists():
