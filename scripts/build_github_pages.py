@@ -16,11 +16,36 @@ from pathlib import Path
 import subprocess
 from urllib.parse import parse_qsl, quote, unquote, urlencode, urljoin, urlsplit
 
-from bs4 import BeautifulSoup
 from flask import render_template
 
 ROOT = Path(__file__).resolve().parents[1]
 REPOSITORY = 'https://github.com/hlin863/ewma_covariate_shift_demo'
+
+
+def compatible_diethe_snapshot(result: dict) -> bool:
+    """Current six-policy template requires evidence-value decisions and metadata.
+
+    Legacy five-policy snapshots remain valid historical results but must not be
+    passed to a template expecting fields they did not record.
+    """
+    if not isinstance(result, dict):
+        return False
+    runs = result.get('runs')
+    metadata = result.get('metadata')
+    summary = result.get('summary')
+    if not isinstance(runs, dict) or not isinstance(metadata, dict) or not isinstance(summary, list):
+        return False
+    evidence = runs.get('evidence_value')
+    config = metadata.get('config')
+    if not isinstance(evidence, dict) or not isinstance(evidence.get('evidence_decisions'), list):
+        return False
+    if not isinstance(config, dict):
+        return False
+    required_config = {'interval', 'performance_window', 'update_scope'}
+    required_row = {'policy_family', 'trigger'}
+    return required_config.issubset(config) and all(
+        isinstance(row, dict) and required_row.issubset(row) for row in summary
+    )
 
 
 def canonical(url: str) -> str:
@@ -38,6 +63,7 @@ def page_path(url: str) -> str:
 
 
 def export(base_path: str, destination: Path) -> dict:
+    from bs4 import BeautifulSoup
     from src.web import app
 
     if destination.exists():
@@ -89,10 +115,23 @@ def export(base_path: str, destination: Path) -> dict:
         if url == '/results/diethe':
             runs = sorted(p for p in tracked if p.startswith('outputs/diethe/') and p.endswith('/experiment.json'))
             if runs:
-                saved_run = runs[-1]
-                result = json.loads((ROOT / saved_run).read_text())
-                with app.test_request_context(url):
-                    html = render_template('diethe.html', values=result['metadata']['config'], result=result, error=None)
+                candidate = runs[-1]
+                result = json.loads((ROOT / candidate).read_text())
+                if compatible_diethe_snapshot(result):
+                    saved_run = candidate
+                    with app.test_request_context(url):
+                        html = render_template('diethe.html', values=result['metadata']['config'], result=result, error=None)
+                else:
+                    # Preserve legacy evidence on disk; do not fabricate a sixth
+                    # policy or pass old fields to a newer template.
+                    html = client.get(url).get_data(as_text=True)
+                    with app.test_request_context(url):
+                        legacy_note = (
+                            'Historical five-policy Diethe evidence is retained at '
+                            + candidate + '. It predates the evidence-value policy, '
+                            'so it is not displayed as a six-policy comparison. '
+                            'Use local Flask to run the current experiment.'
+                        )
             else:
                 html = client.get(url).get_data(as_text=True)
         elif url == '/support':
@@ -115,6 +154,10 @@ def export(base_path: str, destination: Path) -> dict:
         if saved_run:
             note = soup.new_tag('p', attrs={'class': 'pages-local'})
             note.string = 'Saved experiment: ' + saved_run + '. These metrics were loaded from the committed run; the website build did not rerun it.'
+            soup.find('header').append(note)
+        elif url == '/results/diethe' and runs and not compatible_diethe_snapshot(result):
+            note = soup.new_tag('p', attrs={'class': 'pages-local'})
+            note.string = legacy_note
             soup.find('header').append(note)
         for form in list(soup.find_all('form')):
             replacement = soup.new_tag('div', attrs={'class': 'pages-options'})
