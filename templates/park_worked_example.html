@@ -21,6 +21,7 @@
     <div class="hero-actions">
       <a class="theme-button nav-link" href="{{ url_for('data_structures.inspect_dataset', dataset='park') }}">Park data inspection</a>
       <a class="theme-button nav-link" href="{{ url_for('data_structures.overview') }}">Data overview</a>
+      <a class="theme-button nav-link" href="{{ url_for('park_worked_example.index') }}">Learning hub</a>
       <a class="theme-button nav-link" href="{{ url_for('home') }}">Home</a>
       {% include '_research_navigation.html' %}
       <button class="theme-button" type="button" data-theme-option="light">Light</button>
@@ -33,6 +34,18 @@
     <p class="park-answer" role="status">ν₄ = <strong>{{ example.expected_exact }}</strong> ≈ {{ '%.6f'|format(example.cusum) }}
     {% if example.passes_example %}<span class="park-pass">Verified against √2</span>{% else %}<span>Check calculation</span>{% endif %}</p>
     <p>νₜ = √(t(T−t)/T) × |mean(first t) − mean(remaining T−t)| / mean(all T)</p>
+  </section>
+  <section class="structure-notes park-solution" aria-labelledby="worked-steps">
+    <p class="eyebrow">Auditable derivation</p>
+    <h2 id="worked-steps">Step-by-step working</h2>
+    <ol class="park-steps">
+      <li><strong>Split the sequence at t = 4.</strong><p>X₁:₄ = [{{ example.first | join(', ') }}]; X₅:₈ = [{{ example.second | join(', ') }}].</p></li>
+      <li><strong>Compute the segment means.</strong><p>Before: (2 + 2 + 2 + 2) / 4 = {{ '%.0f'|format(example.mean_before) }}. After: (6 + 6 + 6 + 6) / 4 = {{ '%.0f'|format(example.mean_after) }}.</p></li>
+      <li><strong>Compute the overall mean.</strong><p>(2 + 2 + 2 + 2 + 6 + 6 + 6 + 6) / 8 = {{ '%.0f'|format(example.overall_mean) }}.</p></li>
+      <li><strong>Find the contrast and weight.</strong><p>|2 − 6| = {{ '%.0f'|format(example.absolute_difference) }}. The weight is √(4 × (8 − 4) / 8) = √2.</p></li>
+      <li><strong>Substitute into Equation (2.2).</strong><p class="park-derived">ν₄ = √2 × |2 − 6| / 4 = √2 × 4 / 4 = <strong>√2 ≈ {{ '%.6f'|format(example.cusum) }}</strong>.</p></li>
+    </ol>
+    <p><strong>Interpretation:</strong> The value is checked against √2. This example establishes a candidate contrast, not statistical significance or an online alarm.</p>
   </section>
   <section class="park-worked-grid" aria-label="Calculation components">
     <article><span>First group · X₁ through X₄</span><strong>{{ example.first | join(', ') }}</strong><p>Mean = {{ '%.1f'|format(example.mean_before) }}</p></article>
