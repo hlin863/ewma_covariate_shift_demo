@@ -11,3 +11,7 @@
 .park-bar {height:100%;background:var(--computed);border-radius:9px}
 .park-bar-row output {font-variant-numeric:tabular-nums;text-align:right}
 @media(max-width:650px){.park-worked-grid{grid-template-columns:1fr}.park-bar-row{grid-template-columns:48px minmax(0,1fr) 60px}}
+
+.park-steps {padding-left:1.6rem;display:grid;gap:16px;line-height:1.6}
+.park-steps li p {margin:7px 0 0;color:var(--muted)}
+.park-derived {font-size:1.1rem;color:var(--text)!important;font-variant-numeric:tabular-nums}
