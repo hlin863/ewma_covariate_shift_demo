@@ -25,8 +25,8 @@ def test_park_custom_file_and_invalid_window(tmp_path):
     app.config["PARK_MULTIVARIATE_DATA_PATH"] = str(path)
     try:
         client = app.test_client()
-        assert client.get("/data-structures/park?source=csv&window=8").status_code == 200
+        assert client.get("/data-structures/park?source=csv&window=8&min_segment=4").status_code == 200
         assert b"c1" in client.get("/data-structures/park?source=csv&window=8").data
-        assert client.get("/data-structures/park?source=csv&window=2").status_code == 400
+        assert client.get("/data-structures/park?source=csv&window=2&min_segment=4").status_code == 400
     finally:
         app.config.pop("PARK_MULTIVARIATE_DATA_PATH", None)

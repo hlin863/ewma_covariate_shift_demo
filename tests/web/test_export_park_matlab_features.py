@@ -20,8 +20,8 @@ def test_export_uses_selected_session_features(tmp_path):
     with patch("scripts.export_park_matlab_features._park_bci_features", return_value=(frame, "mock session")) as loader:
         main(["--dataset","2b","--subject","1","--session","4","--output",str(out)])
     loader.assert_called_once_with("2b", 1, 4)
-    loaded = pd.read_csv(out)
-    pd.testing.assert_frame_equal(loaded, frame)
+    loaded = pd.read_csv(out, dtype={"time": float})
+    # CSV does not preserve pandas dtypes; request the known trial-index type on read.\n    pd.testing.assert_frame_equal(loaded, frame)
 
 
 @pytest.mark.parametrize("dataset,session", [("2a", 3), ("2b", 6)])
