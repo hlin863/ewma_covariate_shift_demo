@@ -64,3 +64,12 @@ def test_learning_trailing_slash_and_progress_persistence(tmp_path):
         }).status_code == 400
     finally:
         app.config.pop("LEARNING_PROGRESS_PATH", None)
+
+
+def test_home_navigation_has_one_learning_link():
+    html = app.test_client().get("/").get_data(as_text=True)
+    navigation = html.split('<nav class="home-nav"', 1)[1].split("</nav>", 1)[0]
+    assert navigation.count('href="/learning/"') == 1
+    assert 'Learning Hub</a>' not in navigation
+    assert 'href="#pages"' in navigation
+    assert 'href="#progress"' in navigation
