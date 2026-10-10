@@ -22,10 +22,11 @@
     <nav class="home-nav" aria-label="Primary navigation">
       <a class="home-brand" href="{{ url_for('home') }}"><span>CSE</span> Research hub</a>
       <div class="home-nav-links">
+        <div class="home-section-links" aria-label="On this page">
+          <a href="#pages">Workflow</a>
+          <a href="#progress">Progress</a>
+        </div>
         {% include '_research_navigation.html' %}
-        <a href="#progress">Progress</a>
-        <a href="/learning/">Learning Hub</a>
-        <a href="#pages">Workflow</a>
         <div class="theme-switcher" role="group" aria-label="Colour theme">
           <button class="theme-button" type="button" data-theme-option="light" aria-pressed="false"
             aria-label="Switch to light theme">
