@@ -131,15 +131,27 @@ def export(base_path: str, destination: Path) -> dict:
                     fields.append((field['name'], options))
                 if not fields:
                     raise ValueError(f'GET form without exportable controls: {url}')
-                combinations = list(product(*(options for _, options in fields)))
-                if len(combinations) > 100:
-                    raise ValueError(f'Too many form selections: {url}')
-                action = urlsplit(urljoin(url, form.get('action', url))).path
-                for values in combinations:
-                    query = urlencode([(field[0], value[0]) for field, value in zip(fields, values)])
-                    a = soup.new_tag('a', href=action + '?' + query)
-                    a.string = ' · '.join(value[1] for value in values)
-                    replacement.append(a)
+                # Some live filters (e.g. Park: source x subject x session)
+                # have hundreds of combinations. A static snapshot cannot
+                # expose them all or necessarily load their local datasets.
+                # Keep the already-rendered default and explain the boundary.
+                combination_count = 1
+                for _, options in fields:
+                    combination_count *= len(options)
+                if combination_count > 100:
+                    replacement['class'] = 'pages-local'
+                    replacement.string = (
+                        f'This interactive filter has {combination_count} possible '
+                        'selections. The published snapshot shows the default '
+                        'view; run python app.py locally to use all filters.'
+                    )
+                else:
+                    action = urlsplit(urljoin(url, form.get('action', url))).path
+                    for values in product(*(options for _, options in fields)):
+                        query = urlencode([(field[0], value[0]) for field, value in zip(fields, values)])
+                        a = soup.new_tag('a', href=action + '?' + query)
+                        a.string = ' · '.join(value[1] for value in values)
+                        replacement.append(a)
             form.replace_with(replacement)
         # Local test controls must not suggest that a static site can rerun pytest.
         for a in list(soup.select('a[href]')):
