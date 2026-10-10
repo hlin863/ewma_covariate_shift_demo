@@ -1,4 +1,4 @@
-<a class="theme-button nav-link" href="{{ url_for('park_worked_example.index') }}"{% if request.path.startswith('/learning') %} aria-current="page"{% endif %}>Learning</a>
+<a class="theme-button nav-link" href="/learning/"{% if request.path.startswith('/learning') %} aria-current="page"{% endif %}>Learning</a>
 {% include '_data_menu.html' %}
 {% if process_navigation %}
 <details class="nav-menu data-menu process-menu">
