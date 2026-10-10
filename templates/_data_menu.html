@@ -1,6 +1,7 @@
 <details class="nav-menu data-menu">
   <summary class="theme-button nav-link">Data structures ▾</summary>
   <nav class="nav-menu-panel data-menu-panel" aria-label="Dataset subpages">
+    <a class="data-overview-link" href="{{ url_for('park_worked_example.example') }}"{% if request.path == '/learning/park-cusum-example' %} aria-current="page"{% endif %}>Park Eq. (2.2) worked example</a>
     <a class="data-overview-link" href="{{ url_for('data_structures.overview') }}"{% if request.path == '/data-structures' %} aria-current="page"{% endif %}>Dataset overview</a>
     {% for group in dataset_navigation_groups %}
     <details class="dataset-submenu"{% if group.active %} open{% endif %}>
