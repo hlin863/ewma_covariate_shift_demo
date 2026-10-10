@@ -32,7 +32,13 @@ def test_standalone_route_and_navigation():
     assert b"1.414214" in page.data
     assert b"Verified against" in page.data
     assert b"All candidate splits" in page.data
-    overview = client.get("/data-structures")
-    assert b"/learning/park-cusum-example" in overview.data
+    learning = client.get("/learning")
+    assert learning.status_code == 200
+    assert b"/learning/park-cusum-example" in learning.data
+    assert b"Step-by-step working" in page.data
+    assert b"Substitute into Equation" in page.data
+    home = client.get("/")
+    assert home.status_code == 200
+    assert b"Learning hub" in home.data
     existing = client.get("/data-structures/park")
     assert existing.status_code == 200
