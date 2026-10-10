@@ -42,3 +42,25 @@ def test_standalone_route_and_navigation():
     assert b"Learning hub" in home.data
     existing = client.get("/data-structures/park")
     assert existing.status_code == 200
+
+
+def test_learning_trailing_slash_and_progress_persistence(tmp_path):
+    app.config["LEARNING_PROGRESS_PATH"] = str(tmp_path / "progress.json")
+    try:
+        client = app.test_client()
+        for route in ("/learning", "/learning/"):
+            response = client.get(route)
+            assert response.status_code == 200
+            assert b"Study progress" in response.data
+            assert b"Park et al. (2023) learning roadmap" in response.data
+        response = client.post("/learning/progress", data={
+            "topic": "park-normalisation", "status": "completed"
+        })
+        assert response.status_code == 303
+        assert b"1 / 6" in client.get("/learning/").data
+        assert (tmp_path / "progress.json").is_file()
+        assert client.post("/learning/progress", data={
+            "topic": "invalid", "status": "completed"
+        }).status_code == 400
+    finally:
+        app.config.pop("LEARNING_PROGRESS_PATH", None)
