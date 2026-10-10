@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Park Eq. (2.2) · Worked example</title>
+  <script>document.documentElement.dataset.theme = localStorage.getItem('dashboard-theme') || (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');</script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='navigation.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='data_structures.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='park_worked_example.css') }}">
+</head>
+<body>
+<main class="page-shell structures-page">
+  <header class="hero">
+    <div>
+      <p class="eyebrow">Reading laboratory · Park et al. (2023) · Section 2.1</p>
+      <h1>Equation (2.2): one-feature CUSUM</h1>
+      <p class="lede">A standalone, reproducible calculation with fixed teaching data. Not a BCI recording or a confirmed change point.</p>
+    </div>
+    <div class="hero-actions">
+      <a class="theme-button nav-link" href="{{ url_for('data_structures.inspect_dataset', dataset='park') }}">Park data inspection</a>
+      <a class="theme-button nav-link" href="{{ url_for('data_structures.overview') }}">Data overview</a>
+      <a class="theme-button nav-link" href="{{ url_for('home') }}">Home</a>
+      {% include '_research_navigation.html' %}
+      <button class="theme-button" type="button" data-theme-option="light">Light</button>
+      <button class="theme-button" type="button" data-theme-option="dark">Dark</button>
+    </div>
+  </header>
+  <section class="structure-notes">
+    <h2>Problem and verified answer</h2>
+    <p>T = {{ example.T }}, X = [{{ example.observations | join(', ') }}]. Candidate split t = {{ example.split }}.</p>
+    <p class="park-answer" role="status">ν₄ = <strong>{{ example.expected_exact }}</strong> ≈ {{ '%.6f'|format(example.cusum) }}
+    {% if example.passes_example %}<span class="park-pass">Verified against √2</span>{% else %}<span>Check calculation</span>{% endif %}</p>
+    <p>νₜ = √(t(T−t)/T) × |mean(first t) − mean(remaining T−t)| / mean(all T)</p>
+  </section>
+  <section class="park-worked-grid" aria-label="Calculation components">
+    <article><span>First group · X₁ through X₄</span><strong>{{ example.first | join(', ') }}</strong><p>Mean = {{ '%.1f'|format(example.mean_before) }}</p></article>
+    <article><span>Second group · X₅ through X₈</span><strong>{{ example.second | join(', ') }}</strong><p>Mean = {{ '%.1f'|format(example.mean_after) }}</p></article>
+    <article><span>Full-sequence mean</span><strong>{{ '%.1f'|format(example.overall_mean) }}</strong><p>Absolute mean difference = {{ '%.1f'|format(example.absolute_difference) }}</p></article>
+    <article><span>Sample-size weighting</span><strong>√2</strong><p>√(4 × 4 / 8) = {{ '%.6f'|format(example.weight) }}</p></article>
+  </section>
+  <section class="structure-notes">
+    <h2>All candidate splits</h2>
+    <p>These are retrospective contrast magnitudes for the same fixed sequence. A peak is a candidate location, not a statistical confirmation.</p>
+    <div class="park-bars" aria-label="CUSUM magnitude by candidate split">
+      {% for point in example.curve %}
+      <div class="park-bar-row"><span>t = {{ point.split }}</span><div class="park-bar-track"><div class="park-bar" style="width:{{ (100 * point.cusum / example.cusum) | round(2) }}%"></div></div><output>{{ '%.4f'|format(point.cusum) }}</output></div>
+      {% endfor %}
+    </div>
+    <p><strong>Interpretation:</strong> The maximum contrast occurs at the boundary between the two constant regimes. This is a noiseless illustrative sequence, not evidence that Park's full decision rules have been implemented.</p>
+    <p>Reference: Park, Im and Lim (2023), <a href="https://doi.org/10.29220/CSAM.2023.30.4.369">Change points detection for nonstationary multivariate time series</a>, Section 2.1.</p>
+  </section>
+</main>
+<script src="{{ url_for('static', filename='dashboard.js') }}" defer></script>
+</body>
+</html>
