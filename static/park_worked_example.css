@@ -1,0 +1,17 @@
+.park-worked-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin:24px 0}
+.park-worked-grid article {background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px}
+.park-worked-grid span {color:var(--muted);font-size:.9rem;display:block}
+.park-worked-grid strong {font-size:1.3rem;display:block;margin-top:12px}
+.park-worked-grid p {color:var(--muted);margin-bottom:0}
+.park-answer {font-size:1.4rem}
+.park-pass {display:inline-block;margin-left:12px;font-size:.75rem;padding:6px 10px;border:1px solid var(--line);border-radius:10px}
+.park-bars {display:grid;gap:10px;margin-top:18px}
+.park-bar-row {display:grid;grid-template-columns:60px minmax(0,1fr) 72px;gap:12px;align-items:center}
+.park-bar-track {height:18px;border-radius:9px;background:var(--panel-2);overflow:hidden}
+.park-bar {height:100%;background:var(--computed);border-radius:9px}
+.park-bar-row output {font-variant-numeric:tabular-nums;text-align:right}
+@media(max-width:650px){.park-worked-grid{grid-template-columns:1fr}.park-bar-row{grid-template-columns:48px minmax(0,1fr) 60px}}
+
+.park-steps {padding-left:1.6rem;display:grid;gap:16px;line-height:1.6}
+.park-steps li p {margin:7px 0 0;color:var(--muted)}
+.park-derived {font-size:1.1rem;color:var(--text)!important;font-variant-numeric:tabular-nums}

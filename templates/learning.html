@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Learning progress · CSE Research</title>
+<script>document.documentElement.dataset.theme=localStorage.getItem('dashboard-theme')||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark');</script>
+<link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='navigation.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='learning.css') }}">
+</head>
+<body>
+<main class="page-shell learning-shell">
+<header class="learning-header">
+  <div class="learning-heading">
+    <p class="eyebrow">Research learning laboratory · WP2</p>
+    <h1>Learning progress</h1>
+    <p class="lede">A structured reading roadmap linking Park et al. (2023), worked mathematics and the implementation evidence.</p>
+  </div>
+  <nav class="learning-nav" aria-label="Learning navigation">
+    <a class="theme-button nav-link" href="{{ url_for('home') }}">Home</a>
+    {% include '_research_navigation.html' %}
+    <div class="learning-theme" aria-label="Theme">
+      <button class="theme-button" type="button" data-theme-option="light">Light</button>
+      <button class="theme-button" type="button" data-theme-option="dark">Dark</button>
+    </div>
+  </nav>
+</header>
+
+<section class="learning-overview" aria-labelledby="learning-overview-title">
+  <div class="learning-overview-copy">
+    <p class="eyebrow">Your milestones · locally saved</p>
+    <h2 id="learning-overview-title">Study overview</h2>
+    <p>Track what you have learned, revisit worked derivations, and identify your next paper-reading priority.</p>
+    <div class="learning-progress-track" role="progressbar" aria-label="Completed learning milestones" aria-valuemin="0" aria-valuemax="{{ learning.total }}" aria-valuenow="{{ learning.completed }}">
+      <span style="width: {{ 100 * learning.completed / learning.total if learning.total else 0 }}%"></span>
+    </div>
+    <p class="learning-note">Conversation checkpoints are context, not proof of mastery. Only your saved selections count towards completion.</p>
+  </div>
+  <div class="learning-stat-group" aria-label="Progress statistics">
+    <div class="learning-stat"><strong>{{ learning.completed }}<small> / {{ learning.total }}</small></strong><span>Completed</span></div>
+    <div class="learning-stat"><strong>{{ learning.in_progress }}</strong><span>In progress</span></div>
+    <div class="learning-stat"><strong>{{ learning.total - learning.completed - learning.in_progress }}</strong><span>Not started</span></div>
+  </div>
+</section>
+
+<div class="learning-section-heading">
+  <div><p class="eyebrow">Current reading plan</p><h2>Park et al. (2023) · Section 2.1</h2></div>
+  <p>Six progressive topics, from the two-window mean contrast to interpreting and confirming candidate change points.</p>
+</div>
+<section class="learning-roadmap" aria-label="Learning roadmap">
+{% for topic in learning.topics %}
+<article class="learning-card" data-status="{{ topic.status }}">
+  <div class="learning-card-top">
+    <span class="learning-step">{{ '%02d'|format(loop.index) }}</span>
+    <span class="learning-status">{{ topic.status | replace('_',' ') | title }}</span>
+  </div>
+  <p class="learning-source">{{ topic.source }}</p>
+  <h3>{{ topic.title }}</h3>
+  <p class="learning-description">{{ topic.detail }}</p>
+  <div class="learning-card-bottom">
+    <p class="learning-checkpoint"><span>Research checkpoint</span>{{ topic.stage }}</p>
+    <form class="learning-form" action="{{ url_for('park_worked_example.save_progress') }}" method="post">
+      <input type="hidden" name="topic" value="{{ topic.id }}">
+      <label for="status-{{ topic.id }}">Learning status</label>
+      <div class="learning-form-row">
+        <select id="status-{{ topic.id }}" name="status">
+          {% for value,label in [('not_started','Not started'),('in_progress','In progress'),('completed','Completed')] %}
+          <option value="{{ value }}"{% if topic.status == value %} selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+        <button class="learning-save" type="submit">Save</button>
+      </div>
+    </form>
+    <a class="learning-resource" href="{{ url_for(topic.url, **topic.get('args', {})) }}">Open study material <span aria-hidden="true">↗</span></a>
+  </div>
+</article>
+{% endfor %}
+</section>
+<section class="learning-feature" aria-labelledby="learning-feature-title">
+  <div>
+    <p class="eyebrow">Featured worked example</p>
+    <h2 id="learning-feature-title">Derive Equation (2.2) step by step</h2>
+    <p>Use eight ordered observations to calculate both segment means, the normalisation and the exact CUSUM contrast at t = 4.</p>
+    <a class="learning-primary-action" href="{{ url_for('park_worked_example.example') }}">View complete working <span aria-hidden="true">→</span></a>
+  </div>
+  <div class="learning-equation"><span>Park · Mean-CUSUM</span><strong>ν₄ = √2</strong><small>Exact teaching result, not a confirmed shift</small></div>
+</section>
+<section class="learning-footnote">
+  <h2>Learning evidence is not experimental evidence</h2>
+  <p>Worked calculations establish mathematical understanding. The <a href="{{ url_for('data_structures.inspect_dataset', dataset='park') }}">Park data inspection</a> page explores candidate curves, while the Results section contains experimental outputs. Progress is stored locally in <code>outputs/learning/progress.json</code>.</p>
+</section>
+</main>
+<script src="{{ url_for('static', filename='dashboard.js') }}" defer></script>
+</body></html>

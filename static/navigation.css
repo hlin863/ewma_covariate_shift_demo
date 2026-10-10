@@ -86,3 +86,98 @@
 @media (max-width: 720px) {
   .data-menu-panel { width: min(310px, calc(100vw - 24px)); }
 }
+
+/* Unified navigation controls: same geometry in the home and inner-page headers. */
+.home-nav-links .nav-link,
+.hero-actions .nav-link,
+.learning-nav .nav-link,
+.home-nav-links .nav-menu > summary,
+.hero-actions .nav-menu > summary,
+.learning-nav .nav-menu > summary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 42px;
+  padding: 9px 15px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--panel);
+  color: var(--text);
+  font-size: .82rem;
+  font-weight: 750;
+  line-height: 1.25;
+  text-decoration: none;
+  white-space: nowrap;
+  box-shadow: none;
+}
+.home-nav-links .nav-link:hover,
+.hero-actions .nav-link:hover,
+.learning-nav .nav-link:hover,
+.home-nav-links .nav-menu > summary:hover,
+.hero-actions .nav-menu > summary:hover,
+.learning-nav .nav-menu > summary:hover {
+  background: var(--panel-2);
+  border-color: color-mix(in srgb, var(--computed) 38%, var(--line));
+}
+.home-nav-links .nav-link[aria-current="page"],
+.hero-actions .nav-link[aria-current="page"],
+.learning-nav .nav-link[aria-current="page"] {
+  background: color-mix(in srgb, var(--computed) 11%, var(--panel));
+  border-color: color-mix(in srgb, var(--computed) 40%, var(--line));
+  color: var(--text);
+}
+.home-nav-links .nav-menu[open] > summary,
+.hero-actions .nav-menu[open] > summary,
+.learning-nav .nav-menu[open] > summary {
+  background: var(--panel-2);
+  border-color: var(--computed);
+}
+.home-nav-links .nav-link:focus-visible,
+.hero-actions .nav-link:focus-visible,
+.learning-nav .nav-link:focus-visible,
+.home-nav-links .nav-menu > summary:focus-visible,
+.hero-actions .nav-menu > summary:focus-visible,
+.learning-nav .nav-menu > summary:focus-visible {
+  outline: 2px solid var(--computed);
+  outline-offset: 3px;
+}
+.home-nav-links .theme-switcher,
+.hero-actions .theme-switcher,
+.learning-nav .learning-theme {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 4px;
+  min-height: 42px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--panel-2);
+}
+.hero-actions > [data-theme-option] {
+  min-height: 42px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--panel-2);
+}
+.hero-actions > [data-theme-option][aria-pressed="true"],
+.learning-nav [data-theme-option][aria-pressed="true"] {
+  background: var(--computed);
+  color: #071710;
+}
+.home-nav-links .nav-menu-panel,
+.hero-actions .nav-menu-panel,
+.learning-nav .nav-menu-panel { text-align: left; }
+@media (max-width: 680px) {
+  .home-nav-links .nav-link,
+  .hero-actions .nav-link,
+  .learning-nav .nav-link,
+  .home-nav-links .nav-menu > summary,
+  .hero-actions .nav-menu > summary,
+  .learning-nav .nav-menu > summary {
+    min-height: 40px;
+    padding: 8px 11px;
+    font-size: .78rem;
+  }
+}

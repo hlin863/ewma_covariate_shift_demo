@@ -1,9 +1,9 @@
 .home-page { background: linear-gradient(135deg, color-mix(in srgb, var(--bg) 94%, #173b35), var(--bg) 55%); }
 .home-shell { width: min(1320px, calc(100% - 40px)); padding-top: 24px; }
-.home-nav { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 12px 0 24px; border-bottom: 1px solid var(--line); }
+.home-nav { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 12px 0 24px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
 .home-brand { display: inline-flex; align-items: center; gap: 10px; font-weight: 850; text-decoration: none; }
 .home-brand span { display: grid; place-items: center; width: 39px; height: 39px; border-radius: 11px; background: var(--computed); color: #071710; font-size: 0.73rem; letter-spacing: 0.08em; }
-.home-nav-links { display: flex; align-items: center; gap: 18px; }
+.home-nav-links { display: flex; align-items: center; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }
 .home-nav-links > a { color: var(--muted); font-size: 0.82rem; font-weight: 750; text-decoration: none; }
 .home-nav-links > a:hover { color: var(--text); }
 
@@ -118,3 +118,22 @@
 .home-disclosure .evidence-grid { padding-top: 0; }
 .home-page a:focus-visible, .home-disclosure > summary:focus-visible { outline: 2px solid var(--computed); outline-offset: 4px; }
 @media (max-width: 820px) { .process-card-grid { grid-template-columns: 1fr; } .home-hero { grid-template-columns: 1fr; } }
+
+/* Clear separation between in-page shortcuts and research destinations. */
+.home-section-links { display: inline-flex; align-items: center; gap: 12px; padding: 0 12px 0 0; margin-right: 4px; border-right: 1px solid var(--line); }
+.home-section-links a { color: var(--muted); font-size: .82rem; font-weight: 750; text-decoration: none; white-space: nowrap; }
+.home-section-links a:hover, .home-section-links a:focus-visible { color: var(--text); text-decoration: underline; text-underline-offset: 5px; }
+.home-nav-links > .nav-link { white-space: nowrap; }
+.home-nav-links > .nav-menu { flex-shrink: 0; }
+.home-nav-links > .theme-switcher { flex-shrink: 0; margin-left: 4px; }
+@media (max-width: 900px) {
+  .home-nav { align-items: flex-start; }
+  .home-nav-links { justify-content: flex-start; width: 100%; }
+}
+@media (max-width: 600px) {
+  .home-section-links { width: 100%; padding-bottom: 12px; margin-bottom: 4px; border-right: 0; border-bottom: 1px solid var(--line); }
+}
+
+/* Home-only section shortcuts remain visually quieter than page navigation. */
+.home-nav-links .home-section-links a { background:transparent; border:0; padding:5px 2px; border-radius:4px; }
+.home-nav-links .home-section-links a:focus-visible { outline:2px solid var(--computed); outline-offset:3px; }

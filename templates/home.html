@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="en" data-theme="dark">
+
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -15,25 +16,35 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='navigation.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='home.css') }}">
 </head>
+
 <body class="home-page">
   <main class="page-shell home-shell">
     <nav class="home-nav" aria-label="Primary navigation">
       <a class="home-brand" href="{{ url_for('home') }}"><span>CSE</span> Research hub</a>
       <div class="home-nav-links">
+        <div class="home-section-links" aria-label="On this page">
+          <a href="#pages">Workflow</a>
+          <a href="#progress">Progress</a>
+        </div>
         {% include '_research_navigation.html' %}
-        <a href="#progress">Progress</a>
-        <a href="#pages">Workflow</a>
         <div class="theme-switcher" role="group" aria-label="Colour theme">
-          <button class="theme-button" type="button" data-theme-option="light" aria-pressed="false" aria-label="Switch to light theme">
-            <svg class="icon icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-              <circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="1.5"/>
-              <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          <button class="theme-button" type="button" data-theme-option="light" aria-pressed="false"
+            aria-label="Switch to light theme">
+            <svg class="icon icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none"
+              xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="1.5" />
+              <path
+                d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"
+                stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
             </svg>
             <span>Light</span>
           </button>
-          <button class="theme-button" type="button" data-theme-option="dark" aria-pressed="false" aria-label="Switch to dark theme">
-            <svg class="icon icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-              <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <button class="theme-button" type="button" data-theme-option="dark" aria-pressed="false"
+            aria-label="Switch to dark theme">
+            <svg class="icon icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none"
+              xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" stroke="currentColor" stroke-width="1.5"
+                stroke-linecap="round" stroke-linejoin="round" />
             </svg>
             <span>Dark</span>
           </button>
@@ -45,7 +56,8 @@
       <div class="hero-copy">
         <p class="eyebrow">Reproducibility · non-stationary EEG · BCI</p>
         <h1>From covariate-shift warnings to auditable adaptive learning.</h1>
-        <p class="home-lede">A research interface for reconstructing, testing and extending EWMA-based covariate-shift estimation from detector evidence through supervised and transductive adaptation.</p>
+        <p class="home-lede">A research interface for reconstructing, testing and extending EWMA-based covariate-shift
+          estimation from detector evidence through supervised and transductive adaptation.</p>
         <div class="hero-cta">
           <a class="primary-action" href="#pages">Follow the process <span aria-hidden="true">→</span></a>
           <a class="secondary-action" href="{{ url_for('results_catalog') }}">Browse all results</a>
@@ -55,8 +67,10 @@
         <p class="eyebrow">Research problem</p>
         <h2>EEG distributions change while the intended task relationship can remain stable.</h2>
         <div class="equation"><span>P<sub>train</sub>(X)</span><strong>≠</strong><span>P<sub>test</sub>(X)</span></div>
-        <div class="equation secondary"><span>P<sub>train</sub>(Y|X)</span><strong>=</strong><span>P<sub>test</sub>(Y|X)</span></div>
-        <p>The detector asks when the data have shifted; the longer-term research asks when that evidence justifies adaptation.</p>
+        <div class="equation secondary">
+          <span>P<sub>train</sub>(Y|X)</span><strong>=</strong><span>P<sub>test</sub>(Y|X)</span></div>
+        <p>The detector asks when the data have shifted; the longer-term research asks when that evidence justifies
+          adaptation.</p>
       </aside>
     </header>
 
@@ -67,11 +81,18 @@
 
     <section class="home-section workflow-section" id="pages" aria-label="Research workflow">
       <div class="home-section-heading">
-        <div><p class="eyebrow">Research process</p><h2>Prepare, detect, validate, adapt.</h2></div>
-        <p>Choose a process to see its inputs, decisions and next steps. Saved experiment evidence is collected under Results.</p>
+        <div>
+          <p class="eyebrow">Research process</p>
+          <h2>Prepare, detect, validate, adapt.</h2>
+        </div>
+        <p>Choose a process to see its inputs, decisions and next steps. Saved experiment evidence is collected under
+          Results.</p>
       </div>
       <section class="foundation-strip" aria-label="Data foundation">
-        <div><p class="eyebrow">Before detection</p><h3>Data and protocols</h3></div>
+        <div>
+          <p class="eyebrow">Before detection</p>
+          <h3>Data and protocols</h3>
+        </div>
         <a href="{{ url_for('data_structures.overview') }}">Data structures →</a>
         <a href="{{ url_for('data_processing_page') }}">Data preparation and protocols →</a>
       </section>
@@ -79,27 +100,56 @@
         {% for process in processes %}
         <a class="home-process-card" id="{{ process.key }}" href="{{ url_for('process.overview', stage=process.key) }}">
           <span class="eyebrow">{{ process.number }} · Process</span>
-          <h3>{{ process.title }}</h3><p class="process-question">{{ process.question }}</p>
+          <h3>{{ process.title }}</h3>
+          <p class="process-question">{{ process.question }}</p>
           <p>{{ process.description }}</p><strong>Explore process →</strong>
         </a>
         {% endfor %}
       </div>
-      <div class="home-support"><div><h3>{{ support.label }}</h3><p>{{ support.description }}</p></div><a href="{{ url_for(support.endpoint) }}">Open support →</a></div>
+      <div class="home-support">
+        <div>
+          <h3>{{ support.label }}</h3>
+          <p>{{ support.description }}</p>
+        </div><a href="{{ url_for(support.endpoint) }}">Open support →</a>
+      </div>
+    </section>
+
+    <section class="home-section" aria-label="Learning laboratory">
+      <div class="home-section-heading">
+        <div>
+          <p class="eyebrow">Learning laboratory</p>
+          <h2>Understand the mathematics behind the experiments.</h2>
+        </div>
+        <p>Worked calculations and paper-linked study exercises are separate from empirical results.</p>
+      </div>
+      <div class="foundation-strip">
+        <div>
+          <p class="eyebrow">Available module</p>
+          <h3>Park et al. (2023): Equation (2.2)</h3>
+        </div>
+        <a href="/learning/">Learning hub →</a>
+        <a href="/learning/park-cusum-example">View worked solution →</a>
+      </div>
     </section>
 
     <details class="home-section home-disclosure" id="progress">
       <summary>Current project progress</summary>
       <div class="home-section-heading">
-        <div><p class="eyebrow">Current project progress</p><h2>The research pipeline, from detection to adaptation</h2></div>
-        <p>Implemented means code and automated contracts exist. It does not imply exact reproduction of published subject-level values.</p>
+        <div>
+          <p class="eyebrow">Current project progress</p>
+          <h2>The research pipeline, from detection to adaptation</h2>
+        </div>
+        <p>Implemented means code and automated contracts exist. It does not imply exact reproduction of published
+          subject-level values.</p>
       </div>
       <div class="pipeline-grid">
         {% for stage in pipeline %}
-          <article class="pipeline-card status-{{ stage.status|replace(' ', '-') }}">
-            <div class="pipeline-top"><span>{{ stage.number }}</span><span class="progress-status">{{ stage.status }}</span></div>
-            <h3>{{ stage.title }}</h3>
-            <p>{{ stage.detail }}</p>
-          </article>
+        <article class="pipeline-card status-{{ stage.status|replace(' ', '-') }}">
+          <div class="pipeline-top"><span>{{ stage.number }}</span><span class="progress-status">{{ stage.status
+              }}</span></div>
+          <h3>{{ stage.title }}</h3>
+          <p>{{ stage.detail }}</p>
+        </article>
         {% endfor %}
       </div>
     </details>
@@ -107,57 +157,57 @@
     <details class="home-section lineage-section home-disclosure" id="papers">
       <summary>Paper lineage</summary>
       <div class="home-section-heading">
-        <div><p class="eyebrow">Paper foundations</p><h2>How the current reconstruction fits the research lineage</h2></div>
-        <p>The project preserves how detector, validation and adaptation ideas evolve across the source studies and current extensions.</p>
+        <div>
+          <p class="eyebrow">Paper foundations</p>
+          <h2>How the current reconstruction fits the research lineage</h2>
+        </div>
+        <p>The project preserves how detector, validation and adaptation ideas evolve across the source studies and
+          current extensions.</p>
       </div>
       <div class="lineage-grid">
         {% for item in lineage %}
-          {% if item.paper_file %}
-            <a
-              class="lineage-card lineage-paper"
-              href="{{ url_for('paper_file', filename=item.paper_file) }}"
-              target="_blank"
-              rel="noopener"
-              aria-label="Preview paper: {{ item.paper_title }}"
-            >
-              <span>{{ item.year }}</span>
-              <h3>{{ item.title }}</h3>
-              <p>{{ item.detail }}</p>
-              <small>{{ item.citation }}</small>
-              <strong>Preview paper PDF <span aria-hidden="true">↗</span></strong>
-            </a>
-          {% else %}
-            <article class="lineage-card lineage-current">
-              <span>{{ item.year }}</span>
-              <h3>{{ item.title }}</h3>
-              <p>{{ item.detail }}</p>
-              <small>{{ item.citation }}</small>
-              <strong>Project implementation</strong>
-            </article>
-          {% endif %}
+        {% if item.paper_file %}
+        <a class="lineage-card lineage-paper" href="{{ url_for('paper_file', filename=item.paper_file) }}"
+          target="_blank" rel="noopener" aria-label="Preview paper: {{ item.paper_title }}">
+          <span>{{ item.year }}</span>
+          <h3>{{ item.title }}</h3>
+          <p>{{ item.detail }}</p>
+          <small>{{ item.citation }}</small>
+          <strong>Preview paper PDF <span aria-hidden="true">↗</span></strong>
+        </a>
+        {% else %}
+        <article class="lineage-card lineage-current">
+          <span>{{ item.year }}</span>
+          <h3>{{ item.title }}</h3>
+          <p>{{ item.detail }}</p>
+          <small>{{ item.citation }}</small>
+          <strong>Project implementation</strong>
+        </article>
+        {% endif %}
         {% endfor %}
       </div>
     </details>
 
     <details class="home-disclosure contribution-disclosure">
       <summary>Contributions and open questions</summary>
-    <section class="evidence-grid">
-      <article class="evidence-card">
-        <p class="eyebrow">What this work contributes</p>
-        <h2>Reproducibility as an explicit system</h2>
-        <ul>{% for contribution in contributions %}<li>{{ contribution }}</li>{% endfor %}</ul>
-      </article>
-      <article class="evidence-card limitations-card">
-        <p class="eyebrow">What remains unresolved</p>
-        <h2>Limits that affect interpretation</h2>
-        <ul>{% for limitation in limitations %}<li>{{ limitation }}</li>{% endfor %}</ul>
-      </article>
-    </section>
+      <section class="evidence-grid">
+        <article class="evidence-card">
+          <p class="eyebrow">What this work contributes</p>
+          <h2>Reproducibility as an explicit system</h2>
+          <ul>{% for contribution in contributions %}<li>{{ contribution }}</li>{% endfor %}</ul>
+        </article>
+        <article class="evidence-card limitations-card">
+          <p class="eyebrow">What remains unresolved</p>
+          <h2>Limits that affect interpretation</h2>
+          <ul>{% for limitation in limitations %}<li>{{ limitation }}</li>{% endfor %}</ul>
+        </article>
+      </section>
 
     </details>
 
     <footer class="home-footer">
-      <p><strong>Reproducibility and Extension of EWMA-Based Covariate Shift Estimation for Non-Stationary EEG-Based BCI</strong></p>
+      <p><strong>Reproducibility and Extension of EWMA-Based Covariate Shift Estimation for Non-Stationary EEG-Based
+          BCI</strong></p>
       <p><a href="https://haocheng-lin-research.eric-lin.chatgpt.site/">Haocheng Lin · Ulster University</a></p>
     </footer>
   </main>
@@ -176,4 +226,5 @@
     })();
   </script>
 </body>
+
 </html>
