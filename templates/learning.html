@@ -12,7 +12,7 @@
   <header class="hero">
     <div>
       <p class="eyebrow">Paper-grounded study · worked mathematics</p>
-      <h1>Learning laboratory</h1>
+      <h1>Learning progress and study hub</h1>
       <p class="lede">Reconstruct calculations from research literature and connect them to the repository's implementations without mixing educational examples with empirical BCI results.</p>
     </div>
     <div class="hero-actions">
@@ -22,6 +22,37 @@
       <button class="theme-button" type="button" data-theme-option="dark">Dark</button>
     </div>
   </header>
+  <section class="structure-notes" aria-label="Learning progress overview">
+    <p class="eyebrow">Your study milestones · saved locally</p>
+    <h2>Study progress</h2>
+    <p><strong>{{ learning.completed }} / {{ learning.total }}</strong> completed; <strong>{{ learning.in_progress }}</strong> in progress.</p>
+    <progress aria-label="Completed learning milestones" max="{{ learning.total }}" value="{{ learning.completed }}" style="width:100%;height:18px;"></progress>
+    <p>Conversation-based research checkpoints describe what has been discussed. Only progress you explicitly select counts as completed. Selections are saved in the local server's outputs/learning/progress.json.</p>
+  </section>
+  <section class="structure-section" aria-label="Learning roadmap">
+    <p class="eyebrow">Research reading plan · WP2</p><h2>Park et al. (2023) learning roadmap</h2>
+    <div class="dataset-grid">
+    {% for topic in learning.topics %}
+      <article class="dataset-card">
+        <span class="eyebrow">{{ topic.source }}</span>
+        <h3>{{ loop.index }}. {{ topic.title }}</h3>
+        <p>{{ topic.detail }}</p>
+        <p><strong>Research checkpoint:</strong> {{ topic.stage }}</p>
+        <form action="{{ url_for('park_worked_example.save_progress') }}" method="post">
+          <input type="hidden" name="topic" value="{{ topic.id }}">
+          <label for="status-{{ topic.id }}">Your progress</label>
+          <select id="status-{{ topic.id }}" name="status">
+            {% for value,label in [('not_started','Not started'),('in_progress','In progress'),('completed','Completed')] %}
+            <option value="{{ value }}"{% if topic.status == value %} selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+          <button class="theme-button" type="submit">Save progress</button>
+        </form>
+        <a href="{{ url_for(topic.url, **topic.get('args', {})) }}">Open learning material →</a>
+      </article>
+    {% endfor %}
+    </div>
+  </section>
   <section class="dataset-grid" aria-label="Learning modules">
     <a class="dataset-card" href="{{ url_for('park_worked_example.example') }}">
       <span class="eyebrow">Available · Park et al. (2023) §2.1</span>
