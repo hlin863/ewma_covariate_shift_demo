@@ -22,6 +22,7 @@
       <div class="home-nav-links">
         {% include '_research_navigation.html' %}
         <a href="#progress">Progress</a>
+        <a href="{{ url_for('park_worked_example.index') }}">Learning hub</a>
         <a href="#pages">Workflow</a>
         <div class="theme-switcher" role="group" aria-label="Colour theme">
           <button class="theme-button" type="button" data-theme-option="light" aria-pressed="false" aria-label="Switch to light theme">
@@ -85,6 +86,18 @@
         {% endfor %}
       </div>
       <div class="home-support"><div><h3>{{ support.label }}</h3><p>{{ support.description }}</p></div><a href="{{ url_for(support.endpoint) }}">Open support →</a></div>
+    </section>
+
+    <section class="home-section" aria-label="Learning laboratory">
+      <div class="home-section-heading">
+        <div><p class="eyebrow">Learning laboratory</p><h2>Understand the mathematics behind the experiments.</h2></div>
+        <p>Worked calculations and paper-linked study exercises are separate from empirical results.</p>
+      </div>
+      <div class="foundation-strip">
+        <div><p class="eyebrow">Available module</p><h3>Park et al. (2023): Equation (2.2)</h3></div>
+        <a href="{{ url_for('park_worked_example.index') }}">Learning hub →</a>
+        <a href="{{ url_for('park_worked_example.example') }}">View worked solution →</a>
+      </div>
     </section>
 
     <details class="home-section home-disclosure" id="progress">
