@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Learning laboratory · CSE Research</title>
+  <script>document.documentElement.dataset.theme = localStorage.getItem('dashboard-theme') || (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');</script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='navigation.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='data_structures.css') }}">
+</head>
+<body><main class="page-shell structures-page">
+  <header class="hero">
+    <div>
+      <p class="eyebrow">Paper-grounded study · worked mathematics</p>
+      <h1>Learning laboratory</h1>
+      <p class="lede">Reconstruct calculations from research literature and connect them to the repository's implementations without mixing educational examples with empirical BCI results.</p>
+    </div>
+    <div class="hero-actions">
+      <a class="theme-button nav-link" href="{{ url_for('home') }}">Home</a>
+      {% include '_research_navigation.html' %}
+      <button class="theme-button" type="button" data-theme-option="light">Light</button>
+      <button class="theme-button" type="button" data-theme-option="dark">Dark</button>
+    </div>
+  </header>
+  <section class="dataset-grid" aria-label="Learning modules">
+    <a class="dataset-card" href="{{ url_for('park_worked_example.example') }}">
+      <span class="eyebrow">Available · Park et al. (2023) §2.1</span>
+      <h2>Mean-CUSUM: Equation (2.2)</h2>
+      <p>Work through X = [2, 2, 2, 2, 6, 6, 6, 6] at t = 4, compute both sample means, the normalisation and the exact result ν₄ = √2. Compare all candidate positions.</p>
+      <strong>Open worked solution →</strong>
+    </a>
+    <article class="dataset-card">
+      <span class="eyebrow">Further reading · not implemented</span>
+      <h2>Aggregated CUSUM and peak agreement</h2>
+      <p>Next study: contrast feature-wise, maximum and average curves, unimodality and confirmation rules. No completion claim is made for Park's full decision procedure.</p>
+      <a href="{{ url_for('data_structures.inspect_dataset', dataset='park') }}">Inspect existing multivariate curves →</a>
+    </article>
+  </section>
+  <section class="structure-notes">
+    <h2>Learning versus experiment evidence</h2>
+    <p>Worked solutions verify arithmetic on fixed teaching inputs. The Data structures area inspects datasets and candidate curves; Results holds saved experimental evidence. None of these teaching calculations constitutes a confirmed EEG change-point detection.</p>
+  </section>
+</main>
+<script src="{{ url_for('static', filename='dashboard.js') }}" defer></script>
+</body></html>
