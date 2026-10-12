@@ -5,6 +5,7 @@ from src.web.bci_eda import bci_eda_bp
 from src.web.data_structures import data_structures_bp
 from src.web.decision_models import decision_models_bp
 from src.web.diethe import diethe_bp
+from src.web.gpr_kernel import gpr_kernel_bp
 from src.web.process import process_bp
 from src.web.park_worked_example import park_worked_example_bp
 from src.web.test_results import (
@@ -47,6 +48,10 @@ if "diethe" not in app.blueprints:
 
 if "park_worked_example" not in app.blueprints:
     app.register_blueprint(park_worked_example_bp)
+
+
+if "gpr_kernel" not in app.blueprints:
+    app.register_blueprint(gpr_kernel_bp)
 
 
 __all__ = ["app"]

@@ -117,6 +117,7 @@ RESULT_PAGES = (
     {"title": "Validation and reproduction", "pages": (
         ("dashboard", "Table 1 dashboard", "Published and computed warning/confirmation counts."),
         ("ks_validation_results", "K–S validation diagnostics", "Per-warning Stage-II test evidence."),
+        ("gpr_kernel.laboratory", "Hotelling · GPR · kernel laboratory", "Separate shift and uncertainty evidence with a delayed review gate."),
     )},
     {"title": "Continual learning and classifier evidence", "pages": (
         ("diethe.laboratory", "Continual-learning policy laboratory", "Matched non-adaptive, passive and active update-policy comparisons."),

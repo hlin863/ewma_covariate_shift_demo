@@ -121,3 +121,20 @@ class RetrainOnPerformanceDrop:
             and context.trials_since_update >= self.cooldown
             and context.recent_accuracy < self.reference_accuracy - self.drop
         )
+
+
+@dataclass(frozen=True)
+class RetrainOnGPRKernelRecommendation:
+    """Opt-in diagnostic gate, released only at its recorded decision time.
+
+    A caller must provide each event once and own cooldown, label availability,
+    retraining and candidate evaluation. This rule supplies no acceptance test.
+    """
+
+    def should_update(self, context: AdaptationContext) -> bool:
+        record = context.validation_record
+        if record is None or record.get('diagnostic_status') != 'evaluated':
+            return False
+        available = record.get('validation_time')
+        return (available is not None and context.time >= available
+                and bool(record.get('adaptation_recommended', False)))
