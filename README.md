@@ -510,3 +510,7 @@ commands, retention criteria and the review of removed or consolidated cases.
 ## Current research boundary
 
 The repository covers signal processing, feature extraction, CSE warning, Stage-II validation, supervised adaptation, and a first-step PWKNN-driven transductive adaptation path for unlabelled evaluation features. The current pseudo-labelled path keeps evaluation truth outside the learner, applies confidence-gated knowledge-base growth, and supports post-run scoring against hidden labels. These components are still not a complete 2019 CSE-UAEL adaptive ensemble: dynamic LDA ensemble growth, weighted ensemble classification, paper-matched subject-specific PWKNN parameter selection, and an end-to-end 2A/2B adaptive reproduction remain future stages.
+
+## Hotelling / GPR / kernel diagnostic extension
+
+The opt-in Stage-II variant preserves paper reproduction and adds separate MMD and GPR uncertainty evidence. Open `/results/gpr-kernel` in the Flask dashboard, or run `python -m scripts.run_gpr_kernel_validation --all-scenarios`. See [the method, integration points and validation limits](docs/gpr_kernel_validation.md).

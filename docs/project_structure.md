@@ -467,3 +467,7 @@ documentation of result, discrepancy or limitation
 
 Structural refactors should improve clarity without erasing the methodological
 history needed to explain how the PhD implementation developed.
+
+## Hotelling / GPR / kernel diagnostic extension
+
+The opt-in Stage-II variant preserves paper reproduction and adds separate MMD and GPR uncertainty evidence. Open `/results/gpr-kernel` in the Flask dashboard, or run `python -m scripts.run_gpr_kernel_validation --all-scenarios`. See [the method, integration points and validation limits](gpr_kernel_validation.md).
