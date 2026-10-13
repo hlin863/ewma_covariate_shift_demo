@@ -1,0 +1,10 @@
+# Dependencies for notebooks/03_structural_changes_visualization.ipynb
+# Install: python -m pip install -r requirements.txt
+# Detector/test dependencies remain in requirements-test.txt.
+
+numpy
+pandas
+matplotlib
+seaborn
+ipywidgets
+jupyterlab
