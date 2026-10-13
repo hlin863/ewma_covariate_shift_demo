@@ -1,0 +1,50 @@
+{
+  "created_utc": "2026-10-13T15:52:18.736610+00:00",
+  "run_id": "20261013T155218005525Z",
+  "parameters": {
+    "seed": 1,
+    "scenario": "combined",
+    "n_observations": 1000,
+    "change_at": 500,
+    "variance_ratio": 4.0,
+    "correlation_before": 0.0,
+    "correlation_after": 0.7,
+    "ar_before": 0.0,
+    "ar_after": 0.7
+  },
+  "generator_metadata": {
+    "scenario": "combined",
+    "n_observations": 1000,
+    "change_at": 500,
+    "variance_ratio": 4.0,
+    "correlation_before": 0.0,
+    "correlation_after": 0.7,
+    "ar_before": 0.0,
+    "ar_after": 0.7,
+    "shape": [
+      1000,
+      2
+    ]
+  },
+  "revision": "fc08c626d4afd922ef9185bc542e48cf78f3e7d9",
+  "git_status_porcelain": "?? outputs/structural_changes/",
+  "source_sha256": {
+    "notebooks\\03_structural_changes_visualization.ipynb": "cb6eedc33a040f823c76ed7bab37f59c17007e90c4e528fdd619a09ecf25676f",
+    "src\\simulation\\structural_changes.py": "a1bcf11c8c083a4b897c21d4cc536a3991fbd860c17e3f187f64c3751764988d",
+    "notebooks\\04_structural_changes_save_results.ipynb": "fa012a2d78b866c48373e642310a5d3dc60c086321ad8b9ca8a15d6ea99d479a"
+  },
+  "versions": {
+    "numpy": "2.5.3",
+    "pandas": "3.0.6",
+    "matplotlib": "3.11.2",
+    "seaborn": "0.13.2"
+  },
+  "figure_dpi": 200,
+  "interpretation": "Exploratory visualisation only; no detector was evaluated.",
+  "generator_limitation": "Scenario labels do not guarantee isolated changes. AR coefficients and innovation covariance may change together; stationary process covariance is Q/(1-phi**2), with transition effects.",
+  "artifacts_sha256": {
+    "stream.csv": "75282658de39553837d532e8a5365993b9e43f70d0b77fe428997b7e8c02cd3c",
+    "structural_changes.pdf": "79f5e26f6ad2f559fc7a23a33d7d2faddf2de6b8288354960b346913c7b71987",
+    "structural_changes.png": "e0d8c78b77ad2ebdb4e51a42722ca4f87989dbc7c87ce1e818f3c20e5b6b0714"
+  }
+}
