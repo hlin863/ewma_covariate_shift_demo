@@ -242,8 +242,8 @@ def generate_structural_stream(
 
     cov_after = np.array(
         [
-            [variance_ratio, corr_after * np.sqrt(variance_ratio)],
-            [corr_after * np.sqrt(variance_ratio), variance_ratio],
+            [variance_ratio, corr_after * variance_ratio],
+            [corr_after * variance_ratio, variance_ratio],
         ],
         dtype=float,
     )
@@ -525,9 +525,14 @@ def generate_structural_stream(
             # It allows first-order temporal dependence and
             # potentially changing second-order properties.
 
+            noise = rng.multivariate_normal(
+                mean=np.zeros(2),
+                cov=cov,
+            )
+
             stream[i] = (
-                phi * stream[i - 1]
-                + rng.multivariate_normal(np.zeros(2), cov)
+                phi * (stream[i - 1] - mean)
+                + noise
                 + mean
             )
 
