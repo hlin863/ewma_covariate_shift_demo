@@ -125,3 +125,106 @@ def smooth_cusum_curve(positions, values, *, span=0.1, degree=1):
         smoothed[i] = coefficients[0]
 
     return smoothed
+
+
+
+def check_cusum_unimodality(
+    positions, smoothed_curve, *, peak=None, observations=None, k=10
+) -> dict:
+    """Park et al. (2023), Algorithm 1 Step 3: A statistic on smoothed CUSUM.
+
+    Form D1 from k equally spaced *interior* points between 0 and peak,
+    and D2 between peak and T-1; map each target to the nearest retained
+    CUSUM candidate. For k=10, implement the paper's boundary-exclusion
+    version of (2.3): sum_{i=6..10} I[D1[i-1] > D1[i]] +
+    sum_{j=1..5} I[D2[j] < D2[j+1]], using 1-based paper indices.
+
+    Duplicate nearest candidate positions render the diagnostic ineligible:
+    the paper does not specify a remedy when min_segment truncation makes
+    the nominal sample points indistinguishable. This is a conservative
+    repository-specific guard, not an additional Park criterion.
+    """
+    x = np.asarray(positions, dtype=int)
+    y = np.asarray(smoothed_curve, dtype=float)
+    if x.ndim != 1 or y.shape != x.shape or not len(x):
+        raise ValueError("positions and smoothed_curve must be nonempty matching 1D arrays")
+    if np.any(np.diff(x) <= 0) or not np.isfinite(y).all():
+        raise ValueError("positions must be increasing and curve finite")
+    if not isinstance(k, int) or k < 2:
+        raise ValueError("k must be an integer >= 2")
+    if observations is None:
+        raise ValueError("observations T is required for original [0,T-1] domain")
+    if not isinstance(observations, int) or observations < 3 or x[0] < 0 or x[-1] >= observations:
+        raise ValueError("invalid observations or candidate domain")
+    if peak is None:
+        peak = int(x[int(np.argmax(y))])
+    if int(peak) not in x:
+        raise ValueError("peak must be a retained candidate position")
+    if k != 10:
+        raise ValueError("Algorithm 1's boundary-exclusion comparison is defined here for k=10")
+
+    def sample(a, b):
+        target = a + (b - a) * np.arange(1, k + 1) / (k + 1)
+        chosen = np.abs(x[:, None] - target[None, :]).argmin(axis=0)
+        return x[chosen], y[chosen]
+
+    left_x, left_y = sample(0, peak)
+    right_x, right_y = sample(peak, observations - 1)
+    unique = len(np.unique(left_x)) == k and len(np.unique(right_x)) == k
+    if not unique:
+        return {
+            "eligible": False, "A": None, "unimodal": None,
+            "reason": "sampling points collapse on retained candidate positions",
+            "peak": int(peak), "D1": left_x.tolist(), "D2": right_x.tolist(),
+        }
+
+    # For 1-based i=6..10 compare D1[i-1] > D1[i].
+    left_violations = [int(i) for i in range(6, 11) if left_y[i - 2] > left_y[i - 1]]
+    # For 1-based j=1..5 compare D2[j] < D2[j+1].
+    right_violations = [int(j) for j in range(1, 6) if right_y[j - 1] < right_y[j]]
+    A = len(left_violations) + len(right_violations)
+    return {
+        "eligible": True, "A": int(A), "unimodal": A == 0,
+        "reason": None, "peak": int(peak),
+        "D1": left_x.tolist(), "D2": right_x.tolist(),
+        "left_violation_indices": left_violations,
+        "right_violation_indices": right_violations,
+    }
+
+
+def evaluate_mean_change(curves: dict) -> dict:
+    """Park Algorithm 1 Steps 3–4: unimodality and strict peak agreement.
+
+    Accepts the result of mean_cusum_curves(). The result is a paper-rule
+    *decision*, not a calibrated online alarm or a numerical reproduction.
+    On a failed mean rule, the full Park algorithm proceeds to its
+    second-order method; that method is not implemented here.
+    """
+    required = ("positions", "maximum_smoothed", "average_smoothed", "observations")
+    if any(key not in curves for key in required):
+        raise ValueError("curves must contain positions, smoothed aggregates and observations")
+    x = curves["positions"]
+    T = int(curves["observations"])
+    maximum = check_cusum_unimodality(x, curves["maximum_smoothed"], observations=T)
+    average = check_cusum_unimodality(x, curves["average_smoothed"], observations=T)
+    if not maximum["eligible"] or not average["eligible"]:
+        return {
+            "status": "ineligible", "mean_change": None, "estimated_position": None,
+            "maximum_check": maximum, "average_check": average,
+            "reason": "insufficient distinct sampling positions for Algorithm 1",
+        }
+    b_max, b_avg = maximum["peak"], average["peak"]
+    separation = abs(b_max - b_avg)
+    limit = np.sqrt(T) / 2
+    passed = (maximum["A"] * average["A"] == 0) and separation < limit
+    return {
+        "status": "mean_change_candidate" if passed else "no_mean_change_by_rule",
+        "mean_change": bool(passed),
+        "estimated_position": (b_max + b_avg) / 2 if passed else None,
+        "b_max_smoothed": b_max, "b_avg_smoothed": b_avg,
+        "agreement_gap": separation, "agreement_threshold": float(limit),
+        "agreement_passed": bool(separation < limit),
+        "unimodality_passed": bool(maximum["A"] * average["A"] == 0),
+        "maximum_check": maximum, "average_check": average,
+        "next_step": "second_order_procedure_not_implemented" if not passed else None,
+    }
