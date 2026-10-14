@@ -30,8 +30,9 @@ def simulate_park_model(model, *, n=1024, channels=50, change_at=512,
     flag[affected] = True
 
     if model == "A":
-        before_alpha = rng.uniform(-0.5, 0.5, channels)
-        before_sigma = rng.uniform(0.5, 2, channels)
+        before_alpha = rng.uniform(-0.5, 0.5, channels) # $a_d ~ U(-0.5, 0.5)$
+        before_sigma = rng.uniform(0.5, 2, channels) # $\sigma_d ~ U(0.5, 2)$
+        
         after_alpha = before_alpha.copy()
         after_sigma = before_sigma.copy()
         mu = np.zeros(channels)
