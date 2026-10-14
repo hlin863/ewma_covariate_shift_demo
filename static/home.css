@@ -137,3 +137,56 @@
 /* Home-only section shortcuts remain visually quieter than page navigation. */
 .home-nav-links .home-section-links a { background:transparent; border:0; padding:5px 2px; border-radius:4px; }
 .home-nav-links .home-section-links a:focus-visible { outline:2px solid var(--computed); outline-offset:3px; }
+
+/* Six-work-package overview; preserve ten-stage technical view below. */
+.wp-progress-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; }
+.wp-progress-card { display:flex; flex-direction:column; min-width:0; padding:23px 25px; border:1px solid var(--line); border-top:3px solid var(--warning); border-radius:18px; background:var(--panel-alpha); }
+.wp-progress-card.status-planned { border-top-color:var(--published); }
+.wp-card-heading { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; font-size:.77rem; }
+.wp-number { color:var(--computed); font-weight:850; letter-spacing:.06em; }
+.wp-number small { color:var(--muted); font-weight:600; letter-spacing:0; }
+.wp-progress-card h3 { margin:15px 0 9px; font-size:1.25rem; letter-spacing:-.02em; }
+.wp-card-label { margin:15px 0 4px; color:var(--computed); font-size:.72rem; font-weight:800; text-transform:uppercase; letter-spacing:.07em; }
+.wp-card-evidence, .wp-card-next { margin:0; color:var(--muted); line-height:1.55; font-size:.9rem; }
+.wp-card-links { display:flex; flex-wrap:wrap; gap:9px 20px; margin-top:auto; padding-top:20px; }
+.wp-card-links a { font-size:.79rem; font-weight:750; color:var(--computed); text-decoration:none; }
+.wp-card-links a:hover, .wp-card-links a:focus-visible { text-decoration:underline; }
+.wp-progress-note { display:flex; align-items:center; gap:18px; margin-top:16px; padding:17px 21px; border:1px solid var(--line); border-radius:14px; background:var(--panel-alpha); }
+.wp-progress-note strong { white-space:nowrap; color:var(--text); }
+.wp-progress-note p { margin:0; font-size:.83rem; color:var(--muted); line-height:1.5; }
+.wp-technical-details { margin-top:17px; border-top:1px solid var(--line); }
+.wp-technical-details > summary { cursor:pointer; padding:17px 0; color:var(--computed); font-weight:750; }
+.wp-technical-details .pipeline-grid { padding:8px 0 0; }
+@media(max-width:820px) { .wp-progress-grid { grid-template-columns:1fr; } .wp-progress-note { align-items:flex-start; flex-direction:column; gap:5px; } }
+@media(max-width:600px) { .wp-progress-card { padding:19px; } .wp-card-links { gap:12px; } }
+
+/* Linked work-package details: two balanced reading columns, never oversized tiles. */
+.wp-detail-page { padding-bottom:75px; }
+.wp-detail-navigation { display:flex;justify-content:space-between;gap:20px;padding:24px 0;border-bottom:1px solid var(--line); }
+.wp-detail-navigation a,.wp-detail-page > a { color:var(--computed);text-decoration:none;font-weight:750; }
+.wp-detail-header { position:relative;padding:54px 0 35px;max-width:1000px; }
+.wp-detail-header h1 {font-size:clamp(2.4rem,5vw,4rem);line-height:1.05;letter-spacing:-.04em;margin:12px 0;}
+.wp-detail-header > p:not(.eyebrow) {font-size:1.1rem;line-height:1.6;color:var(--muted);max-width:850px;}
+.wp-detail-state {display:inline-block;margin-top:14px;color:var(--warning);font-size:.85rem;text-transform:uppercase;font-weight:850;letter-spacing:.07em;}
+.wp-detail-state.status-planned {color:var(--published);}
+.wp-detail-columns {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;}
+.wp-detail-panel {background:var(--panel-alpha);border:1px solid var(--line);border-top:3px solid var(--computed);border-radius:20px;padding:27px;}
+.wp-detail-panel.wp-next-panel {border-top-color:var(--warning);}
+.wp-detail-panel h2 {font-size:1.36rem;margin:0 0 21px;}
+.wp-task-list {padding:0 0 0 21px;margin:0;display:grid;gap:22px;}
+.wp-task-list li {padding-left:5px;line-height:1.5;}
+.wp-task-list li::marker {color:var(--computed);font-weight:800;}
+.wp-next-panel .wp-task-list li::marker {color:var(--warning);}
+.wp-task-list strong {display:block;font-size:.96rem;}
+.wp-task-list small {display:block;color:var(--muted);font-size:.8rem;line-height:1.55;margin-top:7px;}
+.wp-evidence-boundary {border:1px solid var(--line);border-radius:14px;padding:20px 23px;margin-top:20px;}
+.wp-evidence-boundary strong {color:var(--warning);}
+.wp-evidence-boundary p {margin:6px 0 0;line-height:1.55;color:var(--muted);}
+.wp-detail-resources {margin-top:34px;}
+.wp-detail-resources h2 {font-size:1.18rem;}
+.wp-resource-links {display:flex;gap:12px;flex-wrap:wrap;margin-top:14px;}
+.wp-resource-links a {display:inline-block;color:var(--computed);text-decoration:none;padding:10px 13px;border:1px solid var(--line);border-radius:9px;font-size:.83rem;}
+.wp-detail-siblings {display:flex;flex-wrap:wrap;gap:10px;margin-top:42px;padding-top:20px;border-top:1px solid var(--line);}
+.wp-detail-siblings a {color:var(--muted);text-decoration:none;font-size:.78rem;border:1px solid var(--line);border-radius:12px;padding:10px;}
+.wp-detail-siblings a[aria-current="page"] {color:var(--computed);border-color:var(--computed);}
+@media(max-width:820px) {.wp-detail-columns {grid-template-columns:1fr;}.wp-detail-navigation{flex-wrap:wrap;}.wp-detail-panel{padding:21px;}}

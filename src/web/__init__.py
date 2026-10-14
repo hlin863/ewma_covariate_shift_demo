@@ -7,6 +7,7 @@ from src.web.decision_models import decision_models_bp
 from src.web.diethe import diethe_bp
 from src.web.gpr_kernel import gpr_kernel_bp
 from src.web.process import process_bp
+from src.web.work_plan import work_plan_bp
 from src.web.park_worked_example import park_worked_example_bp
 from src.web.test_results import (
     DEFAULT_TEST_REFRESH_SECONDS,
@@ -36,6 +37,10 @@ if "support" not in app.blueprints:
 
 if "test_results" not in app.blueprints:
     app.register_blueprint(test_results_bp)
+
+
+if "work_plan" not in app.blueprints:
+    app.register_blueprint(work_plan_bp)
 
 
 if "process" not in app.blueprints:

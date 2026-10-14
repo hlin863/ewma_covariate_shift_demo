@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ package.number }} · {{ package.title }} — Research work plan</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='home.css') }}">
+</head>
+<body class="home-page">
+<main class="page-shell home-shell wp-detail-page">
+  <nav class="wp-detail-navigation" aria-label="Work plan navigation">
+    <a href="{{ url_for('home') }}#progress">← Research homepage</a>
+    <a href="{{ url_for('work_plan.index') }}">All work packages</a>
+  </nav>
+  <header class="wp-detail-header">
+    <p class="eyebrow">WORK PLAN · {{ package.number }} · 14 OCTOBER 2026 EVIDENCE SNAPSHOT</p>
+    <h1>{{ package.title }}</h1>
+    <p>{{ detail.goal }}</p>
+    <span class="wp-detail-state status-{{ package.status|replace(' ', '-') }}">{{ package.status }}</span>
+  </header>
+  <section class="wp-detail-columns" aria-label="Research progress and upcoming actions">
+    <article class="wp-detail-panel">
+      <h2>Accomplished and evidenced</h2>
+      <ol class="wp-task-list">
+      {% for title, source in detail.accomplished %}
+        <li><strong>{{ title }}</strong><small>Evidence: {{ source }}</small></li>
+      {% endfor %}
+      </ol>
+    </article>
+    <article class="wp-detail-panel wp-next-panel">
+      <h2>Next tasks and acceptance criteria</h2>
+      <ol class="wp-task-list">
+      {% for title, criterion in detail.next_tasks %}
+        <li><strong>{{ title }}</strong><small>Completion evidence: {{ criterion }}</small></li>
+      {% endfor %}
+      </ol>
+    </article>
+  </section>
+  <aside class="wp-evidence-boundary"><strong>Research boundary</strong><p>{{ detail.boundary }}</p></aside>
+  <section class="wp-detail-resources">
+    <h2>Trace this work package</h2>
+    <div class="wp-resource-links">
+      {% for label, path in detail.code %}
+      <a href="https://github.com/hlin863/ewma_covariate_shift_demo/tree/main/{{ path }}" target="_blank" rel="noopener noreferrer">{{ label }} ↗</a>
+      {% endfor %}
+      <a href="{{ detail.notion }}" target="_blank" rel="noopener noreferrer">Notion research record ↗</a>
+    </div>
+  </section>
+  <nav class="wp-detail-siblings" aria-label="Other work packages">
+    {% for wp in packages %}
+    <a href="{{ url_for('work_plan.detail', wp_id=wp.id) }}" {% if wp.id == package.id %}aria-current="page"{% endif %}>{{ wp.number }} · {{ wp.title }}</a>
+    {% endfor %}
+  </nav>
+</main></body></html>

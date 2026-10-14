@@ -1,0 +1,6 @@
+<!doctype html>
+<html lang="en" data-theme="dark"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Research Work Plan · WP1–WP6</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}"><link rel="stylesheet" href="{{ url_for('static', filename='home.css') }}"></head>
+<body class="home-page"><main class="page-shell home-shell wp-detail-page"><a href="{{ url_for('home') }}#progress">← Research homepage</a>
+<header class="wp-detail-header"><p class="eyebrow">RESEARCH WORK PLAN · 14 OCTOBER 2026</p><h1>Six work packages</h1><p>Follow evidence already produced and the next research deliverables. Code presence alone does not establish numerical reproduction.</p></header>
+<div class="wp-progress-grid">{% for wp in packages %}<article class="wp-progress-card status-{{ wp.status|replace(' ', '-') }}"><div class="wp-card-heading"><span class="wp-number">{{ wp.number }}</span><span class="progress-status">{{ wp.status }}</span></div><h3>{{ wp.title }}</h3><p class="wp-card-evidence">{{ wp.evidence }}</p><div class="wp-card-links"><a href="{{ url_for('work_plan.detail', wp_id=wp.id) }}">Accomplishments and next steps →</a></div></article>{% endfor %}</div></main></body></html>

@@ -132,27 +132,52 @@
       </div>
     </section>
 
-    <details class="home-section home-disclosure" id="progress">
-      <summary>Current project progress</summary>
+    <section class="home-section wp-progress-section" id="progress" aria-labelledby="wp-progress-heading">
       <div class="home-section-heading">
         <div>
-          <p class="eyebrow">Current project progress</p>
-          <h2>The research pipeline, from detection to adaptation</h2>
+          <p class="eyebrow">Current project progress · {{ wp_updated }}</p>
+          <h2 id="wp-progress-heading">Progress against the six work packages</h2>
         </div>
-        <p>Implemented means code and automated contracts exist. It does not imply exact reproduction of published
-          subject-level values.</p>
+        <p>Evidence from the GitHub implementation and Notion project record. A working module is not the same as
+          reproduced scientific results or a completed PhD milestone.</p>
       </div>
-      <div class="pipeline-grid">
-        {% for stage in pipeline %}
-        <article class="pipeline-card status-{{ stage.status|replace(' ', '-') }}">
-          <div class="pipeline-top"><span>{{ stage.number }}</span><span class="progress-status">{{ stage.status
-              }}</span></div>
-          <h3>{{ stage.title }}</h3>
-          <p>{{ stage.detail }}</p>
+      <div class="wp-progress-grid" aria-label="Work package status">
+        {% for wp in work_packages %}
+        <article class="wp-progress-card status-{{ wp.status|replace(' ', '-') }}" id="{{ wp.id }}">
+          <div class="wp-card-heading">
+            <span class="wp-number">{{ wp.number }} <small>· {{ wp.stage }}</small></span>
+            <span class="progress-status">{{ wp.status }}</span>
+          </div>
+          <h3>{{ wp.title }}</h3>
+          <p class="wp-card-label">Current evidence</p>
+          <p class="wp-card-evidence">{{ wp.evidence }}</p>
+          <p class="wp-card-label">Next deliverable</p>
+          <p class="wp-card-next">{{ wp.next }}</p>
+          <div class="wp-card-links">
+            <a href="{{ url_for('work_plan.detail', wp_id=wp.id) }}">Accomplishments &amp; next steps →</a>
+            {% for label, href in wp.links %}<a href="{{ href }}">{{ label }} →</a>{% endfor %}
+            <a href="{{ wp.notion_url }}" target="_blank" rel="noopener noreferrer">Notion record ↗</a>
+          </div>
         </article>
         {% endfor %}
       </div>
-    </details>
+      <div class="wp-progress-note">
+        <strong>Evidence boundary</strong>
+        <p>Implementation, executed experiments and published numerical reproduction are distinct.
+          WP4–WP5 remain planned integrations despite existing supporting code.</p>
+      </div>
+      <details class="wp-technical-details">
+        <summary>View the original ten-stage implementation pipeline</summary>
+        <div class="pipeline-grid">
+          {% for stage in pipeline %}
+          <article class="pipeline-card status-{{ stage.status|replace(' ', '-') }}">
+            <div class="pipeline-top"><span>{{ stage.number }}</span><span class="progress-status">{{ stage.status }}</span></div>
+            <h3>{{ stage.title }}</h3><p>{{ stage.detail }}</p>
+          </article>
+          {% endfor %}
+        </div>
+      </details>
+    </section>
 
     <details class="home-section lineage-section home-disclosure" id="papers">
       <summary>Paper lineage</summary>
