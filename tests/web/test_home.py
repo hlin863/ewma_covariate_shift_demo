@@ -88,3 +88,17 @@ def test_paper_preview_rejects_non_pdf_files() -> None:
     response = app.test_client().get("/papers/README.md")
 
     assert response.status_code == 404
+
+def test_home_work_packages_are_grouped_and_evidence_bounded() -> None:
+    html = app.test_client().get("/").get_data(as_text=True)
+    assert "Progress against the six work packages" in html
+    for number in range(1, 7):
+        assert f'id="wp{number}"' in html
+        assert f"WP{number}" in html
+    assert html.count('class="wp-progress-card ') == 6
+    assert "View the original ten-stage implementation pipeline" in html
+    assert "Park CUSUM smoothing" in html
+    assert "Six-policy laboratory" in html
+    assert "Digital twin co-evolution" in html
+    assert "WP4–WP5 remain planned integrations" in html
+    assert "Notion record" in html
