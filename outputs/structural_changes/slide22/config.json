@@ -1,0 +1,13 @@
+{
+  "seed": 42,
+  "n": 1024,
+  "change_at": 512,
+  "rolling_window": 96,
+  "scenarios": [
+    "mean_shift",
+    "variance_shift",
+    "dependence_shift"
+  ],
+  "interpretation": "descriptive simulations; no measured detector performance",
+  "generator": "isolated stationary-target AR(1) scenarios"
+}
