@@ -33,18 +33,43 @@ def mean_cusum_curves(values: np.ndarray, *, min_segment: int = 8) -> dict:
     after = prefix[-1] - before
     left = np.sqrt((n - positions) / (n * positions))[:, None]
     right = np.sqrt(positions / (n * (n - positions)))[:, None]
+
     curves = np.abs(left * before - right * after) / means[None, :]
     maximum = curves.max(axis=1)
     average = curves.mean(axis=1)
     imax, iavg = int(maximum.argmax()), int(average.argmax())
+    
+    maximum_smoothed = smooth_cusum_curve(positions, maximum, span=0.1, degree=1)
+    average_smoothed = smooth_cusum_curve(positions, average, span=0.1, degree=1)
+
+    imax_smoothed, iavg_smoothed = int(maximum_smoothed.argmax()), int(average_smoothed.argmax())
+    
     return {
         "positions": positions.tolist(),
         "by_channel": curves.T.round(7).tolist(),
+
+        # Original raw CUSUM outputs
         "maximum": maximum.round(7).tolist(),
         "average": average.round(7).tolist(),
         "b_max": int(positions[imax]),
         "b_avg": int(positions[iavg]),
         "agreement_gap": abs(int(positions[imax]) - int(positions[iavg])),
+        
+        # new smoothed CUSUM outputs
+        "maximum_smoothed": maximum_smoothed.round(7).tolist(),
+        "average_smoothed": average_smoothed.round(7).tolist(),
+        "b_max_smoothed": int(positions[imax_smoothed]),
+        "b_avg_smoothed": int(positions[iavg_smoothed]),
+        "agreement_gap_smoothed": abs(int(positions[imax_smoothed]) - int(positions[iavg_smoothed])),
+
+        # Explicit smoothing configuration
+        "smoothing": {
+            "span": 0.1,
+            "degree": 1,
+            "kernel": "tricube",
+            "domain": "retained_candidate_positions",
+        },
+
         "channels": p,
         "observations": n,
         "min_segment": min_segment,
