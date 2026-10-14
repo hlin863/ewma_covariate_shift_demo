@@ -10,6 +10,8 @@ These notebooks follow the repository's research workflow. Keep the numbered seq
 | [04_structural_changes_save_results.ipynb](04_structural_changes_save_results.ipynb) | Structural-change result saving | Earlier results workflow |
 | [05_park_mean_cusum_smoothing.ipynb](05_park_mean_cusum_smoothing.ipynb) | Park (2023) aggregated mean-CUSUM and LOESS-style smoothing | Exploratory reproducible test and visualisation |
 
+| [06_park_structural_model_simulations.ipynb](06_park_structural_model_simulations.ipynb) | Park (2023) Figure 3 model A/B(i)/C synthetic examples | Seeded data-generation experiment, not the original traces |
+
 ## Running the notebooks
 
 Start Jupyter from the repository root or `notebooks/`. Install the repository's dependencies, including `numpy`, `matplotlib`, and Jupyter, in your environment. Execute cells sequentially. Notebook 05 locates the repository root automatically for either working directory and imports the production `src/detection/stage1/park_mean_cusum.py` directly, avoiding copied detector implementations.
