@@ -49,3 +49,54 @@ def mean_cusum_curves(values: np.ndarray, *, min_segment: int = 8) -> dict:
         "observations": n,
         "min_segment": min_segment,
     }
+
+
+def smooth_cusum_curve(positions, values, *, span=0.1, degree=1):
+    """LOESS-style local polynomial fit with tricube weights.
+
+    Park specifies span=0.1. Degree and weighting kernel are
+    explicit reconstruction choices, not verified author settings.
+    """
+    x = np.asarray(positions, dtype=float)
+    y = np.asarray(values, dtype=float)
+
+    if x.ndim != 1 or y.shape != x.shape:
+        raise ValueError("positions and values must be matching 1D arrays.")
+    if not np.isfinite(x).all() or not np.isfinite(y).all():
+        raise ValueError("Inputs must be finite.")
+    if len(x) < 3 or np.any(np.diff(x) <= 0):
+        raise ValueError("Need at least three strictly increasing positions.")
+    if not 0 < span <= 1:
+        raise ValueError("span must be in (0, 1].")
+    if degree not in (1, 2):
+        raise ValueError("degree must be 1 or 2.")
+    if len(x) < degree + 2:
+        raise ValueError("Too few observations for the selected degree.")
+
+    neighbours = min(len(x), max(degree + 2, int(np.ceil(span * len(x)))))
+    smoothed = np.empty_like(y)
+
+    for i, centre in enumerate(x):
+        distance = np.abs(x - centre)
+        indices = np.argsort(distance, kind="stable")[:neighbours]
+
+        # Include all points tied at the neighbourhood boundary.
+        radius = distance[indices[-1]]
+        indices = np.flatnonzero(distance <= radius)
+        offsets = (x[indices] - centre) / radius
+
+        weights = (1 - np.abs(offsets) ** 3) ** 3
+        design = np.vander(offsets, N=degree + 1, increasing=True)
+        root_weights = np.sqrt(weights)
+
+        coefficients, _, rank, _ = np.linalg.lstsq(
+            design * root_weights[:, None],
+            y[indices] * root_weights,
+            rcond=None,
+        )
+        if rank < degree + 1:
+            raise ValueError("Local polynomial fit is rank deficient.")
+
+        smoothed[i] = coefficients[0]
+
+    return smoothed
