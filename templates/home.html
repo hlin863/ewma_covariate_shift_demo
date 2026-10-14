@@ -154,6 +154,7 @@
           <p class="wp-card-label">Next deliverable</p>
           <p class="wp-card-next">{{ wp.next }}</p>
           <div class="wp-card-links">
+            <a href="{{ url_for('work_plan.detail', wp_id=wp.id) }}">Accomplishments &amp; next steps →</a>
             {% for label, href in wp.links %}<a href="{{ href }}">{{ label }} →</a>{% endfor %}
             <a href="{{ wp.notion_url }}" target="_blank" rel="noopener noreferrer">Notion record ↗</a>
           </div>
