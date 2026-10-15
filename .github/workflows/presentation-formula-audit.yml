@@ -192,4 +192,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: presentation-formula-audit
-          path: |\n            presentation_formula_audit.json\n            presentation_compatibility_audit.json\n            equation_compatible_progress_review.pptx
+          path: |
+            presentation_formula_audit.json
+            presentation_compatibility_audit.json
+            equation_compatible_progress_review.pptx
