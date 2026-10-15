@@ -75,6 +75,32 @@ jobs:
                 print(f"FORMULA_GROUP slide={n} index={i} children={len(sh.shapes)} types={types} text={text[:3]} xml_len={len(xml)} has_customgeom={'custGeom' in xml} has_blip={'blip' in xml} has_Glyph={'glyph' in xml}")
           PY
           command -v libreoffice || true
+      - name: Trace formula image fills to embedded media
+        run: |
+          python - <<'PY'
+          from pptx import Presentation
+          from zipfile import ZipFile
+          from collections import Counter
+          from lxml import etree
+          from pathlib import PurePosixPath
+          p="presentations/EWMA_Covariate_Shift_Progress_Review_Haocheng_Lin.pptx"
+          d=Presentation(p)
+          with ZipFile(p) as z:
+            media=[n for n in z.namelist() if n.startswith("ppt/media/")]
+            print("MEDIA_TOTAL",len(media),"TYPES",Counter(n.rsplit(".",1)[-1] for n in media))
+            for n in (9,10,11,12,13,20,22,23,26):
+              slide=d.slides[n-1]
+              for i,grp in enumerate(slide.shapes):
+                if grp.shape_type!=6:continue
+                for child in grp.shapes:
+                  blips=child._element.xpath(".//*[local-name()='blip']")
+                  for b in blips:
+                    embed=b.get("{http://schemas.openxmlformats.org/officeDocument/2006/relationships}embed")
+                    rid=slide.part.rels.get(embed) if embed else None
+                    part=rid.target_part if rid and not rid.is_external else None
+                    payload=part.blob if part else b""
+                    print(f"MEDIA_FORMULA slide={n} group={i} embed={embed} target={part.partname if part else None} size={len(payload)} prefix={payload[:18]!r} mime={part.content_type if part else None}")
+          PY
       - uses: actions/upload-artifact@v4
         with:
           name: presentation-formula-audit
