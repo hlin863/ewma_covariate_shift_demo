@@ -33,6 +33,17 @@ jobs:
             "https://raw.githubusercontent.com/hlin863/ewma_covariate_shift_demo/3f4e4c132c2ec93656748186270eae0657cd12f4/presentations/EWMA_Covariate_Shift_Progress_Review_Haocheng_Lin.pptx" \
             -o /tmp/presentation_oct11.pptx
           python scripts/audit_presentation_equations.py /tmp/presentation_oct11.pptx --json presentation_oct11_audit.json
+      - name: Trace mathematical slides through older October revisions
+        run: |
+          for sha in 3d999c79acf1ef4a3c1a9616fb1b687e28718f75 2a8d20b6ddb88d3d94eb4cb5f301018e99101046 f3ef2e8b7ac6f5ecdd576476f83bf20129543e5b 56b0d5d36be4dd9b67295344ef2f3694cfd2c1e6 c93a6053515bf5102f75c33a9965c8c5559a2ead ad4bbb304048fbf836a68d332f867e90ef25b224 3754c40eaca3976944b79d9cc5f82358482050c; do
+            url="https://raw.githubusercontent.com/hlin863/ewma_covariate_shift_demo/$sha/presentations/EWMA_Covariate_Shift_Progress_Review_Haocheng_Lin.pptx"
+            if curl -fsSL --retry 2 "$url" -o /tmp/history.pptx; then
+              echo "===== HISTORICAL $sha ====="
+              python scripts/audit_presentation_equations.py /tmp/history.pptx | grep -E "Current deck:|nativeMath= [1-9]|mathP= [1-9]|ole= [1-9]|SLIDE_TEXT:|CHECK UNRENDERED SOURCE" | head -55
+            else
+              echo "NOT_FOUND $sha"
+            fi
+          done
       - uses: actions/upload-artifact@v4
         with:
           name: presentation-formula-audit
