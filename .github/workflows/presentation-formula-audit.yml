@@ -27,6 +27,12 @@ jobs:
             presentations/EWMA_Covariate_Shift_Progress_Review_Haocheng_Lin.pptx \
             --baseline /tmp/presentation_before.pptx \
             --json presentation_formula_audit.json
+      - name: Audit 11 October deck for older equation-object baseline
+        run: |
+          curl -fsSL --retry 3 \
+            "https://raw.githubusercontent.com/hlin863/ewma_covariate_shift_demo/3f4e4c132c2ec93656748186270eae0657cd12f4/presentations/EWMA_Covariate_Shift_Progress_Review_Haocheng_Lin.pptx" \
+            -o /tmp/presentation_oct11.pptx
+          python scripts/audit_presentation_equations.py /tmp/presentation_oct11.pptx --json presentation_oct11_audit.json
       - uses: actions/upload-artifact@v4
         with:
           name: presentation-formula-audit
