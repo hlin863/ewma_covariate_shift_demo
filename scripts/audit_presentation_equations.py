@@ -40,6 +40,7 @@ def inventory(path: Path) -> list[dict]:
                 "pictures": sum(e.tag == f"{{{PRES}}}pic" for e in nodes),
                 "ole": sum(e.tag.rsplit("}",1)[-1] in ("oleObj","oleObject") for e in nodes),
                 "text_runs": len(strings),
+                "slide_text": " | ".join(s.strip().replace("\\n", " ") for s in strings if s.strip())[:4000],
                 "raw_tex": [s[:140] for s in strings if TEX.search(s)],
             })
     return result
@@ -55,6 +56,8 @@ def main() -> None:
     print(f"Current deck: {len(current)} slides")
     for row in current:
         print(f"{row['slide']:>2} {row['title'][:44]:44} nativeMath={row['native_math']:>2} mathP={row['math_paragraph']:>2} a14Math={row['office14_math']:>2} ole={row['ole']:>2} pictures={row['pictures']:>2} rawTeX={len(row['raw_tex']):>2}")
+        if row["slide"] in {8,9,10,11,12,13,22,23,24,25,26,43}:
+            print(f"      SLIDE_TEXT: {row['slide_text']}")
         for s in row["raw_tex"][:3]:
             print(f"      CHECK UNRENDERED SOURCE: {s!r}")
     risks=[]
@@ -64,6 +67,9 @@ def main() -> None:
         for r in baseline:
             unique_old_titles.setdefault(r["title"],[]).append(r)
         print(f"\nBaseline: {len(baseline)} slides")
+        for old in baseline:
+            if old["slide"] in {8,9,10,11,12,13,22,23,24,25,26,43}:
+                print(f"BASELINE_TEXT {old['slide']}: {old['slide_text']}")
         for r in current:
             match=unique_old_titles.get(r["title"],[])
             old=match[0] if len(match)==1 else old_by_num.get(r["slide"])
