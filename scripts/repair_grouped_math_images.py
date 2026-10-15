@@ -20,7 +20,7 @@ from pptx import Presentation
 from pptx.enum.shapes import MSO_SHAPE_TYPE
 
 EMBED = "{http://schemas.openxmlformats.org/officeDocument/2006/relationships}embed"
-FORMULA_SLIDES = {9, 10, 11, 12, 13, 20, 22, 23, 26}
+FORMULA_SLIDES = {7, 8, 9, 10, 11, 12, 13, 20, 22, 23, 26}
 
 
 def _slide_text(slide) -> str:

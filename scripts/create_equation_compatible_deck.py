@@ -14,7 +14,7 @@ from pptx import Presentation
 from pptx.enum.shapes import MSO_SHAPE_TYPE
 
 R_EMBED = "{http://schemas.openxmlformats.org/officeDocument/2006/relationships}embed"
-DEFAULT_SLIDES = {9, 10, 11, 12, 13, 20, 22, 23, 26}
+DEFAULT_SLIDES = {7, 8, 9, 10, 11, 12, 13, 20, 22, 23, 26}
 
 
 def convert(original: Path, target: Path, slide_numbers: set[int]) -> list[dict]:

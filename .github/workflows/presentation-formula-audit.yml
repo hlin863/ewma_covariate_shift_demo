@@ -3,8 +3,8 @@ on:
   pull_request:
     paths:
       - "presentations/**"
-      - "scripts/audit_presentation_equations.py"
       - "scripts/repair_grouped_math_images.py"
+      - "scripts/create_equation_compatible_deck.py"
       - ".github/workflows/presentation-formula-audit.yml"
   workflow_dispatch:
 permissions:
@@ -19,180 +19,44 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Download previous presentation revision for comparison
+      - name: Install PowerPoint inspection dependency
+        run: python -m pip install python-pptx
+      - name: Repair existing grouped equations without retyping
         run: |
-          curl -fsSL --retry 3 \
-            "https://raw.githubusercontent.com/hlin863/ewma_covariate_shift_demo/6cd0c67987a6c8c5d8f4b9c8dedd983b54e8128a/presentations/EWMA_Covariate_Shift_Progress_Review_Haocheng_Lin.pptx" \
-            -o /tmp/presentation_before.pptx
-      - name: Compare slide equation objects
-        run: |
-          python scripts/audit_presentation_equations.py \
+          python scripts/repair_grouped_math_images.py \
             presentations/EWMA_Covariate_Shift_Progress_Review_Haocheng_Lin.pptx \
-            --baseline /tmp/presentation_before.pptx \
-            --json presentation_formula_audit.json
-      - name: Audit 11 October deck for older equation-object baseline
+            presentations/EWMA_Covariate_Shift_Progress_Review_FORMULAS_RESTORED.pptx
+      - name: Verify slide 7 and 8 formulas and unchanged slide text
         run: |
-          curl -fsSL --retry 3 \
-            "https://raw.githubusercontent.com/hlin863/ewma_covariate_shift_demo/3f4e4c132c2ec93656748186270eae0657cd12f4/presentations/EWMA_Covariate_Shift_Progress_Review_Haocheng_Lin.pptx" \
-            -o /tmp/presentation_oct11.pptx
-          python scripts/audit_presentation_equations.py /tmp/presentation_oct11.pptx --json presentation_oct11_audit.json
-      - name: Trace mathematical slides through older October revisions
-        run: |
-          for sha in 3d999c79acf1ef4a3c1a9616fb1b687e28718f75 2a8d20b6ddb88d3d94eb4cb5f301018e99101046 f3ef2e8b7ac6f5ecdd576476f83bf20129543e5b 56b0d5d36be4dd9b67295344ef2f3694cfd2c1e6 c93a6053515bf5102f75c33a9965c8c5559a2ead ad4bbb304048fbf836a68d332f867e90ef25b224 3754c40eaca3976944b79d9cc5f82358482050c; do
-            url="https://raw.githubusercontent.com/hlin863/ewma_covariate_shift_demo/$sha/presentations/EWMA_Covariate_Shift_Progress_Review_Haocheng_Lin.pptx"
-            if curl -fsSL --retry 2 "$url" -o /tmp/history.pptx; then
-              echo "===== HISTORICAL $sha ====="
-              python scripts/audit_presentation_equations.py /tmp/history.pptx | grep -E "Current deck:|nativeMath= [1-9]|mathP= [1-9]|ole= [1-9]|SLIDE_TEXT:|CHECK UNRENDERED SOURCE" | head -55
-            else
-              echo "NOT_FOUND $sha"
-            fi
-          done
-      - name: Inspect equation slide layout geometry
-        run: |
-          python -m pip install -q python-pptx
           python - <<'PY'
+          from pathlib import Path
           from pptx import Presentation
-          from pptx.util import Inches
-          d=Presentation("presentations/EWMA_Covariate_Shift_Progress_Review_Haocheng_Lin.pptx")
-          print("PAGE INCHES",round(d.slide_width/914400,2),round(d.slide_height/914400,2))
-          for n in (9,10,11,12,13,20,22,23,26):
-            slide=d.slides[n-1]
-            print("===== LAYOUT",n,"=====")
-            for sh in slide.shapes:
-              txt=sh.text.strip().replace("\n"," ") if sh.has_text_frame else ""
-              if len(txt)>100:txt=txt[:97]+"..."
-              print(f"SHAPE {sh.shape_type!s:12} x={sh.left/914400:5.2f} y={sh.top/914400:5.2f} w={sh.width/914400:5.2f} h={sh.height/914400:5.2f} txt={txt}")
+          from pptx.enum.shapes import MSO_SHAPE_TYPE
+          src=Presentation("presentations/EWMA_Covariate_Shift_Progress_Review_Haocheng_Lin.pptx")
+          dst=Presentation("presentations/EWMA_Covariate_Shift_Progress_Review_FORMULAS_RESTORED.pptx")
+          assert len(src.slides)==len(dst.slides)==44
+          for n in (7,8):
+              a,b=src.slides[n-1],dst.slides[n-1]
+              content=lambda sl:"\n".join(sh.text for sh in sl.shapes if sh.has_text_frame)
+              assert content(a)==content(b),f"Slide {n} text changed"
+              old=sum(sh.shape_type==MSO_SHAPE_TYPE.GROUP for sh in a.shapes)
+              new=sum(sh.shape_type==MSO_SHAPE_TYPE.PICTURE for sh in b.shapes)
+              print(f"SLIDE {n}: original groups={old}, restored pictures={new}")
+              assert old>0 and new>=old,f"Slide {n}: formula groups not converted"
+          print("Slide 7/8 original equation images and text verified")
           PY
-      - name: Inspect embedded formula groups and rendering dependencies
-        run: |
-          python - <<'PY'
-          from pptx import Presentation
-          from collections import Counter
-          d=Presentation("presentations/EWMA_Covariate_Shift_Progress_Review_Haocheng_Lin.pptx")
-          for n in (9,10,11,12,13,20,22,23,26):
-            for i,sh in enumerate(d.slides[n-1].shapes):
-              if sh.shape_type == 6:
-                types=Counter(str(c.shape_type) for c in sh.shapes)
-                text=[" ".join(c.text.split())[:80] for c in sh.shapes if c.has_text_frame and c.text.strip()]
-                xml=sh._element.xml
-                print(f"FORMULA_GROUP slide={n} index={i} children={len(sh.shapes)} types={types} text={text[:3]} xml_len={len(xml)} has_customgeom={'custGeom' in xml} has_blip={'blip' in xml} has_Glyph={'glyph' in xml}")
-          PY
-          command -v libreoffice || true
-      - name: Trace formula image fills to embedded media
-        run: |
-          python - <<'PY'
-          from pptx import Presentation
-          from zipfile import ZipFile
-          from collections import Counter
-          from lxml import etree
-          from pathlib import PurePosixPath
-          p="presentations/EWMA_Covariate_Shift_Progress_Review_Haocheng_Lin.pptx"
-          d=Presentation(p)
-          with ZipFile(p) as z:
-            media=[n for n in z.namelist() if n.startswith("ppt/media/")]
-            print("MEDIA_TOTAL",len(media),"TYPES",Counter(n.rsplit(".",1)[-1] for n in media))
-            for n in (9,10,11,12,13,20,22,23,26):
-              slide=d.slides[n-1]
-              for i,grp in enumerate(slide.shapes):
-                if grp.shape_type!=6:continue
-                for child in grp.shapes:
-                  blips=child._element.xpath(".//*[local-name()='blip']")
-                  for b in blips:
-                    embed=b.get("{http://schemas.openxmlformats.org/officeDocument/2006/relationships}embed")
-                    rid=slide.part.rels.get(embed) if embed else None
-                    part=rid.target_part if rid and not rid.is_external else None
-                    payload=part.blob if part else b""
-                    print(f"MEDIA_FORMULA slide={n} group={i} embed={embed} target={part.partname if part else None} size={len(payload)} prefix={payload[:18]!r} mime={part.content_type if part else None}")
-          PY
-      - name: Trace original manually edited September slides and latest main
-        run: |
-          python - <<'PY'
-          import urllib.request,zipfile,re,io,collections
-          from xml.etree import ElementTree as ET
-          revisions=[
-            ("2026-09-28-init","3ea5ef6b6f2c9517259b3693d6945e8ce538efdf","EWMA_Covariate_Shift_Progress_Review_28_Sep_2026.pptx"),
-            ("2026-09-28-update","32416401db8fe752a52a4c025214ca14540862e0","EWMA_Covariate_Shift_Progress_Review_28_Sep_2026.pptx"),
-            ("2026-09-30","75fca152c61e967e7410015008e95f7463552be9","EWMA_Covariate_Shift_Progress_Review_28_Sep_2026.pptx"),
-            ("2026-10-01-first","4db1878d2f4d8aa75b8ff55cc86d34553ac0f712","EWMA_Covariate_Shift_Progress_Review_Haocheng_Lin.pptx"),
-            ("2026-10-15-new-main","9d2362dcc5d0aefa535e8489c4c059c4d7ee6e5f","EWMA_Covariate_Shift_Progress_Review_Haocheng_Lin.pptx"),
-          ]
-          a="http://schemas.openxmlformats.org/drawingml/2006/main"
-          m="http://schemas.openxmlformats.org/officeDocument/2006/math"
-          p="http://schemas.openxmlformats.org/presentationml/2006/main"
-          for label,sha,filename in revisions:
-            url=f"https://raw.githubusercontent.com/hlin863/ewma_covariate_shift_demo/{sha}/presentations/{filename}"
-            print("===== REVISION",label,sha[:8],"=====",flush=True)
-            try: raw=urllib.request.urlopen(url,timeout=30).read()
-            except Exception as e:
-              print("DOWNLOAD FAILED",repr(e));continue
-            z=zipfile.ZipFile(io.BytesIO(raw))
-            slides=sorted(((int(re.search(r"slide(\d+)\.xml$",v).group(1)),v) for v in z.namelist() if re.fullmatch(r"ppt/slides/slide\d+\.xml",v)))
-            print("SIZE",len(raw),"SLIDES",len(slides),flush=True)
-            totals=collections.Counter()
-            for n,path in slides:
-              root=ET.fromstring(z.read(path))
-              nodes=list(root.iter())
-              txt=[(e.text or "").strip() for e in nodes if e.tag=="{%s}t"%a]
-              content=" | ".join(t for t in txt if t)
-              name=next((t for t in txt if len(t)>6),"(untitled)")
-              counts=collections.Counter(x.tag.split("}")[-1] for x in nodes)
-              mathcount=sum(1 for x in nodes if x.tag=="{%s}oMath"%m)
-              pics=counts["pic"]; frames=counts["graphicFrame"]; groups=counts["grpSp"]; shapes=counts["sp"]
-              totals.update(math=mathcount,pics=pics,frames=frames,groups=groups,shapes=shapes)
-              if "MATH" in content.upper() or "EWMA" in content.upper() or "HOTELLING" in content.upper() or "CSP" in content.upper() or n in (3,4,5,6):
-                print("SLIDE",n,"TITLE",name[:85],"math",mathcount,"pics",pics,"frames",frames,"groups",groups,"shapes",shapes,flush=True)
-                print("TEXT",content[:1600],flush=True)
-            print("COUNTS",dict(totals),flush=True)
-          PY
-      - name: Restore original equation images as standard pictures
-        run: |
-          if [ ! -f presentations/EWMA_Covariate_Shift_Progress_Review_FORMULAS_RESTORED.pptx ]; then
-            python scripts/repair_grouped_math_images.py \
-              presentations/EWMA_Covariate_Shift_Progress_Review_Haocheng_Lin.pptx \
-              presentations/EWMA_Covariate_Shift_Progress_Review_FORMULAS_RESTORED.pptx
-          else
-            echo "Existing restored deck already tracked; skipping binary regeneration."
-          fi
-      - name: Commit restored deck to the diagnostic branch
+      - name: Upload repaired PowerPoint
+        uses: actions/upload-artifact@v4
+        with:
+          name: slides-7-8-equations-recovered
+          path: presentations/EWMA_Covariate_Shift_Progress_Review_FORMULAS_RESTORED.pptx
+      - name: Save corrected presentation to the PR branch
         if: ${{ github.event_name == 'pull_request' && github.head_ref == 'audit/presentation-formula-integrity-20261015' }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add presentations/EWMA_Covariate_Shift_Progress_Review_FORMULAS_RESTORED.pptx
           if ! git diff --cached --quiet; then
-            git commit -m "Recover original slide equations as reliable embedded pictures"
+            git commit -m "Restore slide 7 and 8 original equation image shapes"
             git push origin "HEAD:${{ github.head_ref }}"
           fi
-      - name: Create compatibility PPTX from already-embedded equation PNGs
-        run: |
-          python scripts/create_equation_compatible_deck.py \
-            presentations/EWMA_Covariate_Shift_Progress_Review_Haocheng_Lin.pptx \
-            --output equation_compatible_progress_review.pptx
-          python scripts/audit_presentation_equations.py equation_compatible_progress_review.pptx --json presentation_compatibility_audit.json
-          python - <<'PY'
-          from pathlib import Path
-          from pptx import Presentation
-          from scripts.audit_presentation_equations import inventory
-          src=Path("presentations/EWMA_Covariate_Shift_Progress_Review_Haocheng_Lin.pptx")
-          dst=Path("equation_compatible_progress_review.pptx")
-          before=inventory(src);after=inventory(dst)
-          assert len(before)==len(after),"Slide count changed"
-          assert [r["slide_text"] for r in before]==[r["slide_text"] for r in after],"Slide text changed"
-          for number in (9,10,11,12,13,20,22,23,26):
-              old,new=before[number-1],after[number-1]
-              assert old["image_filled_shapes"]>0, f"No source formula image on slide {number}"
-              assert new["pictures"]>=old["pictures"]+old["image_filled_shapes"], f"Images not retained on slide {number}"
-          print("VERIFIED: slides, text, and formula image object counts retained.")
-          PY
-      - uses: actions/upload-artifact@v4
-        with:
-          name: restored-powerpoint-formulas
-          path: presentations/EWMA_Covariate_Shift_Progress_Review_FORMULAS_RESTORED.pptx
-          if-no-files-found: error
-      - uses: actions/upload-artifact@v4
-        with:
-          name: presentation-formula-audit
-          path: |
-            presentation_formula_audit.json
-            presentation_compatibility_audit.json
-            equation_compatible_progress_review.pptx

@@ -13,6 +13,8 @@ reported zero equations. There is no basis for asking the author to
 retype mathematical formulas or replacing them with transcriptions
 from papers. The preserved images in the deck are the source of truth.
 
+The first compatibility repair accidentally omitted physical slides 7 and 8. These are now included in the source-asset conversion and asserted by CI; no formula re-entry is needed.
+
 Relevant physical slides and linked media in the audited 15 October
 presentation (commit `69ae8d4`):
 
