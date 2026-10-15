@@ -1,6 +1,6 @@
 {
   "input_sha256": "ea60071185aa70ce21cfa0c4604f5b0dd1f8e867cd928e46342057d1312fc292",
-  "output_sha256": "395adfc3560585291841988abf3bf8e2dff1424c049e2e65abe02320bad1482f",
+  "output_sha256": "932f4dcd30a9fe9a3b26d85e3c7719ab8a0a02871827b34cbac1bdd08957af8a",
   "source_slide_count": 44,
   "new_native_math_objects": 22,
   "prior_math_objects_preserved": 10,
@@ -8,6 +8,8 @@
   "untouched_zip_parts_byte_identical": true,
   "changed_slide_numbers": [
     4,
+    7,
+    8,
     9,
     10,
     11,
@@ -32,7 +34,7 @@
         626383
       ],
       "math_object": "native PowerPoint OfficeMath (m:oMath)",
-      "equation_object_sha256": "6dbfc3730c0534ac9ce9f2359c8cedbf875009d9cf2efdb9fc6d5b4b5086ca63",
+      "equation_object_sha256": "09816df7872eb0ef98a357ee68e1a8d7cef735283c9224442aabf07a03b756fc",
       "font_color": "white",
       "new_native_math_count": 1,
       "representation": "human-transcribed exact displayed formula from committed image; editable OMML, not original binary equation object"
@@ -48,7 +50,7 @@
         822960
       ],
       "math_object": "native PowerPoint OfficeMath (m:oMath)",
-      "equation_object_sha256": "08d6a694acb1a3b22532a80167f50ae7a82db743c2f8819e6412b3dd6911441d",
+      "equation_object_sha256": "46e8459e8c2877e682498993e6a4cb6e6a63380ebcf9193d69cf71c92839d5f6",
       "font_color": "dark",
       "new_native_math_count": 1,
       "representation": "human-transcribed exact displayed formula from committed image; editable OMML, not original binary equation object"
@@ -64,7 +66,7 @@
         960120
       ],
       "math_object": "native PowerPoint OfficeMath (m:oMath)",
-      "equation_object_sha256": "e7e874b860379dd47789e50e16b1e5b9f57eab53fda6b03d579b210aa0b5897a",
+      "equation_object_sha256": "62d0810c3003e76f03107be36e740b9cfdfb846e6a456a95d01ee1b7612bd07a",
       "font_color": "dark",
       "new_native_math_count": 1,
       "representation": "human-transcribed exact displayed formula from committed image; editable OMML, not original binary equation object"
@@ -80,7 +82,7 @@
         960120
       ],
       "math_object": "native PowerPoint OfficeMath (m:oMath)",
-      "equation_object_sha256": "c1bc76b6c3b031586e98dd845b15547df6ad1f309ec9dc2199670453dcde3723",
+      "equation_object_sha256": "17fccc88a282887f671a7acaf1f3df87748347d16f27b01fc3a7728ee2c88d1c",
       "font_color": "dark",
       "new_native_math_count": 1,
       "representation": "human-transcribed exact displayed formula from committed image; editable OMML, not original binary equation object"
@@ -96,7 +98,7 @@
         960120
       ],
       "math_object": "native PowerPoint OfficeMath (m:oMath)",
-      "equation_object_sha256": "fba7d1551270acfb357dfb7ab1854b16f38dce38be461336f2c4b9e226fe3ecb",
+      "equation_object_sha256": "2ff761331d69f88f695c731af76f7e34f8ad0589fdbfb7199596239c90e835c5",
       "font_color": "dark",
       "new_native_math_count": 1,
       "representation": "human-transcribed exact displayed formula from committed image; editable OMML, not original binary equation object"
@@ -112,7 +114,7 @@
         685800
       ],
       "math_object": "native PowerPoint OfficeMath (m:oMath)",
-      "equation_object_sha256": "70f67a2d1a23b104e6d123fd2a567ef42e5f280d01c3623a032413e86ab67400",
+      "equation_object_sha256": "e8856af46223707f1dd7acfc98dcd7be1952416304a21834690cc3bd2718f9ef",
       "font_color": "dark",
       "new_native_math_count": 1,
       "representation": "human-transcribed exact displayed formula from committed image; editable OMML, not original binary equation object"
@@ -128,7 +130,7 @@
         822960
       ],
       "math_object": "native PowerPoint OfficeMath (m:oMath)",
-      "equation_object_sha256": "c1f54deca0adede07aee70a4f1db8150c675af7c2ab75852c56e3535dc30868c",
+      "equation_object_sha256": "1f89f6d71fd286e12b0b567dc6ea6d0e1040ac35ef7bcd90929bd3b9e439f136",
       "font_color": "dark",
       "new_native_math_count": 1,
       "representation": "human-transcribed exact displayed formula from committed image; editable OMML, not original binary equation object"
@@ -144,7 +146,7 @@
         960120
       ],
       "math_object": "native PowerPoint OfficeMath (m:oMath)",
-      "equation_object_sha256": "45be2724d8bd77c2c65444d0dde857a362316e7d9ede0ec224f5dc4e94de45e8",
+      "equation_object_sha256": "85d8de7e5476efbdeb58b7048f5453c6118f07794d770694d587ca6f72f1ccc7",
       "font_color": "dark",
       "new_native_math_count": 1,
       "representation": "human-transcribed exact displayed formula from committed image; editable OMML, not original binary equation object"
@@ -160,7 +162,7 @@
         991876
       ],
       "math_object": "native PowerPoint OfficeMath (m:oMath)",
-      "equation_object_sha256": "8873e16a77f8b91af0d2f2c82b32f04dbe3b3fb76852f2367997f4acf4fad643",
+      "equation_object_sha256": "0c1d65c6e94e023dd097766a6e0cdc24a0ccb0689888f6125fbaaa5bfeb077c4",
       "font_color": "dark",
       "new_native_math_count": 1,
       "representation": "human-transcribed exact displayed formula from committed image; editable OMML, not original binary equation object"
@@ -176,7 +178,7 @@
         485775
       ],
       "math_object": "native PowerPoint OfficeMath (m:oMath)",
-      "equation_object_sha256": "a90d549931d98fc954f5318211574f8051fd70f6d13a6027c208edc7f4989d17",
+      "equation_object_sha256": "250d1dade4258dc0b8554ee9d71ce87034f33b3d551225088748bd0dc59420f2",
       "font_color": "white",
       "new_native_math_count": 1,
       "representation": "human-transcribed exact displayed formula from committed image; editable OMML, not original binary equation object"
@@ -192,7 +194,7 @@
         1343025
       ],
       "math_object": "native PowerPoint OfficeMath (m:oMath)",
-      "equation_object_sha256": "edc3a15ea38d8cf4b8de34dbd9636aaecdb7bebdf0200d9a8f5a32006476f9dc",
+      "equation_object_sha256": "46b97771fd0ded68568f78dd1f6b7c573e3e8b48276bf16d8f660fe6eb3e3e7b",
       "font_color": "white",
       "new_native_math_count": 1,
       "representation": "human-transcribed exact displayed formula from committed image; editable OMML, not original binary equation object"
@@ -208,7 +210,7 @@
         588645
       ],
       "math_object": "native PowerPoint OfficeMath (m:oMath)",
-      "equation_object_sha256": "627dec3e8b406f3a416e0c5afad4f07f1971b24ea0cb00548059f17c76aa88c7",
+      "equation_object_sha256": "8001013f75515b88986970b3fb482e219a49ede8faf59e815a8a2ab1b4b370b1",
       "font_color": "white",
       "new_native_math_count": 1,
       "representation": "human-transcribed exact displayed formula from committed image; editable OMML, not original binary equation object"
@@ -224,7 +226,7 @@
         1342063
       ],
       "math_object": "native PowerPoint OfficeMath (m:oMath)",
-      "equation_object_sha256": "481f7681d682e3b8bbb498d67555bc615bcb3200252a2348532a698ec7559c9b",
+      "equation_object_sha256": "4fa0cc9cb3d41bc74544d1767ad1731a953a772effc3d2c3573e07ca588a015f",
       "font_color": "dark",
       "new_native_math_count": 1,
       "representation": "human-transcribed exact displayed formula from committed image; editable OMML, not original binary equation object"
@@ -240,7 +242,7 @@
         491490
       ],
       "math_object": "native PowerPoint OfficeMath (m:oMath)",
-      "equation_object_sha256": "163c38fcbb56702cbb3500e362401a11167057d736dee485445efbef7cbab9cb",
+      "equation_object_sha256": "1c9bcf9d1978d0d3405c95e15d543b12cbd0b0266387a2b772af89ab819657e3",
       "font_color": "white",
       "new_native_math_count": 1,
       "representation": "human-transcribed exact displayed formula from committed image; editable OMML, not original binary equation object"
@@ -256,7 +258,7 @@
         483946
       ],
       "math_object": "native PowerPoint OfficeMath (m:oMath)",
-      "equation_object_sha256": "140a36e7c5d83d3a75e4d96f5ea638c060c8e48f3f756f8bae1811623b67bdf8",
+      "equation_object_sha256": "6416496db3cb00395f17157c0b21c276e43ba25b42fed9bf39809e82181ebfa8",
       "font_color": "white",
       "new_native_math_count": 1,
       "representation": "human-transcribed exact displayed formula from committed image; editable OMML, not original binary equation object"
@@ -272,7 +274,7 @@
         640080
       ],
       "math_object": "native PowerPoint OfficeMath (m:oMath)",
-      "equation_object_sha256": "17b4b1c5df87c37f96e157a40d8bfdffb44dd75434779f678c7f717dbf5eb5f4",
+      "equation_object_sha256": "d880533d4f0bbcfda963484e1704c6b73e702b44a19f973a68fcce6bd7ed7c8d",
       "font_color": "white",
       "new_native_math_count": 1,
       "representation": "human-transcribed exact displayed formula from committed image; editable OMML, not original binary equation object"
@@ -288,7 +290,7 @@
         680085
       ],
       "math_object": "native PowerPoint OfficeMath (m:oMath)",
-      "equation_object_sha256": "ece28e204afaadf601a9ab4a9d90e6684aba2394720df469d76030538e7688b6",
+      "equation_object_sha256": "88c6156ea87e45778ed00ce6d008db492f175105e526548fbdc2d8003fdb299a",
       "font_color": "white",
       "new_native_math_count": 1,
       "representation": "human-transcribed exact displayed formula from committed image; editable OMML, not original binary equation object"
@@ -304,7 +306,7 @@
         508635
       ],
       "math_object": "native PowerPoint OfficeMath (m:oMath)",
-      "equation_object_sha256": "079d248db9d749d49e91e954ef72afea2b6f5cb6c536df1b1527cebc1b2ac1ae",
+      "equation_object_sha256": "f6c3d5f140965aff469fa45582924886355ea09378f6d90da3130b6cf4f29a64",
       "font_color": "white",
       "new_native_math_count": 1,
       "representation": "human-transcribed exact displayed formula from committed image; editable OMML, not original binary equation object"
@@ -320,7 +322,7 @@
         891540
       ],
       "math_object": "native PowerPoint OfficeMath (m:oMath)",
-      "equation_object_sha256": "3a85568e142ca9e2f8a5e5632721828a9d826ad2fd60f75269bfc9998235a569",
+      "equation_object_sha256": "b5276165ee56edcdef9106ffbd019a12dbd147eabb5ac6210364e727f735f919",
       "font_color": "dark",
       "new_native_math_count": 1,
       "representation": "human-transcribed exact displayed formula from committed image; editable OMML, not original binary equation object"
@@ -336,7 +338,7 @@
         960120
       ],
       "math_object": "native PowerPoint OfficeMath (m:oMath)",
-      "equation_object_sha256": "35ae8fa7bd091cc4ff505abbbca9bbd6edb85b509334ef503c9021c9496db42e",
+      "equation_object_sha256": "5caa1ea425c117f373f5ac2fb414b8bd3dec7cb9b98500d5c2f7fd6460533fbe",
       "font_color": "dark",
       "new_native_math_count": 1,
       "representation": "human-transcribed exact displayed formula from committed image; editable OMML, not original binary equation object"
@@ -352,7 +354,7 @@
         1028700
       ],
       "math_object": "native PowerPoint OfficeMath (m:oMath)",
-      "equation_object_sha256": "c72c5507b068ae7b95cdbf40e882f561e9a42adeb0e7c775f968257cb9730911",
+      "equation_object_sha256": "5a50494a4685f0bdce1aec0c903b151d1f22c96ca9ac86189aaad92465818fae",
       "font_color": "dark",
       "new_native_math_count": 1,
       "representation": "human-transcribed exact displayed formula from committed image; editable OMML, not original binary equation object"
@@ -368,7 +370,7 @@
         250288
       ],
       "math_object": "native PowerPoint OfficeMath (m:oMath)",
-      "equation_object_sha256": "fc66abc70f219249c70d9338208a84a1b64248495a15d430104f770ac8db3fbc",
+      "equation_object_sha256": "4f154d7609bfc65c1cc77bd3a5987736b0e54d75e3eb3a326adf8d7c43d2bfb5",
       "font_color": "cyan",
       "new_native_math_count": 1,
       "representation": "human-transcribed exact displayed formula from committed image; editable OMML, not original binary equation object"
