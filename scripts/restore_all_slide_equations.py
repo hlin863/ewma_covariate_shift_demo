@@ -43,7 +43,7 @@ def C(*parts):return list(parts)
 # The dictionary keys are SHA256 prefixes of the corresponding original media.
 MATH_BY_SLIDE={
 4:[
- ("4c0726008","MSE over d dimensions",C(S("L","t")," = MSE(",S("X","t"),", ",S("X̂","t"),") = ",F("1","d"),N("∑","j=1","d",C("(",B("X","t,j","")," − ",B("X̂","t,j",""),U(")","2"))),"white")
+ ("4c0726008","MSE over d dimensions",C(S("L","t")," = MSE(",S("X","t"),", ",S("X̂","t"),") = ",F("1","d"),N("∑","j=1","d",C("(",B("X","t,j","")," − ",B("X̂","t,j",""),U(")","2")))),"white")
 ],
 9:[
  ("bebd58d6b","Kronecker delta",C(S("δ","ij")," = 1 (i = j),     ",S("δ","ij")," = 0 (i ≠ j)"),"dark")
