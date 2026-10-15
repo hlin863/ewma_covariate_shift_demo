@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Read-only OOXML equation-inventory audit for the research slide deck."""
+"""Read-only OOXML equation inventory, including image-filled custom shapes."""
 from __future__ import annotations
 
 import argparse
@@ -38,6 +38,8 @@ def inventory(path: Path) -> list[dict]:
                 "math_paragraph": sum(e.tag == f"{{{MATH}}}oMathPara" for e in nodes),
                 "office14_math": sum(e.tag == f"{{{M14}}}m" for e in nodes),
                 "pictures": sum(e.tag == f"{{{PRES}}}pic" for e in nodes),
+                "image_filled_shapes": len(root.findall(f".//{{{PRES}}}sp/{{{PRES}}}spPr/{{{DRAW}}}blipFill")),
+                "image_references": sum(e.tag == f"{{{DRAW}}}blip" for e in nodes),
                 "ole": sum(e.tag.rsplit("}",1)[-1] in ("oleObj","oleObject") for e in nodes),
                 "text_runs": len(strings),
                 "slide_text": " | ".join(s.strip().replace("\\n", " ") for s in strings if s.strip())[:4000],
@@ -55,7 +57,7 @@ def main() -> None:
     baseline=inventory(args.baseline) if args.baseline else None
     print(f"Current deck: {len(current)} slides")
     for row in current:
-        print(f"{row['slide']:>2} {row['title'][:44]:44} nativeMath={row['native_math']:>2} mathP={row['math_paragraph']:>2} a14Math={row['office14_math']:>2} ole={row['ole']:>2} pictures={row['pictures']:>2} rawTeX={len(row['raw_tex']):>2}")
+        print(f"{row['slide']:>2} {row['title'][:44]:44} nativeMath={row['native_math']:>2} mathP={row['math_paragraph']:>2} a14Math={row['office14_math']:>2} ole={row['ole']:>2} pictures={row['pictures']:>2} filledShapes={row['image_filled_shapes']:>2} rawTeX={len(row['raw_tex']):>2}")
         if row["slide"] in {8,9,10,11,12,13,22,23,24,25,26,43}:
             print(f"      SLIDE_TEXT: {row['slide_text']}")
         for s in row["raw_tex"][:3]:
@@ -74,7 +76,7 @@ def main() -> None:
             match=unique_old_titles.get(r["title"],[])
             old=match[0] if len(match)==1 else old_by_num.get(r["slide"])
             if old is None: continue
-            decreases={k:(old[k],r[k]) for k in ("native_math","math_paragraph","office14_math","ole","pictures") if r[k]<old[k]}
+            decreases={k:(old[k],r[k]) for k in ("native_math","math_paragraph","office14_math","ole","pictures","image_filled_shapes") if r[k]<old[k]}
             if decreases:
                 risks.append({"slide":r["slide"],"title":r["title"],"baseline_slide":old["slide"],"decreased":decreases})
                 print(f"REVIEW POTENTIAL LOSS slide {r['slide']} (baseline {old['slide']}): {r['title']} | {decreases}")
