@@ -101,6 +101,46 @@ jobs:
                     payload=part.blob if part else b""
                     print(f"MEDIA_FORMULA slide={n} group={i} embed={embed} target={part.partname if part else None} size={len(payload)} prefix={payload[:18]!r} mime={part.content_type if part else None}")
           PY
+      - name: Trace original manually edited September slides and latest main
+        run: |
+          python - <<'PY'
+          import urllib.request,zipfile,re,io,collections
+          from xml.etree import ElementTree as ET
+          revisions=[
+            ("2026-09-28-init","3ea5ef6b6f2c9517259b3693d6945e8ce538efdf","EWMA_Covariate_Shift_Progress_Review_28_Sep_2026.pptx"),
+            ("2026-09-28-update","32416401db8fe752a52a4c025214ca14540862e0","EWMA_Covariate_Shift_Progress_Review_28_Sep_2026.pptx"),
+            ("2026-09-30","75fca152c61e967e7410015008e95f7463552be9","EWMA_Covariate_Shift_Progress_Review_28_Sep_2026.pptx"),
+            ("2026-10-01-first","4db1878d2f4d8aa75b8ff55cc86d34553ac0f712","EWMA_Covariate_Shift_Progress_Review_Haocheng_Lin.pptx"),
+            ("2026-10-15-new-main","9d2362dcc5d0aefa535e8489c4c059c4d7ee6e5f","EWMA_Covariate_Shift_Progress_Review_Haocheng_Lin.pptx"),
+          ]
+          a="http://schemas.openxmlformats.org/drawingml/2006/main"
+          m="http://schemas.openxmlformats.org/officeDocument/2006/math"
+          p="http://schemas.openxmlformats.org/presentationml/2006/main"
+          for label,sha,filename in revisions:
+            url=f"https://raw.githubusercontent.com/hlin863/ewma_covariate_shift_demo/{sha}/presentations/{filename}"
+            print("===== REVISION",label,sha[:8],"=====",flush=True)
+            try: raw=urllib.request.urlopen(url,timeout=30).read()
+            except Exception as e:
+              print("DOWNLOAD FAILED",repr(e));continue
+            z=zipfile.ZipFile(io.BytesIO(raw))
+            slides=sorted(((int(re.search(r"slide(\d+)\.xml$",v).group(1)),v) for v in z.namelist() if re.fullmatch(r"ppt/slides/slide\d+\.xml",v)))
+            print("SIZE",len(raw),"SLIDES",len(slides),flush=True)
+            totals=collections.Counter()
+            for n,path in slides:
+              root=ET.fromstring(z.read(path))
+              nodes=list(root.iter())
+              txt=[(e.text or "").strip() for e in nodes if e.tag=="{%s}t"%a]
+              content=" | ".join(t for t in txt if t)
+              name=next((t for t in txt if len(t)>6),"(untitled)")
+              counts=collections.Counter(x.tag.split("}")[-1] for x in nodes)
+              mathcount=sum(1 for x in nodes if x.tag=="{%s}oMath"%m)
+              pics=counts["pic"]; frames=counts["graphicFrame"]; groups=counts["grpSp"]; shapes=counts["sp"]
+              totals.update(math=mathcount,pics=pics,frames=frames,groups=groups,shapes=shapes)
+              if "MATH" in content.upper() or "EWMA" in content.upper() or "HOTELLING" in content.upper() or "CSP" in content.upper() or n in (3,4,5,6):
+                print("SLIDE",n,"TITLE",name[:85],"math",mathcount,"pics",pics,"frames",frames,"groups",groups,"shapes",shapes,flush=True)
+                print("TEXT",content[:1600],flush=True)
+            print("COUNTS",dict(totals),flush=True)
+          PY
       - uses: actions/upload-artifact@v4
         with:
           name: presentation-formula-audit
