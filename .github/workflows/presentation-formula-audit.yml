@@ -163,6 +163,27 @@ jobs:
             git commit -m "Recover original slide equations as reliable embedded pictures"
             git push origin "HEAD:${{ github.head_ref }}"
           fi
+      - name: Create compatibility PPTX from already-embedded equation PNGs
+        run: |
+          python scripts/create_equation_compatible_deck.py \
+            presentations/EWMA_Covariate_Shift_Progress_Review_Haocheng_Lin.pptx \
+            --output equation_compatible_progress_review.pptx
+          python scripts/audit_presentation_equations.py equation_compatible_progress_review.pptx --json presentation_compatibility_audit.json
+          python - <<'PY'
+          from pathlib import Path
+          from pptx import Presentation
+          from scripts.audit_presentation_equations import inventory
+          src=Path("presentations/EWMA_Covariate_Shift_Progress_Review_Haocheng_Lin.pptx")
+          dst=Path("equation_compatible_progress_review.pptx")
+          before=inventory(src);after=inventory(dst)
+          assert len(before)==len(after),"Slide count changed"
+          assert [r["slide_text"] for r in before]==[r["slide_text"] for r in after],"Slide text changed"
+          for number in (9,10,11,12,13,20,22,23,26):
+              old,new=before[number-1],after[number-1]
+              assert old["image_filled_shapes"]>0, f"No source formula image on slide {number}"
+              assert new["pictures"]>=old["pictures"]+old["image_filled_shapes"], f"Images not retained on slide {number}"
+          print("VERIFIED: slides, text, and formula image object counts retained.")
+          PY
       - uses: actions/upload-artifact@v4
         with:
           name: restored-powerpoint-formulas
@@ -171,4 +192,4 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: presentation-formula-audit
-          path: presentation_formula_audit.json
+          path: |\n            presentation_formula_audit.json\n            presentation_compatibility_audit.json\n            equation_compatible_progress_review.pptx
