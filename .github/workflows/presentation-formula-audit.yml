@@ -44,6 +44,22 @@ jobs:
               echo "NOT_FOUND $sha"
             fi
           done
+      - name: Inspect equation slide layout geometry
+        run: |
+          python -m pip install -q python-pptx
+          python - <<'PY'
+          from pptx import Presentation
+          from pptx.util import Inches
+          d=Presentation("presentations/EWMA_Covariate_Shift_Progress_Review_Haocheng_Lin.pptx")
+          print("PAGE INCHES",round(d.slide_width/914400,2),round(d.slide_height/914400,2))
+          for n in (9,10,11,12,13,20,22,23,26):
+            slide=d.slides[n-1]
+            print("===== LAYOUT",n,"=====")
+            for sh in slide.shapes:
+              txt=sh.text.strip().replace("\n"," ") if sh.has_text_frame else ""
+              if len(txt)>100:txt=txt[:97]+"..."
+              print(f"SHAPE {sh.shape_type!s:12} x={sh.left/914400:5.2f} y={sh.top/914400:5.2f} w={sh.width/914400:5.2f} h={sh.height/914400:5.2f} txt={txt}")
+          PY
       - uses: actions/upload-artifact@v4
         with:
           name: presentation-formula-audit
