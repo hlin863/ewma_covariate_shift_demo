@@ -37,6 +37,10 @@ def extract(path):
                 digest=hashlib.sha256(blob).hexdigest()
                 image_name=f"s{n:02d}_object{k:02d}_{j}_{digest[:9]}.png"
                 img.save(OUTPUT/image_name)
+                if n in {4,20,22}:
+                    background=Image.new("RGBA",img.size,(16,27,46,255))
+                    background.alpha_composite(img)
+                    background.convert("RGB").save(OUTPUT/("dark_"+image_name))
                 rect=[round(v/914400,2) for v in (sh.left,sh.top,sh.width,sh.height)]
                 rec["assets"].append({"file":image_name,"sha256":digest,"shape_name":sh.name,"kind":str(kind(sh)),"bounds_inches":rect,"size_pixels":img.size})
                 thumbs.append((n,image_name,rec["title"],img))
