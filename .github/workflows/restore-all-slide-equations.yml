@@ -29,6 +29,44 @@ jobs:
             /tmp/source-main.pptx \
             presentations/EWMA_Covariate_Shift_Progress_Review_FULLY_EDITABLE_PROOF.pptx \
             presentations/COMPLETE_EQUATION_RESTORATION_AUDIT.json
+      - name: Render equation slides for visual review
+        run: |
+          set -e
+          if ! command -v libreoffice >/dev/null; then
+            sudo apt-get update -qq
+            sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq libreoffice-impress poppler-utils
+          fi
+          mkdir -p /tmp/native-math-render presentations/equation_render_review
+          libreoffice -env:UserInstallation=file:///tmp/lo_full_deck_math \
+            --headless --convert-to pdf --outdir /tmp/native-math-render \
+            presentations/EWMA_Covariate_Shift_Progress_Review_FULLY_EDITABLE_PROOF.pptx
+          PDF=/tmp/native-math-render/EWMA_Covariate_Shift_Progress_Review_FULLY_EDITABLE_PROOF.pdf
+          test -s "$PDF"
+          for n in 4 7 8 9 10 11 12 13 20 21 22 23 26 36; do
+            pdftoppm -f "$n" -l "$n" -singlefile -scale-to-x 1100 -scale-to-y -1 -png "$PDF" "presentations/equation_render_review/slide_${n}"
+          done
+          python - <<'PY'
+          from PIL import Image,ImageDraw
+          from pathlib import Path
+          root=Path("presentations/equation_render_review")
+          files=sorted(root.glob("slide_*.png"),key=lambda p:int(p.stem.split("_")[1]))
+          assert len(files)==14
+          W=1100;H=660
+          out=Image.new("RGB",(W*2,H*7),"#e9eef3")
+          for i,p in enumerate(files):
+              im=Image.open(p).convert("RGB")
+              im.thumbnail((W-15,H-35))
+              x=(i%2)*W;y=(i//2)*H
+              out.paste(im,(x,y+30))
+              ImageDraw.Draw(out).text((x+7,y+5),p.stem,fill="#152030")
+          out.save(root/"all_equation_slides_overview.jpg",quality=88)
+          print("RENDERED",len(files),"math slides as independent PNGs and review contact sheet")
+          PY
+      - name: Upload visual review alongside the editable PowerPoint
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-math-render-review
+          path: presentations/equation_render_review
       - name: Upload proof and provenance
         uses: actions/upload-artifact@v4
         with:
@@ -41,7 +79,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add presentations/EWMA_Covariate_Shift_Progress_Review_FULLY_EDITABLE_PROOF.pptx presentations/COMPLETE_EQUATION_RESTORATION_AUDIT.json
+          git add presentations/EWMA_Covariate_Shift_Progress_Review_FULLY_EDITABLE_PROOF.pptx presentations/COMPLETE_EQUATION_RESTORATION_AUDIT.json presentations/equation_render_review/
           if ! git diff --cached --quiet; then
             git commit -m "Verify all 22 mathematical images as editable OfficeMath objects"
             git push origin "HEAD:${{ github.head_ref }}"
