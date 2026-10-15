@@ -8,12 +8,14 @@ on:
       - ".github/workflows/presentation-formula-audit.yml"
   workflow_dispatch:
 permissions:
-  contents: read
+  contents: write
 jobs:
   equation-audit:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -144,9 +146,23 @@ jobs:
           PY
       - name: Restore original equation images as standard pictures
         run: |
-          python scripts/repair_grouped_math_images.py \
-            presentations/EWMA_Covariate_Shift_Progress_Review_Haocheng_Lin.pptx \
-            presentations/EWMA_Covariate_Shift_Progress_Review_FORMULAS_RESTORED.pptx
+          if [ ! -f presentations/EWMA_Covariate_Shift_Progress_Review_FORMULAS_RESTORED.pptx ]; then
+            python scripts/repair_grouped_math_images.py \
+              presentations/EWMA_Covariate_Shift_Progress_Review_Haocheng_Lin.pptx \
+              presentations/EWMA_Covariate_Shift_Progress_Review_FORMULAS_RESTORED.pptx
+          else
+            echo "Existing restored deck already tracked; skipping binary regeneration."
+          fi
+      - name: Commit restored deck to the diagnostic branch
+        if: ${{ github.event_name == 'pull_request' && github.head_ref == 'audit/presentation-formula-integrity-20261015' }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add presentations/EWMA_Covariate_Shift_Progress_Review_FORMULAS_RESTORED.pptx
+          if ! git diff --cached --quiet; then
+            git commit -m "Recover original slide equations as reliable embedded pictures"
+            git push origin "HEAD:${{ github.head_ref }}"
+          fi
       - uses: actions/upload-artifact@v4
         with:
           name: restored-powerpoint-formulas
