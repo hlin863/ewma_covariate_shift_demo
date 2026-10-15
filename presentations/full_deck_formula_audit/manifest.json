@@ -54,25 +54,8 @@
   {
     "slide": 4,
     "title": "LITERATURE REVIEW",
-    "native_omml": 0,
-    "assets": [
-      {
-        "file": "s04_object25_0_4c0726008.png",
-        "sha256": "4c0726008aa741b6d6d2b0e06ffda1ef7d4bd185085dc84060d9d431a37771cb",
-        "shape_name": "Freeform 33",
-        "kind": "FREEFORM (5)",
-        "bounds_inches": [
-          0.0,
-          0.0,
-          4.94,
-          0.91
-        ],
-        "size_pixels": [
-          635,
-          118
-        ]
-      }
-    ]
+    "native_omml": 1,
+    "assets": []
   },
   {
     "slide": 5,
@@ -101,165 +84,32 @@
   {
     "slide": 9,
     "title": "MATHEMATICAL READING UPDATE · 12 OCTOBER 2026",
-    "native_omml": 0,
-    "assets": [
-      {
-        "file": "s09_object04_0_bebd58d6b.png",
-        "sha256": "bebd58d6b1fce893950a2704ed9ea4d37069b8a83000cff0e807647986da7e5b",
-        "shape_name": "Freeform 7",
-        "kind": "FREEFORM (5)",
-        "bounds_inches": [
-          0.0,
-          0.0,
-          10.59,
-          1.2
-        ],
-        "size_pixels": [
-          866,
-          99
-        ]
-      }
-    ]
+    "native_omml": 1,
+    "assets": []
   },
   {
     "slide": 10,
     "title": "MATHEMATICAL READING UPDATE · 12 OCTOBER 2026",
-    "native_omml": 0,
-    "assets": [
-      {
-        "file": "s10_object04_0_1b76839ae.png",
-        "sha256": "1b76839ae5fbb0cf8a95882a8303f3ad2b632f29f0e66c16adeab952574499b3",
-        "shape_name": "Freeform 7",
-        "kind": "FREEFORM (5)",
-        "bounds_inches": [
-          0.0,
-          0.0,
-          10.43,
-          1.4
-        ],
-        "size_pixels": [
-          812,
-          109
-        ]
-      }
-    ]
+    "native_omml": 1,
+    "assets": []
   },
   {
     "slide": 11,
     "title": "MATHEMATICAL READING UPDATE · 12 OCTOBER 2026",
-    "native_omml": 0,
-    "assets": [
-      {
-        "file": "s11_object04_0_91eef13af.png",
-        "sha256": "91eef13aff0c9dea50e53125e41a04eda40a0269ac7f9f2f97bdd16c93370330",
-        "shape_name": "Freeform 7",
-        "kind": "FREEFORM (5)",
-        "bounds_inches": [
-          0.0,
-          0.0,
-          2.59,
-          1.4
-        ],
-        "size_pixels": [
-          237,
-          128
-        ]
-      },
-      {
-        "file": "s11_object05_0_6ef44f2ec.png",
-        "sha256": "6ef44f2ec853d8a3104fd93dfec37c9e0b0838845c06cd204b98cbec94ad95bc",
-        "shape_name": "Freeform 9",
-        "kind": "FREEFORM (5)",
-        "bounds_inches": [
-          0.0,
-          0.0,
-          10.51,
-          1.4
-        ],
-        "size_pixels": [
-          811,
-          108
-        ]
-      },
-      {
-        "file": "s11_object08_0_689cb93a6.png",
-        "sha256": "689cb93a6095d941cd5ba8deae10017ec73eb15c6dab84c0172fcf05426f063a",
-        "shape_name": "Freeform 13",
-        "kind": "FREEFORM (5)",
-        "bounds_inches": [
-          0.0,
-          0.0,
-          8.86,
-          1.0
-        ],
-        "size_pixels": [
-          814,
-          92
-        ]
-      }
-    ]
+    "native_omml": 3,
+    "assets": []
   },
   {
     "slide": 12,
     "title": "MATHEMATICAL READING UPDATE · 12 OCTOBER 2026",
-    "native_omml": 0,
-    "assets": [
-      {
-        "file": "s12_object04_0_a26836a86.png",
-        "sha256": "a26836a86353b889fd81ce5424cc8520de70aebf511dbc8e77dc5bff2b6d2d73",
-        "shape_name": "Freeform 7",
-        "kind": "FREEFORM (5)",
-        "bounds_inches": [
-          0.0,
-          0.0,
-          10.71,
-          1.2
-        ],
-        "size_pixels": [
-          914,
-          103
-        ]
-      }
-    ]
+    "native_omml": 1,
+    "assets": []
   },
   {
     "slide": 13,
     "title": "MATHEMATICAL READING UPDATE · 12 OCTOBER 2026",
-    "native_omml": 0,
-    "assets": [
-      {
-        "file": "s13_object04_0_90a2256e1.png",
-        "sha256": "90a2256e107a7ddf8dd99b77d4bcaa7230f096a57456e130036f90cace43281f",
-        "shape_name": "Freeform 7",
-        "kind": "FREEFORM (5)",
-        "bounds_inches": [
-          0.0,
-          0.0,
-          17.62,
-          1.4
-        ],
-        "size_pixels": [
-          1309,
-          104
-        ]
-      },
-      {
-        "file": "s13_object05_0_918bcb4e3.png",
-        "sha256": "918bcb4e36bd94a2cb27dada1c14c2d94c7d5858169ea8d7a4042bbe0485f598",
-        "shape_name": "Freeform 9",
-        "kind": "FREEFORM (5)",
-        "bounds_inches": [
-          0.0,
-          0.0,
-          20.0,
-          1.45
-        ],
-        "size_pixels": [
-          1369,
-          99
-        ]
-      }
-    ]
+    "native_omml": 2,
+    "assets": []
   },
   {
     "slide": 14,
@@ -300,206 +150,26 @@
   {
     "slide": 20,
     "title": "FEATURE EXTRACTION",
-    "native_omml": 0,
-    "assets": [
-      {
-        "file": "s20_object06_0_890c6953a.png",
-        "sha256": "890c6953aa0829c8d2308d028ba950badf34dc1c22bd38ec5cc3709bb5bf115f",
-        "shape_name": "Freeform 9",
-        "kind": "FREEFORM (5)",
-        "bounds_inches": [
-          0.0,
-          0.0,
-          2.31,
-          0.71
-        ],
-        "size_pixels": [
-          194,
-          60
-        ]
-      },
-      {
-        "file": "s20_object10_0_c72320940.png",
-        "sha256": "c7232094036d8549c72ca35b2fc1b7805123b5f507f9a7d3437b743ab376b1c2",
-        "shape_name": "Freeform 14",
-        "kind": "FREEFORM (5)",
-        "bounds_inches": [
-          0.0,
-          0.0,
-          5.39,
-          1.96
-        ],
-        "size_pixels": [
-          453,
-          165
-        ]
-      },
-      {
-        "file": "s20_object14_0_54ff4741a.png",
-        "sha256": "54ff4741a733d2d87e19ca53cd33c4f4e627b7169c31f681532f6e81042edf7d",
-        "shape_name": "Freeform 19",
-        "kind": "FREEFORM (5)",
-        "bounds_inches": [
-          0.0,
-          0.0,
-          7.85,
-          0.86
-        ],
-        "size_pixels": [
-          754,
-          83
-        ]
-      }
-    ]
+    "native_omml": 3,
+    "assets": []
   },
   {
     "slide": 21,
     "title": "REPRESENTATION VERSUS ADAPTATION",
-    "native_omml": 0,
-    "assets": [
-      {
-        "file": "s21_object04_0_5d51b3a3e.png",
-        "sha256": "5d51b3a3e8674eb9695acf223e341378caccfd7083a4ae4da844c42131b1ea92",
-        "shape_name": "Freeform 7",
-        "kind": "FREEFORM (5)",
-        "bounds_inches": [
-          0.0,
-          0.0,
-          23.5,
-          1.96
-        ],
-        "size_pixels": [
-          1393,
-          116
-        ]
-      }
-    ]
+    "native_omml": 1,
+    "assets": []
   },
   {
     "slide": 22,
     "title": "DETECTOR MATHEMATICS",
-    "native_omml": 0,
-    "assets": [
-      {
-        "file": "s22_object06_0_18da8bf0e.png",
-        "sha256": "18da8bf0ed2448aea2ab4a412ce8bb2c6a51689ec2f0fecf711fd59b264f83c0",
-        "shape_name": "Freeform 9",
-        "kind": "FREEFORM (5)",
-        "bounds_inches": [
-          0.0,
-          0.0,
-          10.8,
-          0.72
-        ],
-        "size_pixels": [
-          1037,
-          69
-        ]
-      },
-      {
-        "file": "s22_object08_0_ee619e437.png",
-        "sha256": "ee619e43770bd18914c4cc8e2cd2a566ec6a0ff6cf5fcc78855ba9c74137ff10",
-        "shape_name": "Freeform 12",
-        "kind": "FREEFORM (5)",
-        "bounds_inches": [
-          0.0,
-          0.0,
-          12.6,
-          0.71
-        ],
-        "size_pixels": [
-          1125,
-          63
-        ]
-      },
-      {
-        "file": "s22_object10_0_e345c7f35.png",
-        "sha256": "e345c7f35f4953fcba044dd9f8fbe009efbbf9878fcf8b7598600001e5596ea3",
-        "shape_name": "Freeform 15",
-        "kind": "FREEFORM (5)",
-        "bounds_inches": [
-          0.0,
-          0.0,
-          8.04,
-          0.93
-        ],
-        "size_pixels": [
-          676,
-          79
-        ]
-      },
-      {
-        "file": "s22_object14_0_df90e7159.png",
-        "sha256": "df90e715968840c72885b0a33f81f0cae9d54e25e71ac8f241a5c0def5cd587e",
-        "shape_name": "Freeform 20",
-        "kind": "FREEFORM (5)",
-        "bounds_inches": [
-          0.0,
-          0.0,
-          9.66,
-          0.99
-        ],
-        "size_pixels": [
-          812,
-          84
-        ]
-      },
-      {
-        "file": "s22_object16_0_97f0972b5.png",
-        "sha256": "97f0972b56353f28bf080589adee93204d6f1a9ecbbe94d5c1198c5ebbc68996",
-        "shape_name": "Freeform 23",
-        "kind": "FREEFORM (5)",
-        "bounds_inches": [
-          0.0,
-          0.0,
-          8.25,
-          0.74
-        ],
-        "size_pixels": [
-          693,
-          63
-        ]
-      }
-    ]
+    "native_omml": 5,
+    "assets": []
   },
   {
     "slide": 23,
     "title": "MATHEMATICAL READING UPDATE · 12 OCTOBER 2026",
-    "native_omml": 0,
-    "assets": [
-      {
-        "file": "s23_object04_0_d162d37a3.png",
-        "sha256": "d162d37a39bb0e0457ad255c1537744d7c71ec6219b5316c2d6f5d73a31f8621",
-        "shape_name": "Freeform 7",
-        "kind": "FREEFORM (5)",
-        "bounds_inches": [
-          0.0,
-          0.0,
-          9.27,
-          1.3
-        ],
-        "size_pixels": [
-          771,
-          108
-        ]
-      },
-      {
-        "file": "s23_object06_0_f0df7120c.png",
-        "sha256": "f0df7120c18f59828b8bb77fcb3c7fc03e885c1e71f692fd2163ae324e2178f0",
-        "shape_name": "Freeform 10",
-        "kind": "FREEFORM (5)",
-        "bounds_inches": [
-          0.0,
-          0.0,
-          11.48,
-          1.4
-        ],
-        "size_pixels": [
-          953,
-          117
-        ]
-      }
-    ]
+    "native_omml": 2,
+    "assets": []
   },
   {
     "slide": 24,
@@ -550,25 +220,8 @@
   {
     "slide": 26,
     "title": "MATHEMATICAL READING UPDATE · 12 OCTOBER 2026",
-    "native_omml": 0,
-    "assets": [
-      {
-        "file": "s26_object04_0_938853d14.png",
-        "sha256": "938853d144964c177e9de8972f1905afd9a7a0f5f8d6b7ad417dc1b03675409c",
-        "shape_name": "Freeform 7",
-        "kind": "FREEFORM (5)",
-        "bounds_inches": [
-          0.0,
-          0.0,
-          12.04,
-          1.5
-        ],
-        "size_pixels": [
-          976,
-          122
-        ]
-      }
-    ]
+    "native_omml": 1,
+    "assets": []
   },
   {
     "slide": 27,
@@ -627,25 +280,8 @@
   {
     "slide": 36,
     "title": "TRACKED EXPERIMENT RESULTS",
-    "native_omml": 0,
-    "assets": [
-      {
-        "file": "s36_object17_0_2e5addd00.png",
-        "sha256": "2e5addd00cdb7fc18d887a05579c0829ccfaa8281384f7422eee46a7463d75b4",
-        "shape_name": "Freeform 21",
-        "kind": "FREEFORM (5)",
-        "bounds_inches": [
-          0.0,
-          0.0,
-          1.33,
-          0.36
-        ],
-        "size_pixels": [
-          166,
-          46
-        ]
-      }
-    ]
+    "native_omml": 1,
+    "assets": []
   },
   {
     "slide": 37,
