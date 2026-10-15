@@ -1,63 +1,43 @@
-name: PowerPoint equation integrity audit
+name: Original PowerPoint math forensic inspection
 on:
   pull_request:
     paths:
-      - "presentations/**"
-      - "scripts/repair_grouped_math_images.py"
-      - "scripts/restore_park_slide8_formulas.py"
       - ".github/workflows/presentation-formula-audit.yml"
+      - "scripts/audit_original_math_objects.py"
   workflow_dispatch:
 permissions:
   contents: write
 jobs:
-  equation-audit:
+  inspect-original:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.head_ref || github.ref_name }}
+          fetch-depth: 1
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
-      - name: Install presentation-only dependencies
-        run: python -m pip install python-pptx matplotlib
-      - name: Preserve original embedded equations as standard pictures
+          python-version: '3.12'
+      - name: Retrieve main and historical committed slide binaries without modifying them
         run: |
-          python scripts/repair_grouped_math_images.py \
-            presentations/EWMA_Covariate_Shift_Progress_Review_Haocheng_Lin.pptx \
-            /tmp/ewma_existing_equations.pptx
-      - name: Restore source-grounded Park equations absent from slide 8
+          git fetch origin main --depth=1
+          git fetch origin 6cd0c67987a6c8c5d8f4b9c8dedd983b54e8128a --depth=1
+          git fetch origin 72bef39cd71878a30b8af101c60466975ad9fc25 --depth=1
+      - name: Inspect exact PowerPoint objects and extract original embedded assets
         run: |
-          python scripts/restore_park_slide8_formulas.py \
-            /tmp/ewma_existing_equations.pptx \
-            presentations/EWMA_Covariate_Shift_Progress_Review_FORMULAS_RESTORED.pptx
-      - name: Check source preservation and both target slides
-        run: |
-          python - <<'PY'
-          from pptx import Presentation
-          from pptx.enum.shapes import MSO_SHAPE_TYPE as Type
-          src=Presentation("presentations/EWMA_Covariate_Shift_Progress_Review_Haocheng_Lin.pptx")
-          dst=Presentation("presentations/EWMA_Covariate_Shift_Progress_Review_FORMULAS_RESTORED.pptx")
-          assert len(src.slides)==len(dst.slides)==44
-          text=lambda s:"\n".join(sh.text for sh in s.shapes if sh.has_text_frame)
-          assert all(text(a)==text(b) for a,b in zip(src.slides,dst.slides)),"Presentation text changed"
-          for n in (7,8):
-              new=sum(sh.shape_type==Type.PICTURE for sh in dst.slides[n-1].shapes)
-              print(f"SLIDE {n} conventional pictures: {new}")
-              assert new>= (1 if n==7 else 2),f"Missing mathematical graphics on slide {n}"
-          print("PASS: slide 7 image preserved, slide 8 formulas present; 44 slides and all text unchanged")
-          PY
+          python -m pip install python-pptx
+          python scripts/audit_original_math_objects.py origin/main 6cd0c67987a6c8c5d8f4b9c8dedd983b54e8128a 72bef39cd71878a30b8af101c60466975ad9fc25
       - uses: actions/upload-artifact@v4
         with:
-          name: slides-7-8-equations-repaired
-          path: presentations/EWMA_Covariate_Shift_Progress_Review_FORMULAS_RESTORED.pptx
-      - name: Commit verified presentation to repair branch
+          name: read-only-source-formula-assets
+          path: presentations/formula_integrity_diagnostics/
+      - name: Save source-image evidence only on diagnostic branch
         if: ${{ github.event_name == 'pull_request' && github.head_ref == 'audit/presentation-formula-integrity-20261015' }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add presentations/EWMA_Covariate_Shift_Progress_Review_FORMULAS_RESTORED.pptx
+          git add presentations/formula_integrity_diagnostics/
           if ! git diff --cached --quiet; then
-            git commit -m "Repair slide 7 original formula and slide 8 Park equations"
+            git commit -m "Archive untouched slide 7/8 equation assets for editability review"
             git push origin "HEAD:${{ github.head_ref }}"
           fi
