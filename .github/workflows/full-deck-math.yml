@@ -1,0 +1,41 @@
+name: Full deck mathematics inventory
+on:
+  pull_request:
+    paths:
+      - scripts/audit_full_deck_media.py
+      - .github/workflows/full-deck-math.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Read main presentation unchanged
+        run: |
+          git fetch origin main --depth=1
+          git show origin/main:presentations/EWMA_Covariate_Shift_Progress_Review_Haocheng_Lin.pptx > /tmp/main.pptx
+      - name: Catalogue every formula and picture on all slides
+        run: |
+          python -m pip install python-pptx Pillow
+          python scripts/audit_full_deck_media.py /tmp/main.pptx
+      - uses: actions/upload-artifact@v4
+        with:
+          name: complete-mathematical-object-inventory
+          path: presentations/full_deck_formula_audit
+      - name: Archive inspection assets on diagnostic branch
+        if: ${{ github.event_name == 'pull_request' && github.head_ref == 'audit/presentation-formula-integrity-20261015' }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add presentations/full_deck_formula_audit/
+          if ! git diff --cached --quiet; then
+            git commit -m "Archive full presentation image and native equation inventory"
+            git push origin "HEAD:${{ github.head_ref }}"
+          fi

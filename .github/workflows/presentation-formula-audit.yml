@@ -1,0 +1,43 @@
+name: Validate native editable equations on slides 7 and 8
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/presentation-formula-audit.yml"
+      - "scripts/restore_native_math.py"
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  make-native-editable-deck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
+          fetch-depth: 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Read latest main presentation without modifying it
+        run: |
+          git fetch origin main --depth=1
+          git show origin/main:presentations/EWMA_Covariate_Shift_Progress_Review_Haocheng_Lin.pptx > /tmp/source-main.pptx
+          git rev-parse origin/main
+      - name: Generate actual PowerPoint OfficeMath objects and verify them
+        run: |
+          python -m pip install python-pptx
+          python scripts/restore_native_math.py /tmp/source-main.pptx presentations/EWMA_Covariate_Shift_Progress_Review_NATIVE_EDITABLE_PROOF.pptx
+      - uses: actions/upload-artifact@v4
+        with:
+          name: native-editable-equations-proof
+          path: presentations/EWMA_Covariate_Shift_Progress_Review_NATIVE_EDITABLE_PROOF.pptx
+      - name: Save verified candidate on diagnostic branch only
+        if: ${{ github.event_name == 'pull_request' && github.head_ref == 'audit/presentation-formula-integrity-20261015' }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add presentations/EWMA_Covariate_Shift_Progress_Review_NATIVE_EDITABLE_PROOF.pptx
+          if ! git diff --cached --quiet; then
+            git commit -m "Produce native editable OfficeMath slides 7 and 8"
+            git push origin "HEAD:${{ github.head_ref }}"
+          fi

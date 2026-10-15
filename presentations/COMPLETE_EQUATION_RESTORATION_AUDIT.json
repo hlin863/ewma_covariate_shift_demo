@@ -1,0 +1,379 @@
+{
+  "input_sha256": "ea60071185aa70ce21cfa0c4604f5b0dd1f8e867cd928e46342057d1312fc292",
+  "output_sha256": "932f4dcd30a9fe9a3b26d85e3c7719ab8a0a02871827b34cbac1bdd08957af8a",
+  "source_slide_count": 44,
+  "new_native_math_objects": 22,
+  "prior_math_objects_preserved": 10,
+  "total_native_math_objects": 32,
+  "untouched_zip_parts_byte_identical": true,
+  "changed_slide_numbers": [
+    4,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    20,
+    21,
+    22,
+    23,
+    26,
+    36
+  ],
+  "conversion_provenance": [
+    {
+      "slide": 4,
+      "source_image_sha256": "4c0726008aa741b6d6d2b0e06ffda1ef7d4bd185085dc84060d9d431a37771cb",
+      "formula_name": "MSE over d dimensions",
+      "bounding_box_emu": [
+        12365584,
+        6815252,
+        3386642,
+        626383
+      ],
+      "math_object": "native PowerPoint OfficeMath (m:oMath)",
+      "equation_object_sha256": "09816df7872eb0ef98a357ee68e1a8d7cef735283c9224442aabf07a03b756fc",
+      "font_color": "white",
+      "new_native_math_count": 1,
+      "representation": "human-transcribed exact displayed formula from committed image; editable OMML, not original binary equation object"
+    },
+    {
+      "slide": 9,
+      "source_image_sha256": "bebd58d6b1fce893950a2704ed9ea4d37069b8a83000cff0e807647986da7e5b",
+      "formula_name": "Kronecker delta",
+      "bounding_box_emu": [
+        1234440,
+        3566160,
+        7263184,
+        822960
+      ],
+      "math_object": "native PowerPoint OfficeMath (m:oMath)",
+      "equation_object_sha256": "46e8459e8c2877e682498993e6a4cb6e6a63380ebcf9193d69cf71c92839d5f6",
+      "font_color": "dark",
+      "new_native_math_count": 1,
+      "representation": "human-transcribed exact displayed formula from committed image; editable OMML, not original binary equation object"
+    },
+    {
+      "slide": 10,
+      "source_image_sha256": "1b76839ae5fbb0cf8a95882a8303f3ad2b632f29f0e66c16adeab952574499b3",
+      "formula_name": "Covariance and Kronecker identity",
+      "bounding_box_emu": [
+        1234440,
+        3429000,
+        7152456,
+        960120
+      ],
+      "math_object": "native PowerPoint OfficeMath (m:oMath)",
+      "equation_object_sha256": "62d0810c3003e76f03107be36e740b9cfdfb846e6a456a95d01ee1b7612bd07a",
+      "font_color": "dark",
+      "new_native_math_count": 1,
+      "representation": "human-transcribed exact displayed formula from committed image; editable OMML, not original binary equation object"
+    },
+    {
+      "slide": 11,
+      "source_image_sha256": "91eef13aff0c9dea50e53125e41a04eda40a0269ac7f9f2f97bdd16c93370330",
+      "formula_name": "Partial derivative identity",
+      "bounding_box_emu": [
+        1234440,
+        3429000,
+        1778251,
+        960120
+      ],
+      "math_object": "native PowerPoint OfficeMath (m:oMath)",
+      "equation_object_sha256": "17fccc88a282887f671a7acaf1f3df87748347d16f27b01fc3a7728ee2c88d1c",
+      "font_color": "dark",
+      "new_native_math_count": 1,
+      "representation": "human-transcribed exact displayed formula from committed image; editable OMML, not original binary equation object"
+    },
+    {
+      "slide": 11,
+      "source_image_sha256": "6ef44f2ec853d8a3104fd93dfec37c9e0b0838845c06cd204b98cbec94ad95bc",
+      "formula_name": "Variance identity",
+      "bounding_box_emu": [
+        9326880,
+        3429000,
+        7209787,
+        960120
+      ],
+      "math_object": "native PowerPoint OfficeMath (m:oMath)",
+      "equation_object_sha256": "2ff761331d69f88f695c731af76f7e34f8ad0589fdbfb7199596239c90e835c5",
+      "font_color": "dark",
+      "new_native_math_count": 1,
+      "representation": "human-transcribed exact displayed formula from committed image; editable OMML, not original binary equation object"
+    },
+    {
+      "slide": 11,
+      "source_image_sha256": "689cb93a6095d941cd5ba8deae10017ec73eb15c6dab84c0172fcf05426f063a",
+      "formula_name": "Online update",
+      "bounding_box_emu": [
+        1234440,
+        7269480,
+        6078074,
+        685800
+      ],
+      "math_object": "native PowerPoint OfficeMath (m:oMath)",
+      "equation_object_sha256": "e8856af46223707f1dd7acfc98dcd7be1952416304a21834690cc3bd2718f9ef",
+      "font_color": "dark",
+      "new_native_math_count": 1,
+      "representation": "human-transcribed exact displayed formula from committed image; editable OMML, not original binary equation object"
+    },
+    {
+      "slide": 12,
+      "source_image_sha256": "a26836a86353b889fd81ce5424cc8520de70aebf511dbc8e77dc5bff2b6d2d73",
+      "formula_name": "Vanishing wavelet moments",
+      "bounding_box_emu": [
+        1234440,
+        3497580,
+        7342346,
+        822960
+      ],
+      "math_object": "native PowerPoint OfficeMath (m:oMath)",
+      "equation_object_sha256": "1f89f6d71fd286e12b0b567dc6ea6d0e1040ac35ef7bcd90929bd3b9e439f136",
+      "font_color": "dark",
+      "new_native_math_count": 1,
+      "representation": "human-transcribed exact displayed formula from committed image; editable OMML, not original binary equation object"
+    },
+    {
+      "slide": 13,
+      "source_image_sha256": "90a2256e107a7ddf8dd99b77d4bcaa7230f096a57456e130036f90cace43281f",
+      "formula_name": "Linear transformation and covariance",
+      "bounding_box_emu": [
+        1234440,
+        3360420,
+        12084587,
+        960120
+      ],
+      "math_object": "native PowerPoint OfficeMath (m:oMath)",
+      "equation_object_sha256": "85d8de7e5476efbdeb58b7048f5453c6118f07794d770694d587ca6f72f1ccc7",
+      "font_color": "dark",
+      "new_native_math_count": 1,
+      "representation": "human-transcribed exact displayed formula from committed image; editable OMML, not original binary equation object"
+    },
+    {
+      "slide": 13,
+      "source_image_sha256": "918bcb4e36bd94a2cb27dada1c14c2d94c7d5858169ea8d7a4042bbe0485f598",
+      "formula_name": "Correlation construction",
+      "bounding_box_emu": [
+        1234440,
+        4869180,
+        13716000,
+        991876
+      ],
+      "math_object": "native PowerPoint OfficeMath (m:oMath)",
+      "equation_object_sha256": "0c1d65c6e94e023dd097766a6e0cdc24a0ccb0689888f6125fbaaa5bfeb077c4",
+      "font_color": "dark",
+      "new_native_math_count": 1,
+      "representation": "human-transcribed exact displayed formula from committed image; editable OMML, not original binary equation object"
+    },
+    {
+      "slide": 20,
+      "source_image_sha256": "890c6953aa0829c8d2308d028ba950badf34dc1c22bd38ec5cc3709bb5bf115f",
+      "formula_name": "CSP spatial filter",
+      "bounding_box_emu": [
+        1028700,
+        3700462,
+        1583055,
+        485775
+      ],
+      "math_object": "native PowerPoint OfficeMath (m:oMath)",
+      "equation_object_sha256": "250d1dade4258dc0b8554ee9d71ce87034f33b3d551225088748bd0dc59420f2",
+      "font_color": "white",
+      "new_native_math_count": 1,
+      "representation": "human-transcribed exact displayed formula from committed image; editable OMML, not original binary equation object"
+    },
+    {
+      "slide": 20,
+      "source_image_sha256": "c7232094036d8549c72ca35b2fc1b7805123b5f507f9a7d3437b743ab376b1c2",
+      "formula_name": "Normalised CSP log-variance feature",
+      "bounding_box_emu": [
+        1028700,
+        5226368,
+        3697605,
+        1343025
+      ],
+      "math_object": "native PowerPoint OfficeMath (m:oMath)",
+      "equation_object_sha256": "46b97771fd0ded68568f78dd1f6b7c573e3e8b48276bf16d8f660fe6eb3e3e7b",
+      "font_color": "white",
+      "new_native_math_count": 1,
+      "representation": "human-transcribed exact displayed formula from committed image; editable OMML, not original binary equation object"
+    },
+    {
+      "slide": 20,
+      "source_image_sha256": "54ff4741a733d2d87e19ca53cd33c4f4e627b7169c31f681532f6e81042edf7d",
+      "formula_name": "PCA projection and first component",
+      "bounding_box_emu": [
+        1028700,
+        7420928,
+        5383530,
+        588645
+      ],
+      "math_object": "native PowerPoint OfficeMath (m:oMath)",
+      "equation_object_sha256": "8001013f75515b88986970b3fb482e219a49ede8faf59e815a8a2ab1b4b370b1",
+      "font_color": "white",
+      "new_native_math_count": 1,
+      "representation": "human-transcribed exact displayed formula from committed image; editable OMML, not original binary equation object"
+    },
+    {
+      "slide": 21,
+      "source_image_sha256": "5d51b3a3e8674eb9695acf223e341378caccfd7083a4ae4da844c42131b1ea92",
+      "formula_name": "Representation and adaptation",
+      "bounding_box_emu": [
+        1097280,
+        2798064,
+        16116300,
+        1342063
+      ],
+      "math_object": "native PowerPoint OfficeMath (m:oMath)",
+      "equation_object_sha256": "4fa0cc9cb3d41bc74544d1767ad1731a953a772effc3d2c3573e07ca588a015f",
+      "font_color": "dark",
+      "new_native_math_count": 1,
+      "representation": "human-transcribed exact displayed formula from committed image; editable OMML, not original binary equation object"
+    },
+    {
+      "slide": 22,
+      "source_image_sha256": "18da8bf0ed2448aea2ab4a412ce8bb2c6a51689ec2f0fecf711fd59b264f83c0",
+      "formula_name": "EWMA statistic and innovation",
+      "bounding_box_emu": [
+        1028700,
+        3745611,
+        7406640,
+        491490
+      ],
+      "math_object": "native PowerPoint OfficeMath (m:oMath)",
+      "equation_object_sha256": "1c9bcf9d1978d0d3405c95e15d543b12cbd0b0266387a2b772af89ab819657e3",
+      "font_color": "white",
+      "new_native_math_count": 1,
+      "representation": "human-transcribed exact displayed formula from committed image; editable OMML, not original binary equation object"
+    },
+    {
+      "slide": 22,
+      "source_image_sha256": "ee619e43770bd18914c4cc8e2cd2a566ec6a0ff6cf5fcc78855ba9c74137ff10",
+      "formula_name": "EWMA upper and lower control limits",
+      "bounding_box_emu": [
+        1028700,
+        5189563,
+        8641080,
+        483946
+      ],
+      "math_object": "native PowerPoint OfficeMath (m:oMath)",
+      "equation_object_sha256": "6416496db3cb00395f17157c0b21c276e43ba25b42fed9bf39809e82181ebfa8",
+      "font_color": "white",
+      "new_native_math_count": 1,
+      "representation": "human-transcribed exact displayed formula from committed image; editable OMML, not original binary equation object"
+    },
+    {
+      "slide": 22,
+      "source_image_sha256": "e345c7f35f4953fcba044dd9f8fbe009efbbf9878fcf8b7598600001e5596ea3",
+      "formula_name": "Variance EWMA recurrence",
+      "bounding_box_emu": [
+        1028700,
+        6551676,
+        5514975,
+        640080
+      ],
+      "math_object": "native PowerPoint OfficeMath (m:oMath)",
+      "equation_object_sha256": "d880533d4f0bbcfda963484e1704c6b73e702b44a19f973a68fcce6bd7ed7c8d",
+      "font_color": "white",
+      "new_native_math_count": 1,
+      "representation": "human-transcribed exact displayed formula from committed image; editable OMML, not original binary equation object"
+    },
+    {
+      "slide": 22,
+      "source_image_sha256": "df90e715968840c72885b0a33f81f0cae9d54e25e71ac8f241a5c0def5cd587e",
+      "formula_name": "Two-sample Hotelling T squared",
+      "bounding_box_emu": [
+        10081260,
+        3980497,
+        6623685,
+        680085
+      ],
+      "math_object": "native PowerPoint OfficeMath (m:oMath)",
+      "equation_object_sha256": "88c6156ea87e45778ed00ce6d008db492f175105e526548fbdc2d8003fdb299a",
+      "font_color": "white",
+      "new_native_math_count": 1,
+      "representation": "human-transcribed exact displayed formula from committed image; editable OMML, not original binary equation object"
+    },
+    {
+      "slide": 22,
+      "source_image_sha256": "97f0972b56353f28bf080589adee93204d6f1a9ecbbe94d5c1198c5ebbc68996",
+      "formula_name": "Detection threshold and degrees of freedom",
+      "bounding_box_emu": [
+        10149840,
+        5842444,
+        5657850,
+        508635
+      ],
+      "math_object": "native PowerPoint OfficeMath (m:oMath)",
+      "equation_object_sha256": "f6c3d5f140965aff469fa45582924886355ea09378f6d90da3130b6cf4f29a64",
+      "font_color": "white",
+      "new_native_math_count": 1,
+      "representation": "human-transcribed exact displayed formula from committed image; editable OMML, not original binary equation object"
+    },
+    {
+      "slide": 23,
+      "source_image_sha256": "d162d37a39bb0e0457ad255c1537744d7c71ec6219b5316c2d6f5d73a31f8621",
+      "formula_name": "One-sample online T squared",
+      "bounding_box_emu": [
+        1234440,
+        3497580,
+        6359652,
+        891540
+      ],
+      "math_object": "native PowerPoint OfficeMath (m:oMath)",
+      "equation_object_sha256": "b5276165ee56edcdef9106ffbd019a12dbd147eabb5ac6210364e727f735f919",
+      "font_color": "dark",
+      "new_native_math_count": 1,
+      "representation": "human-transcribed exact displayed formula from committed image; editable OMML, not original binary equation object"
+    },
+    {
+      "slide": 23,
+      "source_image_sha256": "f0df7120c18f59828b8bb77fcb3c7fc03e885c1e71f692fd2163ae324e2178f0",
+      "formula_name": "Pooled two-sample Hotelling",
+      "bounding_box_emu": [
+        1234440,
+        6035040,
+        7874470,
+        960120
+      ],
+      "math_object": "native PowerPoint OfficeMath (m:oMath)",
+      "equation_object_sha256": "5caa1ea425c117f373f5ac2fb414b8bd3dec7cb9b98500d5c2f7fd6460533fbe",
+      "font_color": "dark",
+      "new_native_math_count": 1,
+      "representation": "human-transcribed exact displayed formula from committed image; editable OMML, not original binary equation object"
+    },
+    {
+      "slide": 26,
+      "source_image_sha256": "938853d144964c177e9de8972f1905afd9a7a0f5f8d6b7ad417dc1b03675409c",
+      "formula_name": "Unpooled covariance weighted mean difference",
+      "bounding_box_emu": [
+        1234440,
+        3429000,
+        8260080,
+        1028700
+      ],
+      "math_object": "native PowerPoint OfficeMath (m:oMath)",
+      "equation_object_sha256": "5a50494a4685f0bdce1aec0c903b151d1f22c96ca9ac86189aaad92465818fae",
+      "font_color": "dark",
+      "new_native_math_count": 1,
+      "representation": "human-transcribed exact displayed formula from committed image; editable OMML, not original binary equation object"
+    },
+    {
+      "slide": 36,
+      "source_image_sha256": "2e5addd00cdb7fc18d887a05579c0829ccfaa8281384f7422eee46a7463d75b4",
+      "formula_name": "CUSUM auxiliary quantity",
+      "bounding_box_emu": [
+        14785848,
+        8738902,
+        914962,
+        250288
+      ],
+      "math_object": "native PowerPoint OfficeMath (m:oMath)",
+      "equation_object_sha256": "4f154d7609bfc65c1cc77bd3a5987736b0e54d75e3eb3a326adf8d7c43d2bfb5",
+      "font_color": "cyan",
+      "new_native_math_count": 1,
+      "representation": "human-transcribed exact displayed formula from committed image; editable OMML, not original binary equation object"
+    }
+  ]
+}
