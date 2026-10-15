@@ -60,6 +60,21 @@ jobs:
               if len(txt)>100:txt=txt[:97]+"..."
               print(f"SHAPE {sh.shape_type!s:12} x={sh.left/914400:5.2f} y={sh.top/914400:5.2f} w={sh.width/914400:5.2f} h={sh.height/914400:5.2f} txt={txt}")
           PY
+      - name: Inspect embedded formula groups and rendering dependencies
+        run: |
+          python - <<'PY'
+          from pptx import Presentation
+          from collections import Counter
+          d=Presentation("presentations/EWMA_Covariate_Shift_Progress_Review_Haocheng_Lin.pptx")
+          for n in (9,10,11,12,13,20,22,23,26):
+            for i,sh in enumerate(d.slides[n-1].shapes):
+              if sh.shape_type == 6:
+                types=Counter(str(c.shape_type) for c in sh.shapes)
+                text=[" ".join(c.text.split())[:80] for c in sh.shapes if c.has_text_frame and c.text.strip()]
+                xml=sh._element.xml
+                print(f"FORMULA_GROUP slide={n} index={i} children={len(sh.shapes)} types={types} text={text[:3]} xml_len={len(xml)} has_customgeom={'custGeom' in xml} has_blip={'blip' in xml} has_Glyph={'glyph' in xml}")
+          PY
+          command -v libreoffice || true
       - uses: actions/upload-artifact@v4
         with:
           name: presentation-formula-audit
