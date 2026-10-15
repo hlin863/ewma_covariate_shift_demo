@@ -1,6 +1,8 @@
-# Slide 22: mean, variance and temporal-dependence changes
+# Structural-change visuals: presentation slide numbering
 
-**PowerPoint location:** Physical slide 22 of `presentations/EWMA_Covariate_Shift_Progress_Review_Haocheng_Lin.pptx`, titled **"Mean validation has a variance-change limitation"**.
+**Current PowerPoint location (15 October 2026, `main` commit `69ae8d4`):** the discussion titled **"Mean validation has a variance-change limitation"** is on physical **slide 26**; structural-change target and rolling-statistics discussions occupy slides **24–25**. Physical **slide 22** is now **"Detector Mathematics"**. The `slide22` output directory and `generate_slide22_structural_visuals.py` name are kept as historical asset identifiers, not as current slide-number claims.
+
+When slides are inserted or reordered, update this location mapping rather than renaming experiment outputs or changing the generator.
 
 ## Generate images
 
