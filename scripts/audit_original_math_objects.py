@@ -20,8 +20,10 @@ for ref in sys.argv[1:]:
   omml=len(slide._element.xpath('.//*[local-name()="oMath"]'))
   print("SLIDE",idx+1,"TITLE",repr(texts[0][:130] if texts else ""),"OMML",omml,"SHAPES",len(slide.shapes))
   for k,sh in enumerate(slide.shapes):
-   print("  ITEM",k,sh.name,str(sh.shape_type),"TEXT",repr(sh.text[:400] if sh.has_text_frame else ""))
-   group=list(sh.shapes) if sh.shape_type==MSO_SHAPE_TYPE.GROUP else [sh]
+   try: typ=sh.shape_type
+   except NotImplementedError: typ="UNKNOWN"
+   print("  ITEM",k,sh.name,str(typ),"TEXT",repr(sh.text[:400] if sh.has_text_frame else ""))
+   group=list(sh.shapes) if typ==MSO_SHAPE_TYPE.GROUP else [sh]
    for j,ch in enumerate(group):
     for q,blip in enumerate(ch._element.xpath('.//*[local-name()="blip"]')):
      rid=blip.get(qn("r:embed"))
