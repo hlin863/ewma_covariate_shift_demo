@@ -1,0 +1,46 @@
+name: Verify visible native PowerPoint math
+on:
+  push:
+    branches: [repair/native-visible-equations-20261015]
+    paths: [scripts/restore_visible_native_math.py, .github/workflows/verify-visible-native-math.yml]
+permissions:
+  contents: write
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Read original main presentation without rewriting source
+        run: |
+          git fetch origin main --depth=1
+          git show origin/main:presentations/EWMA_Covariate_Shift_Progress_Review_Haocheng_Lin.pptx > /tmp/main-source.pptx
+          git rev-parse origin/main
+      - name: Construct and verify 32 actual PowerPoint equation objects
+        run: |
+          python -m pip install python-pptx
+          python scripts/restore_visible_native_math.py /tmp/main-source.pptx presentations/EWMA_Covariate_Shift_Progress_Review_VISIBLE_NATIVE_MATH.pptx
+      - name: Render corrected PowerPoint to verify 44-slide PDF
+        run: |
+          if ! command -v libreoffice >/dev/null; then
+            sudo apt-get update -qq
+            sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq libreoffice-impress poppler-utils
+          fi
+          mkdir -p /tmp/verify-present
+          libreoffice -env:UserInstallation=file:///tmp/lo_real_omml_new --headless --convert-to pdf --outdir /tmp/verify-present presentations/EWMA_Covariate_Shift_Progress_Review_VISIBLE_NATIVE_MATH.pptx
+          pdfinfo /tmp/verify-present/EWMA_Covariate_Shift_Progress_Review_VISIBLE_NATIVE_MATH.pdf | grep -E 'Pages: +44$'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: visible-native-equations
+          path: presentations/EWMA_Covariate_Shift_Progress_Review_VISIBLE_NATIVE_MATH.pptx
+      - name: Commit verified PPTX to the repair branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add presentations/EWMA_Covariate_Shift_Progress_Review_VISIBLE_NATIVE_MATH.pptx
+          if ! git diff --cached --quiet; then
+            git commit -m "Restore all 32 visible native PowerPoint OfficeMath equations"
+            git push origin HEAD:repair/native-visible-equations-20261015
+          fi
