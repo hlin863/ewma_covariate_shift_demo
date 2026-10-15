@@ -1,0 +1,33 @@
+name: PowerPoint equation integrity audit
+on:
+  pull_request:
+    paths:
+      - "presentations/**"
+      - "scripts/audit_presentation_equations.py"
+      - ".github/workflows/presentation-formula-audit.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  equation-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Download previous presentation revision for comparison
+        run: |
+          curl -fsSL --retry 3 \
+            "https://raw.githubusercontent.com/hlin863/ewma_covariate_shift_demo/6cd0c67987a6c8c5d8f4b9c8dedd983b54e8128a/presentations/EWMA_Covariate_Shift_Progress_Review_Haocheng_Lin.pptx" \
+            -o /tmp/presentation_before.pptx
+      - name: Compare slide equation objects
+        run: |
+          python scripts/audit_presentation_equations.py \
+            presentations/EWMA_Covariate_Shift_Progress_Review_Haocheng_Lin.pptx \
+            --baseline /tmp/presentation_before.pptx \
+            --json presentation_formula_audit.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: presentation-formula-audit
+          path: presentation_formula_audit.json
