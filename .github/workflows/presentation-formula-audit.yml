@@ -4,6 +4,7 @@ on:
     paths:
       - "presentations/**"
       - "scripts/audit_presentation_equations.py"
+      - "scripts/repair_grouped_math_images.py"
       - ".github/workflows/presentation-formula-audit.yml"
   workflow_dispatch:
 permissions:
@@ -141,6 +142,16 @@ jobs:
                 print("TEXT",content[:1600],flush=True)
             print("COUNTS",dict(totals),flush=True)
           PY
+      - name: Restore original equation images as standard pictures
+        run: |
+          python scripts/repair_grouped_math_images.py \
+            presentations/EWMA_Covariate_Shift_Progress_Review_Haocheng_Lin.pptx \
+            presentations/EWMA_Covariate_Shift_Progress_Review_FORMULAS_RESTORED.pptx
+      - uses: actions/upload-artifact@v4
+        with:
+          name: restored-powerpoint-formulas
+          path: presentations/EWMA_Covariate_Shift_Progress_Review_FORMULAS_RESTORED.pptx
+          if-no-files-found: error
       - uses: actions/upload-artifact@v4
         with:
           name: presentation-formula-audit
