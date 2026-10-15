@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Native, editable OfficeMath repair for Park slides 7–8 (not image rendering)."""
-import hashlib,sys
+import hashlib,sys,zipfile
 from pathlib import Path
 from lxml import etree
 from pptx import Presentation
@@ -117,7 +117,21 @@ def repair(src,dst):
     assert len(s7._element.xpath('.//*[local-name()="oMath"]'))==4
     assert len(s8._element.xpath('.//*[local-name()="oMath"]'))==6
     dst.parent.mkdir(parents=True,exist_ok=True)
-    deck.save(str(dst))
+    # Modify exactly TWO slide XML members in the original OOXML ZIP package.
+    # This avoids python-pptx rewriting unrelated package parts or dropping
+    # unsupported objects, rich metadata, timings, assets, and relationships.
+    replacements={
+       "ppt/slides/slide7.xml":etree.tostring(s7._element,encoding="UTF-8",xml_declaration=True,standalone=True),
+       "ppt/slides/slide8.xml":etree.tostring(s8._element,encoding="UTF-8",xml_declaration=True,standalone=True),
+    }
+    with zipfile.ZipFile(src,"r") as zin,zipfile.ZipFile(dst,"w") as zout:
+        for entry in zin.infolist():
+            zout.writestr(entry,replacements.get(entry.filename,zin.read(entry.filename)))
+    with zipfile.ZipFile(src) as zin,zipfile.ZipFile(dst) as zout:
+        before={name:hashlib.sha256(zin.read(name)).hexdigest() for name in zin.namelist() if name not in replacements}
+        after={name:hashlib.sha256(zout.read(name)).hexdigest() for name in zout.namelist() if name not in replacements}
+        assert before==after,"An unrelated PowerPoint package part was modified"
+        print("VERIFIED every package part outside slides 7 and 8 retains original SHA256")
     check=Presentation(str(dst))
     assert len(check.slides)==44
     assert [len(check.slides[i]._element.xpath('.//*[local-name()="oMath"]')) for i in (6,7)]==[4,6]
