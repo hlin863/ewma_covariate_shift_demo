@@ -47,7 +47,7 @@ def add_math(slide,name,rect,lines,font_size):
         end.addprevious(wrapper)
     return box
 def text(slide):
-    return "\n".join(s.text for s in slide.shapes if s.has_text_frame)
+    return "\n".join(s.text for s in slide.shapes if s.has_text_frame and not s.name.startswith("EDITABLE MATH | "))
 def media(slide):
     out=[]
     for sh in slide.shapes:
