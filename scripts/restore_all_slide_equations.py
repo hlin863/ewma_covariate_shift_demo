@@ -13,6 +13,7 @@ author-entered equation object. Does not alter experimental calculations or meta
 """
 from __future__ import annotations
 import sys,json,zipfile,hashlib
+from copy import deepcopy
 from pathlib import Path
 from collections import Counter
 from lxml import etree
@@ -43,7 +44,7 @@ def C(*parts):return list(parts)
 # The dictionary keys are SHA256 prefixes of the corresponding original media.
 MATH_BY_SLIDE={
 4:[
- ("4c0726008","MSE over d dimensions",C(S("L","t")," = MSE(",S("X","t"),", ",S("X̂","t"),") = ",F("1","d"),N("∑","j=1","d",C("(",B("X","t,j","")," − ",B("X̂","t,j",""),U(")","2")))),"white")
+ ("4c0726008","MSE over d dimensions",C(S("L","t")," = MSE(",S("X","t"),", ",ACC(S("X","t"),"hat"),") = ",F("1","d"),N("∑","j=1","d",C("(",S("X","t,j")," − ",ACC(S("X","t,j"),"hat"),U(")","2")))),"white")
 ],
 9:[
  ("bebd58d6b","Kronecker delta",C(S("δ","ij")," = 1 (i = j),     ",S("δ","ij")," = 0 (i ≠ j)"),"dark")
@@ -53,7 +54,7 @@ MATH_BY_SLIDE={
 ],
 11:[
  ("91eef13af","Partial derivative identity",C(F("∂"+ "wᵢ","∂"+"wⱼ")," = ",S("δ","ij")),"dark"),
- ("6ef44f2ec","Variance identity",C("Var(",S("Z","i"),") = E[(",S("Z","i")," − E[",S("Z","i"),U("])","2"),"]"),"dark"),
+ ("6ef44f2ec","Variance identity",C("Var(",S("Z","i"),") = E[(",S("Z","i")," − E[",S("Z","i"),"]",U(")","2"),"]"),"dark"),
  ("689cb93a6","Online update",C(S("w","i"),"(t+1) = ",S("w","i"),"(t) + ηe(t)",S("x","i"),"(t)"),"dark")
 ],
 12:[
@@ -96,8 +97,8 @@ def n(kind, parent):
     return etree.SubElement(parent,f"{{{M}}}{kind}")
 def atom_text(node,txt):
     r=n("r",node)
-    rp=n("rPr",r)
-    sty=n("sty",rp);sty.set(f"{{{M}}}val","p")
+    # Some PowerPoint-compatible mathematical run-property combinations
+    # disappear in LibreOffice. Do not emit redundant m:rPr for ordinary runs.
     n("t",r).text=str(txt)
 def render(parent,obj):
     if isinstance(obj,str):
@@ -150,7 +151,19 @@ def new_math_shape(slide,name,rect,expr,color,font_size):
     end.set("lang","en-GB")
     fg=etree.SubElement(end,f"{{{DRAW}}}solidFill")
     rgb=etree.SubElement(fg,f"{{{DRAW}}}srgbClr")
-    rgb.set("val",{"white":"EFF8FF","dark":"14233B","cyan":"00DDCC"}[color])
+    rgb.set("val",{"white":"14233B","dark":"14233B","cyan":"075F57"}[color])
+    if color in ("white","cyan"):
+        # LibreOffice's imported OfficeMath uses black by default even when the
+        # paragraph requests white. Small contrasting equation backing keeps
+        # equations readable in PowerPoint and LibreOffice while preserving
+        # their exact location, editability and the surrounding slide design.
+        sppr=box._element.xpath('./*[local-name()="spPr"]')[0]
+        for el in list(sppr):
+            if el.tag in (f"{{{DRAW}}}noFill",f"{{{DRAW}}}solidFill"):
+                sppr.remove(el)
+        bg=etree.SubElement(sppr,f"{{{DRAW}}}solidFill")
+        color_ref=etree.SubElement(bg,f"{{{DRAW}}}srgbClr")
+        color_ref.set("val","DDEBF3" if color=="white" else "D5F6F1")
     mat=etree.Element(f"{{{A14}}}m",nsmap={"a14":A14,"m":M})
     para=n("oMathPara",mat)
     eq=n("oMath",para)
@@ -159,7 +172,7 @@ def new_math_shape(slide,name,rect,expr,color,font_size):
     return box
 
 def text(sl):
-    return [sh.text for sh in sl.shapes if sh.has_text_frame and not sh.name.startswith("EDITABLE OfficeMath |")]
+    return [sh.text for sh in sl.shapes if sh.has_text_frame and not sh.name.startswith(("EDITABLE OfficeMath |", "EDITABLE MATH |"))]
 def findhash(slide,shape):
     if shape.shape_type!=Type.GROUP or len(shape.shapes)!=1:return None
     refs=shape.shapes[0]._element.xpath('.//*[local-name()="blip"]')
@@ -168,12 +181,70 @@ def findhash(slide,shape):
     if not rid:return None
     return hashlib.sha256(slide.part.related_part(rid).blob).hexdigest()
 
+def split_prior_math(slide,number:int):
+    """Retain each existing native OMML expression but place it in its own editable box.
+
+    Multiple OfficeMath paragraphs inside one PowerPoint textbox can render as
+    nothing in alternative viewers; this uses unchanged original m:oMath subtrees.
+    """
+    restored=0
+    for shape in list(slide.shapes):
+        if not shape.name.startswith("EDITABLE MATH |"):continue
+        paras=shape._element.xpath('./*[local-name()="txBody"]/*[local-name()="p"]')
+        if len(paras)<2:continue
+        source=[etree.tostring(el) for el in shape._element.xpath('.//*[local-name()="oMath"]')]
+        parent=shape._element.getparent()
+        index=parent.index(shape._element)
+        nrows=len(paras)
+        # Slide 7 has a caption directly above the equation and a notation key below;
+        # shift rows inside that panel so neither text block is covered.
+        start=int(Inches(6.82)) if number==7 else int(shape.top)
+        bottom=int(Inches(8.18)) if number==7 else int(shape.top+shape.height-Inches(.30))
+        height=(bottom-start)//nrows
+        for j in range(nrows):
+            cloned=deepcopy(shape._element)
+            textbody=cloned.xpath('./*[local-name()="txBody"]')[0]
+            rows=cloned.xpath('./*[local-name()="txBody"]/*[local-name()="p"]')
+            for k,row in enumerate(rows):
+                if k!=j:textbody.remove(row)
+            xfrm=cloned.xpath('./*[local-name()="spPr"]/*[local-name()="xfrm"]')[0]
+            off=xfrm.xpath('./*[local-name()="off"]')[0]
+            ext=xfrm.xpath('./*[local-name()="ext"]')[0]
+            off.set("y",str(start+j*height))
+            ext.set("cy",str(height))
+            c=cloned.xpath('./*[local-name()="nvSpPr"]/*[local-name()="cNvPr"]')[0]
+            c.set("id",str(6000+number*10+j))
+            c.set("name",shape.name+" | ROW "+str(j+1))
+            # Lower font size on dense four-row slide 7, preserving the original
+            # equation symbol structures and their provenance.
+            if number==7:
+                for end in cloned.xpath('.//*[local-name()="endParaRPr"]'):
+                    end.set("sz","1300")
+            parent.insert(index+j,cloned)
+        parent.remove(shape._element)
+        after=[etree.tostring(el) for el in slide._element.xpath('.//*[local-name()="oMath"]')]
+        for item in source:
+            assert item in after,"A pre-existing Park equation object was altered"
+        restored+=nrows
+    return restored
+
 def build(src:Path,dst:Path,report:Path):
     if src.resolve()==dst.resolve():raise ValueError("Never overwrite the source")
     prs=Presentation(str(src))
     assert len(prs.slides)==44
     before=[text(sl) for sl in prs.slides]
-    slide_xml={}
+    old_native={
+        n:[etree.tostring(m) for m in prs.slides[n-1]._element.xpath('.//*[local-name()="oMath"]')]
+        for n in (7,8)
+    }
+    prior_split=sum(split_prior_math(prs.slides[n-1],n) for n in (7,8))
+    assert prior_split==10, f"Expected ten pre-existing editable Park equations, found {prior_split}"
+    for n in (7,8):
+        assert len(prs.slides[n-1]._element.xpath('.//*[local-name()="oMath"]'))==len(old_native[n])
+    slide_xml={
+        f"ppt/slides/slide{n}.xml":etree.tostring(prs.slides[n-1]._element,encoding="UTF-8",xml_declaration=True,standalone=True)
+        for n in (7,8)
+    }
     original_count={i:len(sl._element.xpath('.//*[local-name()="oMath"]')) for i,sl in enumerate(prs.slides,1)}
     assert original_count[7]>=4 and original_count[8]>=6,"Main should already include the prior native equation restoration"
     allchanges=[]
@@ -248,10 +319,10 @@ def build(src:Path,dst:Path,report:Path):
       "prior_math_objects_preserved":sum(original_count.values()),
       "total_native_math_objects":sum(counts.values()),
       "untouched_zip_parts_byte_identical":True,
-      "changed_slide_numbers":sorted(EXPECTED),
+      "changed_slide_numbers":sorted(set(EXPECTED)|{7,8}),
       "conversion_provenance":allchanges,
     },ensure_ascii=False,indent=2),encoding="utf-8")
-    print("PASS 44 slides; 22 replacement native equations; 10 existing native equations retained.")
+    print("PASS 44 slides; 22 replacement native equations; 10 existing native equations retained and split for visibility.")
     print("PASS every ZIP entry outside the targeted slide XMLs is byte-for-byte identical.")
     print("PASS logos, plots, timeline graphics, experiments and original text preserved.")
     print("PROVENANCE",report)
