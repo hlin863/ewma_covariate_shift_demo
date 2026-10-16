@@ -98,7 +98,21 @@ def smooth_cusum_curve(positions, values, *, span=0.1, degree=1):
     if len(x) < degree + 2:
         raise ValueError("Too few observations for the selected degree.")
 
-    neighbours = min(len(x), max(degree + 2, int(np.ceil(span * len(x)))))
+    minimum_neighbours = degree + 3
+
+    if len(x) < minimum_neighbours:
+        raise ValueError(
+            "Too few candidate positions for tricube "
+            "local polynomial smoothing."
+        )
+
+    neighbours = min(
+        len(x),
+        max(
+            minimum_neighbours,
+            int(np.ceil(span * len(x)))
+        )
+    )
     smoothed = np.empty_like(y)
 
     for i, centre in enumerate(x):
