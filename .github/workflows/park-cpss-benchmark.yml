@@ -1,0 +1,51 @@
+name: Park CPSS versus binary benchmark
+
+on:
+  push:
+    paths:
+      - "src/experiments/park2023/cpss_benchmark.py"
+      - "src/detection/stage1/park_cpss.py"
+      - "src/detection/stage1/park_mean_cusum.py"
+      - "scripts/run_park_cpss_benchmark.py"
+      - "tests/detection/test_park_cpss_benchmark.py"
+      - ".github/workflows/park-cpss-benchmark.yml"
+  workflow_dispatch:
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements-test.txt
+      - name: Install numerical dependencies
+        run: python -m pip install -r requirements-test.txt
+      - name: Check benchmark invariants
+        run: python -m pytest tests/detection/test_park_cpss_benchmark.py -q
+      - name: Run paired mean-change benchmark
+        run: |
+          python -m scripts.run_park_cpss_benchmark \
+            --calibration-seeds 12 \
+            --evaluation-seeds 24 \
+            --perturbations 8 \
+            --seed 2026 \
+            --output outputs/park_cpss/ci
+      - name: Run weaker mean-shift stress case
+        run: |
+          python -m scripts.run_park_cpss_benchmark \
+            --calibration-seeds 12 \
+            --evaluation-seeds 24 \
+            --perturbations 8 \
+            --mean-shift-size 0.65 \
+            --seed 2026 \
+            --output outputs/park_cpss/ci_weak
+      - name: Retain reproducible result files
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: park-cpss-binary-comparison
+          path: outputs/park_cpss/
+          if-no-files-found: warn

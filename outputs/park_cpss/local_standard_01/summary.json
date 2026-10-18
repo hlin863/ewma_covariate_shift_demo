@@ -1,0 +1,226 @@
+{
+  "source": "Exploratory positive-feature AR(1) synthetic benchmark; not Park Figure 3 reproduction",
+  "config": {
+    "observations": 160,
+    "channels": 4,
+    "calibration_seeds": 12,
+    "evaluation_seeds": 24,
+    "perturbations": 8,
+    "jitter_sd": 0.12,
+    "gamma": 1.0,
+    "target_fpr": 0.05,
+    "mean_shift_size": 2.0,
+    "variance_factor": 1.8,
+    "seed": 2026,
+    "min_segment": 8
+  },
+  "calibration": {
+    "target_fpr": 0.05,
+    "threshold": 0.0,
+    "seed_range": [
+      102026,
+      102037
+    ],
+    "scores": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "rule": "score > threshold; ties rejected"
+  },
+  "evaluation_seed_range": [
+    202026,
+    202049
+  ],
+  "classification": {
+    "binary": {
+      "tp": 24,
+      "tn": 24,
+      "fp": 0,
+      "fn": 0,
+      "accuracy": 1.0,
+      "balanced_accuracy": 1.0,
+      "sensitivity": 1.0,
+      "specificity": 1.0,
+      "precision": 1.0,
+      "f1": 1.0,
+      "false_positive_rate": 0.0,
+      "roc_auc": 1.0,
+      "position_absolute_error": {
+        "mean": 0.9375,
+        "std": 1.0965608292173823,
+        "median": 0.5,
+        "iqr": 0.625,
+        "p10": 0.0,
+        "p90": 1.5,
+        "count": 24
+      },
+      "stationary_positive_rate": 0.0,
+      "variance_only_positive_rate": 0.0
+    },
+    "cpss": {
+      "tp": 24,
+      "tn": 23,
+      "fp": 1,
+      "fn": 0,
+      "accuracy": 0.9791666666666666,
+      "balanced_accuracy": 0.9791666666666667,
+      "sensitivity": 1.0,
+      "specificity": 0.9583333333333334,
+      "precision": 0.96,
+      "f1": 0.9795918367346939,
+      "false_positive_rate": 0.041666666666666664,
+      "roc_auc": 1.0,
+      "position_absolute_error": {
+        "mean": 0.9375,
+        "std": 1.1801114538374167,
+        "median": 0.5,
+        "iqr": 0.5625,
+        "p10": 0.07500000000000007,
+        "p90": 1.5,
+        "count": 24
+      },
+      "stationary_positive_rate": 0.041666666666666664,
+      "variance_only_positive_rate": 0.0
+    }
+  },
+  "spread": {
+    "stationary": {
+      "cpss_score": {
+        "mean": 0.010351358626302048,
+        "std": 0.05071109355799408,
+        "median": 0.0,
+        "iqr": 0.0,
+        "p10": 0.0,
+        "p90": 0.0,
+        "count": 24
+      },
+      "binary_decision": {
+        "mean": 0.0,
+        "std": 0.0,
+        "median": 0.0,
+        "iqr": 0.0,
+        "p10": 0.0,
+        "p90": 0.0,
+        "count": 24
+      },
+      "within_stream_cpss_contribution_std": {
+        "mean": 0.01916699175236885,
+        "std": 0.09389869939487454,
+        "median": 0.0,
+        "iqr": 0.0,
+        "p10": 0.0,
+        "p90": 0.0,
+        "count": 24
+      },
+      "within_stream_peak_iqr": {
+        "mean": 0.5,
+        "std": null,
+        "median": 0.5,
+        "iqr": 0.0,
+        "p10": 0.5,
+        "p90": 0.5,
+        "count": 1
+      },
+      "ineligible_binary": 21,
+      "ineligible_perturbations": 173
+    },
+    "mean_shift": {
+      "cpss_score": {
+        "mean": 0.9926432691471229,
+        "std": 0.0055591575401019305,
+        "median": 0.9937304281249967,
+        "iqr": 0.004879693024544829,
+        "p10": 0.9853332426427972,
+        "p90": 0.9974138016015611,
+        "count": 24
+      },
+      "binary_decision": {
+        "mean": 1.0,
+        "std": 0.0,
+        "median": 1.0,
+        "iqr": 0.0,
+        "p10": 1.0,
+        "p90": 1.0,
+        "count": 24
+      },
+      "within_stream_cpss_contribution_std": {
+        "mean": 0.0023139918745949902,
+        "std": 0.001953560475514416,
+        "median": 0.002884051978057735,
+        "iqr": 0.0032448117170709445,
+        "p10": 0.0,
+        "p90": 0.004263407823906228,
+        "count": 24
+      },
+      "within_stream_peak_iqr": {
+        "mean": 0.22916666666666666,
+        "std": 0.27501646854509365,
+        "median": 0.125,
+        "iqr": 0.5,
+        "p10": 0.0,
+        "p90": 0.5,
+        "count": 24
+      },
+      "ineligible_binary": 0,
+      "ineligible_perturbations": 0
+    },
+    "variance_shift": {
+      "cpss_score": {
+        "mean": 0.0,
+        "std": 0.0,
+        "median": 0.0,
+        "iqr": 0.0,
+        "p10": 0.0,
+        "p90": 0.0,
+        "count": 24
+      },
+      "binary_decision": {
+        "mean": 0.0,
+        "std": 0.0,
+        "median": 0.0,
+        "iqr": 0.0,
+        "p10": 0.0,
+        "p90": 0.0,
+        "count": 24
+      },
+      "within_stream_cpss_contribution_std": {
+        "mean": 0.0,
+        "std": 0.0,
+        "median": 0.0,
+        "iqr": 0.0,
+        "p10": 0.0,
+        "p90": 0.0,
+        "count": 24
+      },
+      "within_stream_peak_iqr": {
+        "mean": null,
+        "std": null,
+        "median": null,
+        "iqr": null,
+        "p10": null,
+        "p90": null,
+        "count": 0
+      },
+      "ineligible_binary": 19,
+      "ineligible_perturbations": 155
+    }
+  },
+  "limitations": [
+    "Park binary rule is an offline first-order candidate, not an online detector.",
+    "Synthetic feature distributions are not Park's signed AR/MA Section 3 models.",
+    "CPSS jitter is a sensitivity perturbation, not calibrated measurement uncertainty.",
+    "Threshold is null-calibrated on a finite disjoint sample; evaluation FPR can differ.",
+    "Localization error is evaluated only for detected mean changes.",
+    "Variance-only changes are a second-order stress case, not a mean-change positive."
+  ]
+}
