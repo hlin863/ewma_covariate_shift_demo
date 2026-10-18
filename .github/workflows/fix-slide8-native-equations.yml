@@ -46,10 +46,10 @@ jobs:
               prs=Presentation(f)
               assert len(prs.slides)==44, f
               s=prs.slides[7]
-              assert len(s._element.xpath('.//*[local-name()="oMath"]'))==7, f
+              assert len(s._element.xpath('.//*[local-name()="oMath"]'))==8, f
               assert not any(sh.shape_type==13 for sh in s.shapes), f
-              assert len(s.shapes)==24, f
-              print('PASS: 44 slides, 7 editable OMML equations, 0 pictures on slide 8:', f)
+              assert len(s.shapes)==23, f
+              print('PASS: 44 slides, 8 native OMML equations (2 preserved + 6 generated), 0 pictures on slide 8:', f)
           PY
       - name: Publish updated PowerPoint as downloadable artifact
         uses: actions/upload-artifact@v4
