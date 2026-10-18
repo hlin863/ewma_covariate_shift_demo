@@ -43,6 +43,21 @@ def main():
               f"F1={stats['f1']}, AUC={stats['roc_auc']:.3f}, "
               f"stationary_FPR={stats['stationary_positive_rate']:.3f}, "
               f"variance_only_alarm_rate={stats['variance_only_positive_rate']:.3f}")
+    print("Score and decision spread (across matched evaluation seeds):")
+    for scenario, summary in result["spread"].items():
+        for method in ("binary_decision", "cpss_score"):
+            spread = summary[method]
+            print(f"  {scenario} / {method}: mean={spread['mean']:.4f}, "
+                  f"std={spread['std']:.4f}, IQR={spread['iqr']:.4f}, "
+                  f"p10={spread['p10']:.4f}, p90={spread['p90']:.4f}")
+        within = summary["within_stream_cpss_contribution_std"]
+        print(f"  {scenario} / within-stream CPSS contribution std: "
+              f"mean={within['mean']:.4f}")
+    for method, stats in result["classification"].items():
+        loc = stats["position_absolute_error"]
+        print(f"{method} / detected mean-change absolute localisation error: "
+              f"n={loc['count']}, mean={loc['mean']}, "
+              f"median={loc['median']}, IQR={loc['iqr']}")
     print(saved)
 
 
