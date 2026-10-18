@@ -43,7 +43,7 @@ def equation(slide, latex, x, y, w, h, name):
     return add_equation(slide, name, Inches(x), Inches(y), Inches(w), Inches(h),
                         font_pt=18)
 
-def panel(slide,x,y,w,h,heading,detail,eqs,label):
+def panel(slide,x,y,w,h,heading,detail,eqs,label, *, preserved_loess=False):
     p=slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE,
                              Inches(x),Inches(y),Inches(w),Inches(h))
     p.name='Slide 8 / '+label+' / panel'
@@ -57,8 +57,13 @@ def panel(slide,x,y,w,h,heading,detail,eqs,label):
         pass
     text(slide,heading,x+.25,y+.18,w-.48,.34,size=16.2,color=TEAL,bold=True).name='Slide 8 / '+label+' / heading'
     for i,eq in enumerate(eqs):
-        equation(slide,eq,x+.30,y+.62+(i*.44)+(.06 if len(eqs)==1 else 0),
-                 w-.60,.40,'Slide 8 / '+label+' / equation '+str(i+1))
+        if preserved_loess and label=="step2" and i==0:
+            continue  # preserve the two manually entered native LOESS equations
+        eq_y = y+.62+(i*.44)+(.06 if len(eqs)==1 else 0)
+        if preserved_loess and label=="step2":
+            eq_y=y+1.20  # keep peak location below both original LOESS rows
+        equation(slide,eq,x+.30,eq_y,w-.60,.40,
+                 'Slide 8 / '+label+' / equation '+str(i+1))
     text(slide,detail,x+.27,y+h-.49,w-.55,.36,
          size=11.7,color=SECONDARY).name='Slide 8 / '+label+' / explanation'
 
@@ -72,6 +77,14 @@ def edit(source:Path,target:Path):
         raise ValueError('Invalid presentation dimensions')
     original=[[sh.text for sh in sl.shapes if sh.has_text_frame] for sl in prs.slides]
     sl=prs.slides[7]
+    preserved=sl._element.xpath('.//*[local-name()="oMath"]')
+    if len(preserved) not in (0,2):
+        raise ValueError("Unexpected native OfficeMath content on original Slide 8")
+    preserved_loess=len(preserved)==2
+    if preserved_loess:
+        signatures=[''.join(m.xpath('.//*[local-name()="t"]/text()')) for m in preserved]
+        if not all('LOESS' in t or '𝐿𝑂𝐸𝑆𝑆' in t for t in signatures):
+            raise ValueError("Preserve non-LOESS manual equations by inspecting them first")
     for shape in list(sl.shapes):
         sl.shapes._spTree.remove(shape._element)
     sl.background.fill.solid()
@@ -89,7 +102,7 @@ def edit(source:Path,target:Path):
           '02   Smooth and Locate Peaks',
           'Local polynomial span 0.1; peak locations from smoothed curves.',
           [r'\tilde{\nu}_t^{g}=\mathrm{LP}_{0.1}(\nu^{g})(t)',
-           r'b_g=\arg\max_t\tilde{\nu}_t^{g}'],'step2')
+           r'b_g=\arg\max_t\tilde{\nu}_t^{g}'],'step2', preserved_loess=preserved_loess)
     panel(sl,.78,4.00,5.82,2.12,
           '03   Check Unimodality',
           'k = 10 interior positions per side; at least one A count must be 0.',
@@ -132,13 +145,15 @@ def edit(source:Path,target:Path):
     target.parent.mkdir(parents=True,exist_ok=True)
     prs.save(str(target))
     check=Presentation(str(target))
-    if len(check.slides)!=44 or len(check.slides[7].shapes)!=24:
+    expected = 8 if preserved_loess else 7
+    expected_shapes = 23 if preserved_loess else 24
+    if len(check.slides)!=44 or len(check.slides[7].shapes)!=expected_shapes:
         raise AssertionError('Slide-count or shape-count verification failed')
-    if count_math(check.slides[7]) != 7 or any(
+    if count_math(check.slides[7]) != expected or any(
             sh.shape_type == 13 for sh in check.slides[7].shapes):
-        raise AssertionError('Slide 8 must have 7 native OMML equations, 0 pictures')
+        raise AssertionError('Slide 8 must have native OMML equations and zero pictures')
     print('Slide 8 replaced in 44-slide deck; other 43 slide text sets preserved')
-    print('Seven genuine editable OfficeMath expressions and explanatory text verified')
+    print(f'{expected} editable OfficeMath expressions, including preserved manual LOESS when present')
     print('Saved:',target)
 
 def main():
