@@ -1,14 +1,14 @@
 """Rebuild only physical slide 8 in the original 44-slide research presentation.
 
 Usage: python -m scripts.update_slide8_park --input SOURCE.pptx --output OUT.pptx
-Math images remain explicit high-resolution pictures like the source Slide 8.
+All seven equations are native editable OfficeMath, not pictures.
 All explanatory labels remain editable PowerPoint text.
 """
 from __future__ import annotations
 import argparse
-from io import BytesIO
 from pathlib import Path
 from pptx import Presentation
+from scripts.repair_slide8_native_math import add_equation, count_math
 from pptx.dml.color import RGBColor
 from pptx.enum.shapes import MSO_SHAPE
 from pptx.enum.text import PP_ALIGN
@@ -39,19 +39,9 @@ def text(slide, message, x, y, w, h, *, size=15, color=NAVY, bold=False):
     return shape
 
 def equation(slide, latex, x, y, w, h, name):
-    import matplotlib
-    matplotlib.use('Agg')
-    import matplotlib.pyplot as plt
-    fig = plt.figure(figsize=(w,h),dpi=210)
-    fig.patch.set_alpha(0)
-    fig.text(0.5,0.53,'$'+latex+'$',ha='center',va='center',
-             color='#17283F',fontsize=19.6,family='DejaVu Sans')
-    b = BytesIO()
-    fig.savefig(b,format='png',dpi=210,transparent=True,pad_inches=0)
-    plt.close(fig)
-    b.seek(0)
-    shp=slide.shapes.add_picture(b,Inches(x),Inches(y),width=Inches(w),height=Inches(h))
-    shp.name = name
+    """Add source-mapped native OfficeMath, never an equation image."""
+    return add_equation(slide, name, Inches(x), Inches(y), Inches(w), Inches(h),
+                        font_pt=18)
 
 def panel(slide,x,y,w,h,heading,detail,eqs,label):
     p=slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE,
@@ -129,6 +119,11 @@ def edit(source:Path,target:Path):
                 for run in para.runs:
                     if run.font.size:
                         run.font.size = Pt(run.font.size.pt * scale_y)
+        if shape.name.find("EDITABLE OfficeMath equation") >= 0:
+            for end in shape._element.xpath('.//*[local-name()="endParaRPr"]'):
+                sz=end.get("sz")
+                if sz is not None:
+                    end.set("sz", str(round(int(sz)*scale_y)))
     print('Source presentation canvas:', round(prs.slide_width/914400,3),
           'x', round(prs.slide_height/914400,3), 'inches')
     if any([s.text for s in prs.slides[i].shapes if s.has_text_frame]!=original[i]
@@ -139,10 +134,11 @@ def edit(source:Path,target:Path):
     check=Presentation(str(target))
     if len(check.slides)!=44 or len(check.slides[7].shapes)!=24:
         raise AssertionError('Slide-count or shape-count verification failed')
-    if sum(s.shape_type==13 for s in check.slides[7].shapes)!=7:
-        raise AssertionError('Not all 7 mathematical equations are present')
+    if count_math(check.slides[7]) != 7 or any(
+            sh.shape_type == 13 for sh in check.slides[7].shapes):
+        raise AssertionError('Slide 8 must have 7 native OMML equations, 0 pictures')
     print('Slide 8 replaced in 44-slide deck; other 43 slide text sets preserved')
-    print('Seven equation images and all explanatory editable text boxes verified')
+    print('Seven genuine editable OfficeMath expressions and explanatory text verified')
     print('Saved:',target)
 
 def main():
