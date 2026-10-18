@@ -33,10 +33,19 @@ jobs:
             --perturbations 8 \
             --seed 2026 \
             --output outputs/park_cpss/ci
+      - name: Run weaker mean-shift stress case
+        run: |
+          python -m scripts.run_park_cpss_benchmark \
+            --calibration-seeds 12 \
+            --evaluation-seeds 24 \
+            --perturbations 8 \
+            --mean-shift-size 0.65 \
+            --seed 2026 \
+            --output outputs/park_cpss/ci_weak
       - name: Retain reproducible result files
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: park-cpss-binary-comparison
-          path: outputs/park_cpss/ci/
+          path: outputs/park_cpss/
           if-no-files-found: warn
