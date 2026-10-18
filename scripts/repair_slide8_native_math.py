@@ -122,7 +122,12 @@ def repair(source:Path, destination:Path):
     old={shape.name:shape for shape in slide.shapes if shape.name in EQUATIONS}
     if set(old)!=set(EQUATIONS) or any(shape.shape_type!=13 for shape in old.values()):
         raise ValueError("Seven recognized image-backed equations not found; refusing unsafe update")
-    if count_math(slide)!=0:raise ValueError("Slide 8 contains pre-existing math; investigate before replacing")
+    if count_math(slide)!=0:
+        existing=[(sh.name, len(sh._element.xpath('.//*[local-name()="oMath"]')),
+                   str(sh.shape_type)) for sh in slide.shapes
+                  if sh._element.xpath('.//*[local-name()="oMath"]')]
+        raise ValueError("Pre-existing native OfficeMath must be preserved; "
+                         "inventory="+str(existing))
     orig_text=Counter(shape.text for shape in slide.shapes if shape.has_text_frame)
     for name,old_picture in old.items():
         new=add_equation(slide,name,old_picture.left,old_picture.top,
