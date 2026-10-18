@@ -1,0 +1,66 @@
+name: Update Park Algorithm 1 slide 8
+
+on:
+  push:
+    branches:
+      - feat/slide8-park-four-step-layout-rebased-20261018
+    paths:
+      - scripts/update_slide8_park.py
+      - .github/workflows/update-park-slide8.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout exact feature-branch deck
+        uses: actions/checkout@v4
+        with:
+          ref: feat/slide8-park-four-step-layout-rebased-20261018
+          persist-credentials: true
+      - name: Configure Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install PowerPoint and formula-rendering libraries
+        run: python -m pip install python-pptx matplotlib pillow
+      - name: Preserve original and replace only slide 8
+        run: |
+          python -m scripts.update_slide8_park \
+            --input presentations/EWMA_Covariate_Shift_Progress_Review_Haocheng_Lin.pptx \
+            --output /tmp/EWMA_Covariate_Shift_Progress_Review_Haocheng_Lin.pptx
+          cp /tmp/EWMA_Covariate_Shift_Progress_Review_Haocheng_Lin.pptx \
+            presentations/EWMA_Covariate_Shift_Progress_Review_Haocheng_Lin.pptx
+      - name: Verify deck content and targeted change
+        run: |
+          python - <<'PY'
+          from pptx import Presentation
+          deck=Presentation('presentations/EWMA_Covariate_Shift_Progress_Review_Haocheng_Lin.pptx')
+          assert len(deck.slides)==44
+          assert len(deck.slides[7].shapes)==24
+          text=' '.join(s.text for s in deck.slides[7].shapes if s.has_text_frame)
+          for phrase in ('Aggregation Across Channels','Smooth and Locate Peaks','Check Unimodality','Confirm and Estimate','Statistical calibration'):
+              assert phrase in text, phrase
+          print('PASS: original 44-slide presentation, four step cards and seven equation pictures')
+          PY
+          git status --short
+      - name: Retain downloadable PowerPoint artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: park-slide8-updated-44-slide-deck
+          path: presentations/EWMA_Covariate_Shift_Progress_Review_Haocheng_Lin.pptx
+          retention-days: 30
+      - name: Commit reviewed slide 8 on feature branch only
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add presentations/EWMA_Covariate_Shift_Progress_Review_Haocheng_Lin.pptx
+          if git diff --cached --quiet; then
+            echo 'No binary deck change to commit'
+          else
+            git commit -m 'Redesign slide 8 as four-step Park mean-CUSUM confirmation'
+            git push origin HEAD:feat/slide8-park-four-step-layout-rebased-20261018
+          fi
