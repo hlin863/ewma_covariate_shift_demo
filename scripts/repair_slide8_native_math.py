@@ -122,33 +122,48 @@ def repair(source:Path, destination:Path):
     old={shape.name:shape for shape in slide.shapes if shape.name in EQUATIONS}
     if set(old)!=set(EQUATIONS) or any(shape.shape_type!=13 for shape in old.values()):
         raise ValueError("Seven recognized image-backed equations not found; refusing unsafe update")
-    if count_math(slide)!=0:
-        root=slide._element.getroottree()
-        existing=[]
-        for m in slide._element.xpath('.//*[local-name()="oMath"]'):
-            shape=next((x for x in m.iterancestors()
-                        if etree.QName(x).localname == "sp"),None)
-            n=shape.xpath('.//*[local-name()="cNvPr"]') if shape is not None else []
-            off=shape.xpath('.//*[local-name()="xfrm"]/*[local-name()="off"]') if shape is not None else []
-            ext=shape.xpath('.//*[local-name()="xfrm"]/*[local-name()="ext"]') if shape is not None else []
-            existing.append({
-                "path":root.getpath(m),
-                "shape_name":n[0].get("name") if n else None,
-                "xy":(off[0].get("x"),off[0].get("y")) if off else None,
-                "wh":(ext[0].get("cx"),ext[0].get("cy")) if ext else None,
-                "text":''.join(m.xpath('.//*[local-name()="t"]/text()'))[:120]})
-        raise ValueError("Pre-existing native math inventory: count="+str(len(existing))
-                         +", detail="+str(existing))
+    # This user's current deck already includes TWO manually entered native
+    # LOESS equations wrapped in mc:AlternateContent (outside python-pptx
+    # shape iteration). Keep those exact mathematical XML subtrees.
+    original_user_math=slide._element.xpath('.//*[local-name()="oMath"]')
+    user_text=[''.join(m.xpath('.//*[local-name()="t"]/text()'))
+               for m in original_user_math]
+    if len(original_user_math)!=2 or not all('𝐿𝑂𝐸𝑆𝑆' in t or 'LOESS' in t
+                                           for t in user_text):
+        raise ValueError("Expected exactly two existing editable LOESS equations; "
+                         "found "+str(user_text))
+    original_omml=[etree.tostring(m) for m in original_user_math]
+    # Keep both author's editable formulas but position them inside the Step 2
+    # card: preserve their XML and change only their Choice/Fallback rectangles.
+    positions=(3.39,3.86)
+    for m,y_inches in zip(original_user_math,positions):
+        alternate=next((a for a in m.iterancestors()
+                        if etree.QName(a).localname=="AlternateContent"),None)
+        if alternate is None:
+            raise ValueError("Source native equation has no AlternateContent wrapper")
+        for off in alternate.xpath('.//*[local-name()="xfrm"]/*[local-name()="off"]'):
+            off.set("y",str(round(y_inches*914400)))
     orig_text=Counter(shape.text for shape in slide.shapes if shape.has_text_frame)
     for name,old_picture in old.items():
+        parent=old_picture._element.getparent()
+        if name=="Slide 8 / step2 / equation 1":
+            # Two preserved real LOESS equations supersede this generic LP image.
+            parent.remove(old_picture._element)
+            continue
+        if name=="Slide 8 / step2 / equation 2":
+            # Peak-location formula follows the two preserved LOESS rows.
+            old_picture.top=round(4.37*914400)
         new=add_equation(slide,name,old_picture.left,old_picture.top,
                          old_picture.width,old_picture.height)
-        parent=old_picture._element.getparent()
         parent.replace(old_picture._element,new._element)
     after_text=Counter(shape.text for shape in slide.shapes if shape.has_text_frame)
-    if after_text!=orig_text+Counter({"":7}):
+    if after_text!=orig_text+Counter({"":6}):
         raise AssertionError("Slide 8 editorial text unexpectedly changed")
-    if count_math(slide)!=7:raise AssertionError("Seven OMML equations not present")
+    if count_math(slide)!=8:raise AssertionError("Expected 2 preserved + 6 new OMML equations")
+    now=slide._element.xpath('.//*[local-name()="oMath"]')
+    if any(etree.tostring(math) not in [etree.tostring(x) for x in now]
+           for math in original_user_math):
+        raise AssertionError("Original handwritten OfficeMath was altered")
     for kind in ("f","nary","sSub","sSup","sSubSup","rad","acc"):
         if not slide._element.xpath('.//*[local-name()="'+kind+'"]'):
             raise AssertionError("Unstructured or missing OfficeMath "+kind)
@@ -164,10 +179,10 @@ def repair(source:Path, destination:Path):
         if changed!=[SLIDE_XML]:raise AssertionError("Unexpected OOXML changes: "+str(changed))
     verified=Presentation(str(destination))
     assert len(verified.slides)==44
-    assert count_math(verified.slides[7])==7
+    assert count_math(verified.slides[7])==8
     assert not [s.name for s in verified.slides[7].shapes
                 if s.name in EQUATIONS and s.shape_type==13]
-    print("VERIFIED: seven editable OfficeMath equations, no equation pictures on slide 8")
+    print("VERIFIED: two preserved manual LOESS OfficeMath + six additional editable equations on slide 8")
     print("VERIFIED: only slide8.xml changed; all other PPTX ZIP members byte-identical")
     print("VERIFIED: preserved 44 slides, current theme, panels and explanatory text")
     return destination
