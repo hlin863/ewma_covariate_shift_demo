@@ -123,11 +123,14 @@ def repair(source:Path, destination:Path):
     if set(old)!=set(EQUATIONS) or any(shape.shape_type!=13 for shape in old.values()):
         raise ValueError("Seven recognized image-backed equations not found; refusing unsafe update")
     if count_math(slide)!=0:
-        existing=[(sh.name, len(sh._element.xpath('.//*[local-name()="oMath"]')),
-                   str(sh.shape_type)) for sh in slide.shapes
-                  if sh._element.xpath('.//*[local-name()="oMath"]')]
-        raise ValueError("Pre-existing native OfficeMath must be preserved; "
-                         "inventory="+str(existing))
+        root=slide._element.getroottree()
+        existing=[
+            {"path":root.getpath(m),
+             "parents":[etree.QName(a).localname for a in list(m.iterancestors())[:5]],
+             "text":''.join(m.xpath('.//*[local-name()="t"]/text()'))[:120]}
+            for m in slide._element.xpath('.//*[local-name()="oMath"]')]
+        raise ValueError("Pre-existing native math inventory: count="+str(len(existing))
+                         +", detail="+str(existing))
     orig_text=Counter(shape.text for shape in slide.shapes if shape.has_text_frame)
     for name,old_picture in old.items():
         new=add_equation(slide,name,old_picture.left,old_picture.top,
