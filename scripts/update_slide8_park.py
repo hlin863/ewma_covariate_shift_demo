@@ -77,7 +77,11 @@ def edit(source:Path,target:Path):
         raise ValueError('Invalid presentation dimensions')
     original=[[sh.text for sh in sl.shapes if sh.has_text_frame] for sl in prs.slides]
     sl=prs.slides[7]
-    preserved=sl._element.xpath('.//*[local-name()="oMath"]')
+    # Ordinary source-mapped OMML textboxes are rebuilt; only the two
+    # original user-entered LOESS equations in AlternateContent are retained.
+    preserved=[m for m in sl._element.xpath('.//*[local-name()="oMath"]')
+               if any(str(a.tag).endswith("}AlternateContent")
+                      for a in m.iterancestors())]
     if len(preserved) not in (0,2):
         raise ValueError("Unexpected native OfficeMath content on original Slide 8")
     preserved_loess=len(preserved)==2
