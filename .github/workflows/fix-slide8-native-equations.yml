@@ -1,0 +1,66 @@
+name: Slide 8 - native OfficeMath verification
+
+on:
+  push:
+    branches:
+      - fix/slide8-native-editable-officemath-20261018
+    paths:
+      - scripts/repair_slide8_native_math.py
+      - scripts/update_slide8_park.py
+      - .github/workflows/fix-slide8-native-equations.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  convert-and-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/slide8-native-editable-officemath-20261018
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install OOXML editing tools (no mathematical image renderer)
+        run: python -m pip install python-pptx lxml
+      - name: Replace precisely seven existing image equations
+        run: |
+          python -m scripts.repair_slide8_native_math \
+            presentations/EWMA_Covariate_Shift_Progress_Review_Haocheng_Lin.pptx \
+            /tmp/Slide8_Native_OfficeMath.pptx
+          cp /tmp/Slide8_Native_OfficeMath.pptx \
+            presentations/EWMA_Covariate_Shift_Progress_Review_Haocheng_Lin.pptx
+      - name: Regression check - regeneration also creates native equations
+        run: |
+          python -m scripts.update_slide8_park \
+            --input presentations/EWMA_Covariate_Shift_Progress_Review_Haocheng_Lin.pptx \
+            --output /tmp/rebuilt_editable.pptx
+          python - <<'PY'
+          from pptx import Presentation
+          for f in (
+             'presentations/EWMA_Covariate_Shift_Progress_Review_Haocheng_Lin.pptx',
+             '/tmp/rebuilt_editable.pptx'):
+              prs=Presentation(f)
+              assert len(prs.slides)==44, f
+              s=prs.slides[7]
+              assert len(s._element.xpath('.//*[local-name()="oMath"]'))==7, f
+              assert not any(sh.shape_type==13 for sh in s.shapes), f
+              assert len(s.shapes)==24, f
+              print('PASS: 44 slides, 7 editable OMML equations, 0 pictures on slide 8:', f)
+          PY
+      - name: Publish updated PowerPoint as downloadable artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: revised-slide8-fully-editable-officemath
+          path: presentations/EWMA_Covariate_Shift_Progress_Review_Haocheng_Lin.pptx
+          retention-days: 30
+      - name: Commit corrected existing deck to feature branch
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add presentations/EWMA_Covariate_Shift_Progress_Review_Haocheng_Lin.pptx
+          git commit -m 'Restore seven native editable OfficeMath formulas on slide 8'
+          git push origin HEAD:fix/slide8-native-editable-officemath-20261018
