@@ -76,8 +76,10 @@ def edit(source:Path,target:Path):
     prs=Presentation(str(source))
     if len(prs.slides)!=44:
         raise ValueError('Expected exact 44-slide main presentation, found '+str(len(prs.slides)))
-    if abs(prs.slide_width/914400-13.3333)>.2 or abs(prs.slide_height/914400-7.5)>.2:
-        raise ValueError('Expected a 16:9 wide presentation')
+    # The actual 44-slide repository deck uses a custom page size.
+    # Author the design on a 13.333 x 7.5 canvas, then scale to match it.
+    if prs.slide_width <= 0 or prs.slide_height <= 0:
+        raise ValueError('Invalid presentation dimensions')
     original=[[sh.text for sh in sl.shapes if sh.has_text_frame] for sl in prs.slides]
     sl=prs.slides[7]
     for shape in list(sl.shapes):
@@ -113,6 +115,22 @@ def edit(source:Path,target:Path):
          .83,6.79,11.95,.22,size=9.3,color=SECONDARY).name='Slide 8 / citation'
     text(sl,'Research progress  |  hlin863/ewma_covariate_shift_demo  |  Oct 2026',
          .82,7.16,11.8,.18,size=8.9,color=SECONDARY).name='Slide 8 / footer'
+    # Scale every new shape to the source deck's *actual* canvas, including
+    # text sizes. This keeps the four-card layout proportional to the deck.
+    scale_x = prs.slide_width / Inches(13.3333333333)
+    scale_y = prs.slide_height / Inches(7.5)
+    for shape in sl.shapes:
+        shape.left = int(shape.left * scale_x)
+        shape.top = int(shape.top * scale_y)
+        shape.width = int(shape.width * scale_x)
+        shape.height = int(shape.height * scale_y)
+        if shape.has_text_frame:
+            for para in shape.text_frame.paragraphs:
+                for run in para.runs:
+                    if run.font.size:
+                        run.font.size = Pt(run.font.size.pt * scale_y)
+    print('Source presentation canvas:', round(prs.slide_width/914400,3),
+          'x', round(prs.slide_height/914400,3), 'inches')
     if any([s.text for s in prs.slides[i].shapes if s.has_text_frame]!=original[i]
             for i in range(len(prs.slides)) if i!=7):
         raise AssertionError('Non-slide-8 text changed')
