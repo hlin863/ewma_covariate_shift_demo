@@ -33,3 +33,27 @@ def test_lab_is_discoverable_from_results_navigation():
     page = client.get("/results/abcd")
     assert b"ABCD" in page.data
     assert b"/results/abcd" in page.data
+
+
+def test_shared_research_design_and_theme_controls():
+    client = app.test_client()
+    page = client.get("/results/abcd")
+    assert page.status_code == 200
+    assert b"dashboard.css" in page.data
+    assert b"home.css" in page.data
+    assert b"dashboard.js" in page.data
+    assert b'data-theme-option="light"' in page.data
+    assert b'data-theme-option="dark"' in page.data
+    assert b"Research hub" in page.data
+    assert b"Teaching baseline" in page.data
+
+
+def test_run_retains_visual_evidence_and_accessible_split_picker():
+    page = app.test_client().post("/results/abcd", data={"segment_size": "80"})
+    assert page.status_code == 200
+    assert b'id="loss-chart"' in page.data
+    assert b'id="bound-chart"' in page.data
+    assert b'id="inspect-k"' in page.data
+    assert b'data-split-k="' in page.data
+    assert b'id="download"' in page.data
+    assert b"not stream-calibrated" in page.data
