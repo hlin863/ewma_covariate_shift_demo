@@ -1,0 +1,23 @@
+:root{color-scheme:light;font-family:system-ui,-apple-system,sans-serif;color:#21323b;background:#eef2f1}
+*{box-sizing:border-box}body{margin:0}main{max-width:1240px;margin:auto;padding:32px 24px 72px}
+nav{display:flex;gap:24px;flex-wrap:wrap}a{color:#12645d}
+h1{font-size:clamp(2rem,4vw,3.4rem);margin:8px 0;letter-spacing:-.03em}h2{font-size:1.4rem}h3{font-size:1.06rem;margin:28px 0 12px}
+.lead{font-size:1.16rem;max-width:900px}.eyebrow{color:#466d60;text-transform:uppercase;font-size:.8rem;letter-spacing:.08em}
+header{padding:34px 0 22px}p{line-height:1.65}.boundary{border-left:4px solid #b87d3a;padding-left:14px}
+section{border:1px solid #d3dfda;background:white;padding:24px;border-radius:14px;margin:18px 0}
+.controls{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+label{display:flex;flex-direction:column;gap:7px;font-size:.88rem;font-weight:620}
+input,select,button{font:inherit;padding:10px;border:1px solid #9bb0a8;border-radius:8px;max-width:100%}
+button{background:#17695f;color:white;font-weight:650;cursor:pointer}button:hover{background:#104e47}
+button:focus-visible,a:focus-visible{outline:3px solid #ebad47;outline-offset:3px}form button{margin-top:20px}
+.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.metrics article{background:#f0f5f2;border-radius:10px;padding:17px;display:flex;flex-direction:column;gap:8px}
+.metrics span{color:#47645a;font-size:.78rem;text-transform:uppercase}
+.metrics strong{font-size:1.45rem;font-variant-numeric:tabular-nums}
+.metrics small,.help{font-size:.83rem;color:#586b66}
+.section-title{display:flex;justify-content:space-between;align-items:center;gap:16px}
+.table-wrap{overflow:auto}table{border-collapse:collapse;width:100%;font-size:.86rem;font-variant-numeric:tabular-nums}
+th,td{padding:10px;border-bottom:1px solid #dce7e2;text-align:right}th:first-child,td:first-child{text-align:left}th{background:#f1f5f3}
+svg{display:block;width:100%;background:#f7faf8;border-radius:10px}.error{color:#9b2424}
+@media(max-width:780px){.controls,.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}main{padding:18px 12px}section{padding:18px}}
+@media(max-width:450px){.controls,.metrics{grid-template-columns:1fr}.section-title{display:block}}

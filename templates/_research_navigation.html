@@ -13,6 +13,7 @@
 <details class="nav-menu data-menu results-menu">
   <summary class="theme-button nav-link">Results ▾</summary>
   <nav class="nav-menu-panel" aria-label="Saved results">
+    <a href="{{ url_for('abcd.laboratory') }}"{% if request.path.startswith('/results/abcd') %} aria-current="page"{% endif %}>ABCD · Bernstein lab</a>
     <a href="{{ url_for('results_catalog') }}"{% if request.endpoint == 'results_catalog' %} aria-current="page"{% endif %}>Research results catalogue</a>
     {% for group in result_navigation_groups %}
       <span class="nav-menu-heading">{{ group.title }}</span>

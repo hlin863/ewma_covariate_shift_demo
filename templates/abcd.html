@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ABCD · Bernstein Change Lab</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='abcd.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='navigation.css') }}"></head>
+<body><main>
+<nav><a href="{{ url_for('home') }}">← Research hub</a><a href="{{ url_for('results_catalog') }}">All results</a>{% include '_research_navigation.html' %}</nav>
+<header>
+<p class="eyebrow">Heyden et al. (2024) · Equations (1), (5), (8), (12)</p>
+<h1>Adaptive Bernstein Change Lab</h1>
+<p class="lead">Explore synthetic reconstruction loss, compare candidate split points, and see the two Bernstein terms build the change score.</p>
+<p class="boundary">Teaching implementation only: frozen PCA, batch candidate scan, two synthetic Gaussian concepts. This is not the authors' full ABCD Algorithm 2, nor a reproduction of their published results. No EEG observations are used.</p>
+</header>
+<section><h2>Configure experiment</h2>
+{% if error %}<p role="alert" class="error">{{ error }}</p>{% endif %}
+<form method="post"><div class="controls">
+<label>Dataset<select name="scenario"><option value="Normal-M" {% if values.scenario == 'Normal-M' %}selected{% endif %}>Normal-M · mean shift</option><option value="Normal-V" {% if values.scenario == 'Normal-V' %}selected{% endif %}>Normal-V · variance shift</option></select></label>
+<label>Seed<input name="seed" type="number" min="0" max="4294967295" value="{{ values.seed }}" required></label>
+<label>Observations per concept<input name="segment_size" type="number" min="80" max="500" value="{{ values.segment_size }}" required></label>
+<label>Dimensions d<input name="dimensions" type="number" min="4" max="64" value="{{ values.dimensions }}" required></label>
+<label>Affected dimensions<input name="changed_dimensions" type="number" min="1" max="63" value="{{ values.changed_dimensions }}" required></label>
+<label>PCA retained dimensions d′<input name="bottleneck" type="number" min="1" max="63" value="{{ values.bottleneck }}" required></label>
+<label>Mean shift / variance scale<input name="shift" type="number" min="0.1" max="3" step="0.1" value="{{ values.shift }}" required></label>
+<label>Bernstein bound M<select name="M"><option value="0.1" {% if values.M == 0.1 %}selected{% endif %}>0.1 · empirical paper setting</option><option value="1.0" {% if values.M == 1.0 %}selected{% endif %}>1.0 · theoretical normalized bound</option></select></label>
+<label>Nominal threshold δ<input name="delta" type="number" min="0.001" max="0.5" step="0.001" value="{{ values.delta }}" required></label>
+<label>Candidate splits<input name="candidate_count" type="number" min="2" max="40" value="{{ values.candidate_count }}" required></label>
+</div>
+<p class="help">The authors' synthetic experiment uses 10 concepts × 2,000 observations and multiple repetitions. This smaller, deterministic subset is for explaining formulas interactively. Global MinMax scaling follows their preprocessing but exposes future data; a production monitor should fit scaling on calibration data only.</p>
+<button type="submit">Generate and evaluate</button></form></section>
+{% if result %}
+<section>
+<div class="section-title"><h2>Results · current simulated run</h2><button type="button" id="download">Export complete evidence JSON</button></div>
+<div class="metrics">
+<article><span>Known intervention</span><strong>{{ result.summary.actual_change_after }}</strong><small>after observation</small></article>
+<article><span>Estimated best split</span><strong>{{ result.summary.estimated_split_after }}</strong><small>min Bernstein score</small></article>
+<article><span>Raw minimum bound</span><strong>{{ '%.5g'|format(result.summary.min_raw_bound) }}</strong><small>not an exact p-value</small></article>
+<article><span>Nominal decision</span><strong>{{ 'Flag' if result.summary.nominal_flag else 'No flag' }}</strong><small>not stream-calibrated</small></article>
+</div>
+<h3>Reconstruction MSE — Eq. (1)</h3>
+<svg id="loss-chart" viewBox="0 0 960 260" role="img" aria-label="Reconstruction loss over the stream"></svg>
+<p class="help">Loss is computed with a PCA model fit only to concept 1, then frozen. Gray dashed marker: known synthetic intervention. Orange marker: selected split.</p>
+<h3>Two-sample Bernstein score across candidate k — Eq. (5), (8)</h3>
+<svg id="bound-chart" viewBox="0 0 960 250" role="img" aria-label="Bernstein score for each candidate split"></svg>
+<div class="controls"><label>Inspect candidate split k<select id="inspect-k">
+{% for row in result.splits %}<option value="{{ row.k }}" {% if row.k == result.best.k %}selected{% endif %}>k = {{ row.k }}</option>{% endfor %}
+</select></label></div>
+<div class="metrics" id="split-metrics"></div>
+<p class="help">The score is the sum of two two-sided Bernstein terms, which can exceed 1. The smallest score need not correspond to the largest mean difference. Inspect how changing k changes ε, κ, variances and sample sizes.</p>
+<h3>All evaluated split positions</h3>
+<div class="table-wrap"><table><thead><tr><th>k</th><th>n₁</th><th>n₂</th><th>ε</th><th>κ</th><th>Term 1</th><th>Term 2</th><th>Total bound</th></tr></thead><tbody>
+{% for row in result.splits %}
+<tr><td>{{ row.k }}</td><td>{{ row.n1 }}</td><td>{{ row.n2 }}</td><td>{{ '%.5f'|format(row.epsilon) }}</td><td>{{ '%.3f'|format(row.kappa) }}</td><td>{{ '%.5g'|format(row.term_before) }}</td><td>{{ '%.5g'|format(row.term_after) }}</td><td>{{ '%.5g'|format(row.bound) }}</td></tr>
+{% endfor %}
+</tbody></table></div>
+<script id="abcd-data" type="application/json">{{ result|tojson }}</script>
+<script src="{{ url_for('static', filename='abcd.js') }}" defer></script>
+</section>
+{% else %}
+<section><h2>Ready for a reproducible teaching run</h2><p>Choose Normal-M or Normal-V and run the experiment. The page does not display precomputed or invented study results.</p></section>
+{% endif %}
+<section><h2>Reproduction boundaries and sources</h2>
+<p>The synthetic generator is adapted conceptually from <a href="https://github.com/heymarco/StreamGenerators/blob/main/changeds/datastreams/synthetic.py">StreamGenerators.Gaussian</a>. The official experiment configuration is <a href="https://github.com/heymarco/AdaptiveBernsteinChangeDetector/blob/main/E_synthetic_data.py">E_synthetic_data.py</a>; the authors' loss visualisation is <a href="https://github.com/heymarco/AdaptiveBernsteinChangeDetector/blob/main/E_visualize_loss.py">E_visualize_loss.py</a>.</p>
+<p>No automatic data download, streaming retraining, subspace significance test or severity estimate is implemented here. A sample-variance plug-in bound is educational; false-alarm calibration across multiple split positions and monitoring times is not established.</p>
+</section>
+</main></body></html>

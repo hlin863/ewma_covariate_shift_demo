@@ -1,6 +1,7 @@
 """Web presentation layer for research-result visualisation."""
 
 from src.web.dashboard import app
+from src.web.abcd import abcd_bp
 from src.web.bci_eda import bci_eda_bp
 from src.web.data_structures import data_structures_bp
 from src.web.decision_models import decision_models_bp
@@ -21,6 +22,9 @@ app.config.setdefault("TEST_RESULTS_PATH", str(DEFAULT_TEST_REPORT_PATH))
 app.config.setdefault("TEST_RESULTS_REFRESH_SECONDS", DEFAULT_TEST_REFRESH_SECONDS)
 app.config.setdefault("TEST_RESULTS_AUTO_RUN", True)
 configure_support_defaults(app)
+
+if "abcd" not in app.blueprints:
+    app.register_blueprint(abcd_bp)
 
 if "bci_eda" not in app.blueprints:
     app.register_blueprint(bci_eda_bp)
