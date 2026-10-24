@@ -25,8 +25,10 @@ def textbox(slide,left,top,width,height,text,pt=14,bold=False,color=(28,45,68),a
     sh=slide.shapes.add_textbox(left,top,width,height)
     tf=sh.text_frame;tf.word_wrap=True
     tf.margin_top=Pt(2);tf.margin_left=Pt(3);tf.margin_bottom=Pt(1)
-    p=tf.paragraphs[0];p.text=text;p.font.name="Aptos";p.font.size=Pt(pt);p.font.bold=bold
-    p.font.color.rgb=RGBColor(*color)
+    p=tf.paragraphs[0];p.text=text
+    for run in p.runs:
+        run.font.name="Aptos";run.font.size=Pt(pt);run.font.bold=bold
+        run.font.color.rgb=RGBColor(*color)
     if align is not None:p.alignment=align
     return sh
 
