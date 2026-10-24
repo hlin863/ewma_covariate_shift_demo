@@ -444,6 +444,7 @@ def run_dataset_2a_subject(
             validation_after_size=validation_window_size,
             validation_alpha=validation_alpha,
             covariance_method=covariance_method,
+            minimum_alarm_gap=minimum_alarm_gap,
         ),
     )
     return Dataset2AExperimentResult(

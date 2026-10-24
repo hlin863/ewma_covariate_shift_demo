@@ -187,9 +187,7 @@ def _run_cse_warning_stage(
             lambda_value=effective_lambda,
         )
         n_features = ewma_training_result.n_features
-        control_limit = float(
-            chi2.ppf(1.0 - config.multivariate_alpha, df=n_features)
-        )
+        control_limit = float(chi2.ppf(1.0 - config.multivariate_alpha, df=n_features))
         initial_z = (
             ewma_training_result.initial_z
             if config.ewma_initialization == "training_mean"
@@ -290,11 +288,18 @@ def run_cse(
         testing_features=testing_features,
         testing_times=testing_times,
     )
-    pca_result, training_signal, testing_transformed, testing_signal = _prepare_cse_features(
-        training_features=training,
-        testing_features=testing,
-        pca_components=cse_config.pca_components,
-        stage1_mode=cse_config.stage1_mode,
+    pca_result, training_signal, testing_transformed, testing_signal = (
+        _prepare_cse_features(
+            training_features=training,
+            testing_features=testing,
+            pca_components=cse_config.pca_components,
+            stage1_mode=cse_config.stage1_mode,
+        )
+    )
+
+    _validate_stage2_feasibility(
+        cse_config,
+        n_features=pca_result.n_components,
     )
     ewma_training_result, effective_lambda, warning_results = _run_cse_warning_stage(
         training_signal=training_signal,
@@ -320,3 +325,29 @@ def run_cse(
         warning_results=warning_results,
         validation_results=validation_results,
     )
+
+
+def _validate_stage2_feasibility(
+    config: CSEConfig,
+    *,
+    n_features: int,
+) -> None:
+    """Check dimensional feasibility of window-based Hotelling."""
+    if config.validation_mode not in {
+        "paper_two_sample",
+        "retrospective_windows",
+    }:
+        return
+
+    n_before = config.validation_before_size
+    n_after = config.validation_after_size
+    df2 = n_before + n_after - n_features - 1
+
+    if df2 <= 0:
+        raise ValueError(
+            f"Stage-II infeasible: "
+            f"before={n_before}, after={n_after}, "
+            f"d={n_features}, df2={df2}. "
+            "Reduce PCA dimensions or increase "
+            "the validation window sizes."
+        )
