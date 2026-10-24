@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ABCD · Bernstein Change Lab | CSE Research</title>
+  <script>
+    (function () {
+      const saved = localStorage.getItem("dashboard-theme");
+      document.documentElement.dataset.theme =
+        saved === "light" || saved === "dark" ? saved :
+        (matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
+    })();
+  </script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='navigation.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='home.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='abcd.css') }}">
+</head>
+<body class="abcd-page">
+<main class="page-shell home-shell abcd-shell">
+  <nav class="home-nav abcd-nav" aria-label="Research navigation">
+    <a class="home-brand" href="{{ url_for('home') }}"><span>CSE</span> Research hub</a>
+    <div class="home-nav-links abcd-nav-links">
+      <a class="theme-button nav-link" href="{{ url_for('results_catalog') }}">All results</a>
+      {% include '_research_navigation.html' %}
+      <div class="theme-switcher" role="group" aria-label="Colour theme">
+        <button class="theme-button" type="button" data-theme-option="light" aria-pressed="false">Light</button>
+        <button class="theme-button" type="button" data-theme-option="dark" aria-pressed="false">Dark</button>
+      </div>
+    </div>
+  </nav>
+
+  <header class="abcd-hero">
+    <div class="abcd-hero-copy">
+      <p class="eyebrow">WP2 · Change-point detection · Heyden et al. (2024)</p>
+      <h1>Understand change, one split at a time.</h1>
+      <p class="lede">Explore how an encoder–decoder's reconstruction errors become a Bernstein change score. Adjust a synthetic stream, inspect the candidate splits and trace the result back to the paper's equations.</p>
+      <div class="abcd-quick-links">
+        <a class="primary-action" href="#experiment">Run an experiment <span aria-hidden="true">→</span></a>
+        <a class="secondary-action" href="#method">Review the method</a>
+      </div>
+    </div>
+    <aside class="problem-card abcd-paper-card" aria-label="Method at a glance">
+      <p class="eyebrow">From representation to evidence</p>
+      <h2>One measured loss. Many candidate change points.</h2>
+      <div class="abcd-formula"><span>Eq. 1</span><strong>L<sub>i</sub> = MSE(x<sub>i</sub>, x̂<sub>i</sub>)</strong></div>
+      <div class="abcd-formula"><span>Eq. 8</span><strong>k* = argmin<sub>k</sub> B(k)</strong></div>
+      <p>Equation (5) evaluates each candidate split; Equation (8) identifies the smallest computed score.</p>
+    </aside>
+  </header>
+
+  <section class="scope-banner abcd-scope" aria-label="Evidence boundary">
+    <div><span class="scope-marker">Teaching baseline</span><strong>Paper-inspired, not the authors' published-results reproduction</strong></div>
+    <p>Frozen PCA, two synthetic Gaussian concepts and a batch split scan. No online ABCD reset, EEG samples, or stream-wide false-alarm guarantee.</p>
+  </section>
+
+  <section class="abcd-panel" id="method" aria-labelledby="method-heading">
+    <div class="abcd-section-heading">
+      <div><p class="eyebrow">Method outline</p><h2 id="method-heading">Three calculations, one change hypothesis.</h2></div>
+      <p>Follow the same mathematical steps you used in the Heyden derivation.</p>
+    </div>
+    <div class="abcd-method-grid">
+      <article><span class="abcd-step">01 · Reconstruction</span><h3>Measure the mismatch</h3><p>Fit PCA on the first concept, reconstruct each observation, and calculate mean squared error (Eq. 1).</p></article>
+      <article><span class="abcd-step">02 · Candidate split</span><h3>Compare two means</h3><p>For each k, compute the absolute difference between mean losses before and after the split (Eq. 4).</p></article>
+      <article><span class="abcd-step">03 · Statistical score</span><h3>Evaluate the bound</h3><p>Apply both Bernstein terms (Eq. 5), then select the smallest score across candidates (Eq. 8).</p></article>
+    </div>
+  </section>
+
+  <section class="abcd-panel" id="experiment" aria-labelledby="experiment-heading">
+    <div class="abcd-section-heading">
+      <div><p class="eyebrow">Controlled simulation</p><h2 id="experiment-heading">Configure an experiment</h2></div>
+      <p>Use deterministic seeds to compare the same generated evidence across settings.</p>
+    </div>
+    {% if error %}<p class="abcd-error" role="alert">{{ error }}</p>{% endif %}
+    <form method="post" class="abcd-form">
+      <fieldset class="abcd-fieldset">
+        <legend>Stream and intervention</legend>
+        <div class="abcd-controls">
+          <label for="abcd-scenario">Scenario<select name="scenario" id="abcd-scenario"><option value="Normal-M" {% if values.scenario == 'Normal-M' %}selected{% endif %}>Normal-M · mean shift</option><option value="Normal-V" {% if values.scenario == 'Normal-V' %}selected{% endif %}>Normal-V · variance shift</option></select></label>
+          <label for="abcd-seed">Random seed<input name="seed" id="abcd-seed" type="number" min="0" max="4294967295" value="{{ values.seed }}" required></label>
+          <label for="abcd-segment">Observations per concept<input name="segment_size" id="abcd-segment" type="number" min="80" max="500" value="{{ values.segment_size }}" required></label>
+          <label for="abcd-dims">Dimensions (d)<input name="dimensions" id="abcd-dims" type="number" min="4" max="64" value="{{ values.dimensions }}" required></label>
+          <label for="abcd-changed">Affected dimensions<input name="changed_dimensions" id="abcd-changed" type="number" min="1" max="63" value="{{ values.changed_dimensions }}" required></label>
+          <label for="abcd-shift">Mean shift / variance scale<input name="shift" id="abcd-shift" type="number" min="0.1" max="3" step="0.1" value="{{ values.shift }}" required></label>
+        </div>
+      </fieldset>
+      <fieldset class="abcd-fieldset">
+        <legend>Representation and test</legend>
+        <div class="abcd-controls">
+          <label for="abcd-bottleneck">Retained PCA dimensions (d′)<input name="bottleneck" id="abcd-bottleneck" type="number" min="1" max="63" value="{{ values.bottleneck }}" required></label>
+          <label for="abcd-m">Bernstein M<select name="M" id="abcd-m"><option value="0.1" {% if values.M == 0.1 %}selected{% endif %}>0.1 · empirical setting</option><option value="1.0" {% if values.M == 1.0 %}selected{% endif %}>1.0 · theoretical bound</option></select></label>
+          <label for="abcd-delta">Nominal threshold (δ)<input name="delta" id="abcd-delta" type="number" min="0.001" max="0.5" step="0.001" value="{{ values.delta }}" required></label>
+          <label for="abcd-splits">Candidate split count<input name="candidate_count" id="abcd-splits" type="number" min="2" max="40" value="{{ values.candidate_count }}" required></label>
+        </div>
+      </fieldset>
+      <div class="abcd-form-footer">
+        <p>The authors' synthetic benchmark has 10 concepts × 2,000 observations and multiple repetitions. This smaller run is for learning. Global MinMax normalisation uses future observations, so it is not a leak-free online protocol.</p>
+        <button class="abcd-action" type="submit">Generate and evaluate <span aria-hidden="true">→</span></button>
+      </div>
+    </form>
+  </section>
+
+  {% if result %}
+  <section class="abcd-panel" aria-labelledby="run-heading">
+    <div class="abcd-section-heading abcd-heading-actions">
+      <div><p class="eyebrow">Calculated evidence · current run</p><h2 id="run-heading">What did the detector find?</h2></div>
+      <button class="abcd-secondary-button" type="button" id="download">Export evidence JSON ↓</button>
+    </div>
+    <div class="abcd-metrics" aria-label="Run summary">
+      <article><span>Known intervention</span><strong>{{ result.summary.actual_change_after }}</strong><small>after observation</small></article>
+      <article><span>Best candidate split</span><strong>{{ result.summary.estimated_split_after }}</strong><small>minimum Bernstein score</small></article>
+      <article><span>Minimum raw bound</span><strong>{{ '%.5g'|format(result.summary.min_raw_bound) }}</strong><small>not an exact p-value</small></article>
+      <article><span>Nominal decision</span><strong>{{ 'Flag' if result.summary.nominal_flag else 'No flag' }}</strong><small>not stream-calibrated</small></article>
+    </div>
+  </section>
+
+  <section class="abcd-panel" aria-labelledby="charts-heading">
+    <div class="abcd-section-heading">
+      <div><p class="eyebrow">Interactive evidence</p><h2 id="charts-heading">Trace the result through the stream.</h2></div>
+      <label class="abcd-split-picker" for="inspect-k">Inspect candidate split k
+        <select id="inspect-k">{% for row in result.splits %}<option value="{{ row.k }}" {% if row.k == result.best.k %}selected{% endif %}>k = {{ row.k }}</option>{% endfor %}</select>
+      </label>
+    </div>
+    <div class="abcd-chart-stack">
+      <figure class="abcd-chart-card">
+        <figcaption><div><span class="abcd-step">Equation (1)</span><h3>Reconstruction MSE by observation</h3></div><div class="abcd-legend"><span><i class="abcd-dot abcd-true"></i>Known intervention</span><span><i class="abcd-dot abcd-candidate"></i>Selected split</span></div></figcaption>
+        <svg id="loss-chart" class="abcd-chart" viewBox="0 0 960 260" role="img" aria-label="Reconstruction loss and change-point markers"></svg>
+        <p>Reconstructions use PCA trained on the first concept, then frozen. The loss curve is experimental evidence from this generated stream.</p>
+      </figure>
+      <figure class="abcd-chart-card">
+        <figcaption><div><span class="abcd-step">Equations (5) and (8)</span><h3>Two-sample Bernstein score across k</h3></div></figcaption>
+        <svg id="bound-chart" class="abcd-chart" viewBox="0 0 960 250" role="img" aria-label="Bernstein score at each candidate split"></svg>
+        <p>Smaller scores indicate stronger evidence under the particular bound. The selected split is not necessarily where ε is largest.</p>
+      </figure>
+    </div>
+    <div class="abcd-inspection" aria-live="polite" aria-atomic="true">
+      <div class="abcd-inspection-title"><h3>Inspecting candidate k</h3><span>The selected point updates both charts and the table.</span></div>
+      <div class="abcd-metrics abcd-detail-metrics" id="split-metrics"></div>
+    </div>
+  </section>
+
+  <section class="abcd-panel" aria-labelledby="table-heading">
+    <div class="abcd-section-heading">
+      <div><p class="eyebrow">Numerical audit</p><h2 id="table-heading">Every evaluated split</h2></div>
+      <p>Values before and after the split are retained for independent inspection.</p>
+    </div>
+    <div class="abcd-table-wrap" tabindex="0" role="region" aria-label="Candidate split evidence table">
+      <table class="abcd-table"><thead><tr><th scope="col">k</th><th scope="col">n₁</th><th scope="col">n₂</th><th scope="col">ε</th><th scope="col">κ</th><th scope="col">Term 1</th><th scope="col">Term 2</th><th scope="col">Total bound</th></tr></thead>
+        <tbody>{% for row in result.splits %}
+        <tr data-split-k="{{ row.k }}"><td>{{ row.k }}</td><td>{{ row.n1 }}</td><td>{{ row.n2 }}</td><td>{{ '%.5f'|format(row.epsilon) }}</td><td>{{ '%.3f'|format(row.kappa) }}</td><td>{{ '%.5g'|format(row.term_before) }}</td><td>{{ '%.5g'|format(row.term_after) }}</td><td>{{ '%.5g'|format(row.bound) }}</td></tr>
+        {% endfor %}</tbody></table>
+    </div>
+    <script id="abcd-data" type="application/json">{{ result|tojson }}</script>
+    <script src="{{ url_for('static', filename='abcd.js') }}" defer></script>
+  </section>
+  {% else %}
+  <section class="abcd-panel abcd-empty-state">
+    <p class="eyebrow">Awaiting a run</p>
+    <h2>Ready for a reproducible teaching run</h2>
+    <p>Choose Normal-M or Normal-V and select <strong>Generate and evaluate</strong>. The charts and metrics appear only after a calculation; no experimental values are prefilled.</p>
+  </section>
+  {% endif %}
+
+  <section class="abcd-panel" id="sources" aria-labelledby="sources-heading">
+    <div class="abcd-section-heading">
+      <div><p class="eyebrow">Sources and limitations</p><h2 id="sources-heading">What this experiment establishes</h2></div>
+    </div>
+    <div class="abcd-source-grid">
+      <div><h3>Reference implementations</h3><p>Generator adapted conceptually from <a href="https://github.com/heymarco/StreamGenerators/blob/main/changeds/datastreams/synthetic.py">StreamGenerators.Gaussian ↗</a>. Compare the official <a href="https://github.com/heymarco/AdaptiveBernsteinChangeDetector/blob/main/E_synthetic_data.py">synthetic experiment ↗</a> and <a href="https://github.com/heymarco/AdaptiveBernsteinChangeDetector/blob/main/E_visualize_loss.py">loss visualisation ↗</a>.</p></div>
+      <div><h3>Reproduction boundary</h3><p>No automatic data download, adaptive window reset, streaming retraining, subspace significance or severity estimation. Sample-variance plug-ins and repeated split tests are not globally calibrated probabilities.</p></div>
+    </div>
+  </section>
+  <footer class="abcd-footer"><span>ABCD · Method study / WP2</span><a href="{{ url_for('home') }}">Back to CSE Research hub ↑</a></footer>
+</main>
+<script src="{{ url_for('static', filename='dashboard.js') }}" defer></script>
+</body>
+</html>
