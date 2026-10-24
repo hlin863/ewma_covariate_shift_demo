@@ -15,27 +15,49 @@ from src.web.data_processing import build_data_processing_view
 from src.web.figure1 import build_dataset_2a_figure1, serialise_figure1
 from src.web.home import build_home_page_model
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_RESULTS_PATH = PROJECT_ROOT / "outputs" / "metrics" / "bci_table1_comparison.csv"
+DEFAULT_RESULTS_PATH = PROJECT_ROOT / "outputs" / "metrics" / "table1_pca3_h10.csv"
 DEFAULT_OUTPUTS_ROOT = PROJECT_ROOT / "outputs"
 PAPERS_ROOT = PROJECT_ROOT / "papers"
 DEFAULT_DATASET_2A_PATH = PROJECT_ROOT / "data" / "raw" / "bci_competition_iv_2a"
-DEFAULT_DATASET_2A_LABELS_PATH = PROJECT_ROOT / "data" / "raw" / "bci_competition_iv_2a_labels"
+DEFAULT_DATASET_2A_LABELS_PATH = (
+    PROJECT_ROOT / "data" / "raw" / "bci_competition_iv_2a_labels"
+)
 DEFAULT_CHOWDHURY_DATA_PATH = PROJECT_ROOT / "data" / "raw" / "chowdhury_cse_uael"
 
 
 RESULT_DEFINITIONS = (
     {
         "id": "bci-table1",
-        "title": "BCI Table 1 reproduction",
+        "title": "BCI Table 1 — PCA3/H10 diagnostic",
         "domain": "bci",
-        "domain_label": "BCI reproduction",
-        "datasets": ["BCI Competition IV 2A", "BCI Competition IV 2B"],
-        "methods": ["FBCSP", "PCA", "EWMA Stage I", "Hotelling T² Stage II"],
-        "purpose": "Published-versus-computed CSE warning and validation counts for the paper-style Table 1 experiment.",
-        "command": "python scripts/run_bci_table1_reproduction.py --validation-mode paper_two_sample --labels-2a {DATASET_2A_LABELS_PATH}",
-        "primary_artifact": "metrics/bci_table1_comparison.csv",
+        "domain_label": "BCI reproduction diagnostics",
+        "datasets": [
+            "BCI Competition IV 2A",
+            "BCI Competition IV 2B",
+        ],
+        "methods": [
+            "FBCSP",
+            "PCA (3 components)",
+            "EWMA Stage I",
+            "Hotelling T² Stage II (H=10)",
+        ],
+        "purpose": (
+            "Diagnostic comparison of published and computed "
+            "CSW/CSV counts using three retained PCA components "
+            "and ten-observation validation windows. "
+            "Not yet an exact numerical reproduction."
+        ),
+        "command": (
+            "python -m scripts.run_bci_table1_reproduction "
+            "--validation-mode paper_two_sample "
+            "--labels-2a {DATASET_2A_LABELS_PATH} "
+            "--pca-components 3 "
+            "--validation-window-size 10 "
+            "--markdown-output outputs/metrics/table1_pca3_h10.md "
+            "--comparison-output outputs/metrics/table1_pca3_h10.csv"
+        ),
+        "primary_artifact": "metrics/table1_pca3_h10.csv",
         "preview_columns": [
             "dataset",
             "subject",
@@ -48,8 +70,14 @@ RESULT_DEFINITIONS = (
             "csv_difference",
         ],
         "artifacts": [
-            ("metrics/bci_table1_reproduction.md", "Paper-style Markdown table"),
-            ("metrics/bci_table1_comparison.csv", "Published/computed comparison"),
+            (
+                "metrics/table1_pca3_h10.md",
+                "PCA3/H10 Markdown results",
+            ),
+            (
+                "metrics/table1_pca3_h10.csv",
+                "PCA3/H10 published/computed comparison",
+            ),
         ],
     },
     {
@@ -97,7 +125,10 @@ RESULT_DEFINITIONS = (
             "absolute_csv_error",
         ],
         "artifacts": [
-            ("metrics/bci_2b_l_sensitivity.csv", "L and variance-mode sensitivity table"),
+            (
+                "metrics/bci_2b_l_sensitivity.csv",
+                "L and variance-mode sensitivity table",
+            ),
         ],
     },
     {
@@ -305,16 +336,31 @@ RESULT_DEFINITIONS = (
         "artifacts": [
             ("metrics/paper2015/d2/summary.json", "Run summary"),
             ("metrics/paper2015/d2/stage1_trace.csv", "Full Stage-I detector trace"),
-            ("metrics/paper2015/d2/stage2_validations.csv", "Stage-II validation trace"),
+            (
+                "metrics/paper2015/d2/stage2_validations.csv",
+                "Stage-II validation trace",
+            ),
             ("metrics/paper2015/d2/stage1_events.csv", "Stage-I event scoring"),
             ("metrics/paper2015/d2/stage2_events.csv", "Stage-II event scoring"),
             ("metrics/paper2015/d2/table3_computed.csv", "Computed Table III"),
-            ("metrics/paper2015/d2/table3_comparison.csv", "Published/computed Table III comparison"),
+            (
+                "metrics/paper2015/d2/table3_comparison.csv",
+                "Published/computed Table III comparison",
+            ),
             ("metrics/paper2015/d2/table3_computed.md", "Human-readable Table III"),
             ("metrics/paper2015/d2/ici_cdt_trace.csv", "ICI-CDT trace"),
-            ("metrics/paper2015/d2/table3_sd_ewma_events.csv", "SD-EWMA Table III events"),
-            ("metrics/paper2015/d2/table3_tssd_ewma_events.csv", "TSSD-EWMA Table III events"),
-            ("metrics/paper2015/d2/table3_ici_cdt_events.csv", "ICI-CDT Table III events"),
+            (
+                "metrics/paper2015/d2/table3_sd_ewma_events.csv",
+                "SD-EWMA Table III events",
+            ),
+            (
+                "metrics/paper2015/d2/table3_tssd_ewma_events.csv",
+                "TSSD-EWMA Table III events",
+            ),
+            (
+                "metrics/paper2015/d2/table3_ici_cdt_events.csv",
+                "ICI-CDT Table III events",
+            ),
         ],
     },
 )
@@ -341,9 +387,17 @@ def complementary_results():
     """Inspect exported real-dataset Stage-I traces without claiming shift truth."""
     path = Path(app.config["COMPLEMENTARY_BCI_TRACES_PATH"])
     required = {
-        "dataset", "subject", "session", "time", "pc1_score", "residual_q",
-        "score_only_alarm", "residual_only_alarm", "stage_1_alarm",
-        "score_alarm", "residual_alarm",
+        "dataset",
+        "subject",
+        "session",
+        "time",
+        "pc1_score",
+        "residual_q",
+        "score_only_alarm",
+        "residual_only_alarm",
+        "stage_1_alarm",
+        "score_alarm",
+        "residual_alarm",
     }
     error = None
     frame = pd.DataFrame()
@@ -358,10 +412,17 @@ def complementary_results():
                 frame = frame.loc[frame["dataset"].isin(["2A", "2B"])].copy()
                 for column in ("time", "pc1_score", "residual_q"):
                     frame[column] = pd.to_numeric(frame[column], errors="raise")
-                if not np.isfinite(frame[["time", "pc1_score", "residual_q"]].to_numpy()).all():
+                if not np.isfinite(
+                    frame[["time", "pc1_score", "residual_q"]].to_numpy()
+                ).all():
                     raise ValueError("Timeline values must be finite numbers")
                 for column in required.intersection(frame.columns) - {
-                    "dataset", "subject", "session", "time", "pc1_score", "residual_q"
+                    "dataset",
+                    "subject",
+                    "session",
+                    "time",
+                    "pc1_score",
+                    "residual_q",
                 }:
                     values = frame[column].astype(str).str.lower()
                     if not values.isin(["true", "false", "1", "0"]).all():
@@ -376,9 +437,14 @@ def complementary_results():
         options = sorted(
             (str(d), str(s), str(session))
             for d, s, session in frame[["dataset", "subject", "session"]]
-            .drop_duplicates().itertuples(index=False, name=None)
+            .drop_duplicates()
+            .itertuples(index=False, name=None)
         )
-    selected = (request.args.get("dataset"), request.args.get("subject"), request.args.get("session"))
+    selected = (
+        request.args.get("dataset"),
+        request.args.get("subject"),
+        request.args.get("session"),
+    )
     if selected not in options:
         selected = options[0] if options else None
     rows = []
@@ -395,14 +461,30 @@ def complementary_results():
             ("Combined", "stage_1_alarm"),
         ):
             count = int(group[column].sum())
-            summary.append({"label": label, "alarms": count,
-                            "per_100": round(100 * count / len(group), 2)})
+            summary.append(
+                {
+                    "label": label,
+                    "alarms": count,
+                    "per_100": round(100 * count / len(group), 2),
+                }
+            )
         # Chart sampling is for display only; summary counts use every trial.
         step = max(1, (len(group) + 1199) // 1200)
-        rows = group.iloc[::step].loc[:, [
-            "time", "pc1_score", "residual_q", "score_alarm",
-            "residual_alarm", "stage_1_alarm",
-        ]].to_dict(orient="records")
+        rows = (
+            group.iloc[::step]
+            .loc[
+                :,
+                [
+                    "time",
+                    "pc1_score",
+                    "residual_q",
+                    "score_alarm",
+                    "residual_alarm",
+                    "stage_1_alarm",
+                ],
+            ]
+            .to_dict(orient="records")
+        )
     synthetic_root = Path(app.config["RESULTS_ROOT"]) / "complementary"
     synthetic_scenario = request.args.get("scenario", "none")
     if synthetic_scenario not in ("none", "pc1", "pc2", "both"):
@@ -416,31 +498,77 @@ def complementary_results():
     if summary_path.is_file() and trace_path.is_file():
         try:
             import json
+
             summary_frame = pd.read_csv(summary_path)
             trace_frame = pd.read_csv(trace_path)
-            expected_summary = {"scenario", "method", "mean_false_alarm_rate", "window_alarm_rate", "detection_rate", "mean_delay_detected_only", "mean_alarm_count"}
-            expected_trace = {"time", "pc1_score", "residual_q", "score_alarm", "residual_alarm", "stage_1_alarm"}
-            if expected_summary - set(summary_frame) or expected_trace - set(trace_frame):
-                raise ValueError("Synthetic output columns do not match the experiment runner")
+            expected_summary = {
+                "scenario",
+                "method",
+                "mean_false_alarm_rate",
+                "window_alarm_rate",
+                "detection_rate",
+                "mean_delay_detected_only",
+                "mean_alarm_count",
+            }
+            expected_trace = {
+                "time",
+                "pc1_score",
+                "residual_q",
+                "score_alarm",
+                "residual_alarm",
+                "stage_1_alarm",
+            }
+            if expected_summary - set(summary_frame) or expected_trace - set(
+                trace_frame
+            ):
+                raise ValueError(
+                    "Synthetic output columns do not match the experiment runner"
+                )
             for column in ("time", "pc1_score", "residual_q"):
                 trace_frame[column] = pd.to_numeric(trace_frame[column], errors="raise")
-            if not np.isfinite(trace_frame[["time", "pc1_score", "residual_q"]].to_numpy()).all():
+            if not np.isfinite(
+                trace_frame[["time", "pc1_score", "residual_q"]].to_numpy()
+            ).all():
                 raise ValueError("Synthetic trace contains nonfinite values")
             for column in ("score_alarm", "residual_alarm", "stage_1_alarm"):
-                trace_frame[column] = trace_frame[column].astype(str).str.lower().isin(("true", "1"))
-            synthetic_summary = summary_frame.astype(object).where(pd.notnull(summary_frame), None).to_dict("records")
-            synthetic_rows = trace_frame.loc[:, ["time", "pc1_score", "residual_q", "score_alarm", "residual_alarm", "stage_1_alarm"]].to_dict("records")
+                trace_frame[column] = (
+                    trace_frame[column].astype(str).str.lower().isin(("true", "1"))
+                )
+            synthetic_summary = (
+                summary_frame.astype(object)
+                .where(pd.notnull(summary_frame), None)
+                .to_dict("records")
+            )
+            synthetic_rows = trace_frame.loc[
+                :,
+                [
+                    "time",
+                    "pc1_score",
+                    "residual_q",
+                    "score_alarm",
+                    "residual_alarm",
+                    "stage_1_alarm",
+                ],
+            ].to_dict("records")
             config_path = synthetic_root / "config.json"
             if config_path.is_file():
                 synthetic_config = json.loads(config_path.read_text(encoding="utf-8"))
         except (OSError, ValueError, pd.errors.ParserError) as exc:
             synthetic_error = str(exc)
     return render_template(
-        "complementary_results.html", path=path, options=options,
-        selected=selected, rows=rows, summary=summary, error=error,
-        synthetic_summary=synthetic_summary, synthetic_rows=synthetic_rows,
-        synthetic_scenario=synthetic_scenario, synthetic_config=synthetic_config,
-        synthetic_error=synthetic_error, synthetic_root=synthetic_root,
+        "complementary_results.html",
+        path=path,
+        options=options,
+        selected=selected,
+        rows=rows,
+        summary=summary,
+        error=error,
+        synthetic_summary=synthetic_summary,
+        synthetic_rows=synthetic_rows,
+        synthetic_scenario=synthetic_scenario,
+        synthetic_config=synthetic_config,
+        synthetic_error=synthetic_error,
+        synthetic_root=synthetic_root,
     )
 
 
@@ -523,20 +651,22 @@ def _chart_rows(frame: pd.DataFrame, dataset: str) -> list[dict[str, object]]:
 
     rows: list[dict[str, object]] = []
     for _, row in group.iterrows():
-        rows.append({
-            "subject": str(row["subject"]),
-            "lambda": float(row["lambda"]),
-            "published_csw": int(row["published_csw"]),
-            "computed_csw": int(row["computed_csw"]),
-            "published_csv": int(row["published_csv"]),
-            "computed_csv": int(row["computed_csv"]),
-            "csw_difference": int(row["csw_difference"]),
-            "csv_difference": int(row["csv_difference"]),
-            "published_csw_width": 100.0 * float(row["published_csw"]) / max_value,
-            "computed_csw_width": 100.0 * float(row["computed_csw"]) / max_value,
-            "published_csv_width": 100.0 * float(row["published_csv"]) / max_value,
-            "computed_csv_width": 100.0 * float(row["computed_csv"]) / max_value,
-        })
+        rows.append(
+            {
+                "subject": str(row["subject"]),
+                "lambda": float(row["lambda"]),
+                "published_csw": int(row["published_csw"]),
+                "computed_csw": int(row["computed_csw"]),
+                "published_csv": int(row["published_csv"]),
+                "computed_csv": int(row["computed_csv"]),
+                "csw_difference": int(row["csw_difference"]),
+                "csv_difference": int(row["csv_difference"]),
+                "published_csw_width": 100.0 * float(row["published_csw"]) / max_value,
+                "computed_csw_width": 100.0 * float(row["computed_csw"]) / max_value,
+                "published_csv_width": 100.0 * float(row["published_csv"]) / max_value,
+                "computed_csv_width": 100.0 * float(row["computed_csv"]) / max_value,
+            }
+        )
     return rows
 
 
@@ -586,7 +716,9 @@ def _csv_preview(path: Path, preferred_columns: list[str]) -> dict[str, object] 
     }
 
 
-def _lambda_analysis_visualisation(outputs_root: str | Path) -> dict[str, object] | None:
+def _lambda_analysis_visualisation(
+    outputs_root: str | Path,
+) -> dict[str, object] | None:
     """Build the focused lambda-estimation and sensitivity presentation model."""
 
     root = Path(outputs_root)
@@ -609,10 +741,12 @@ def _lambda_analysis_visualisation(outputs_root: str | Path) -> dict[str, object
     if not valid.any():
         return None
 
-    clean = pd.DataFrame({
-        "lambda": lambda_values.loc[valid],
-        "sse": sse_values.loc[valid],
-    })
+    clean = pd.DataFrame(
+        {
+            "lambda": lambda_values.loc[valid],
+            "sse": sse_values.loc[valid],
+        }
+    )
     best_row = clean.loc[clean["sse"].idxmin()]
 
     figures = (
@@ -720,8 +854,12 @@ def _table3_visualisation(outputs_root: str | Path) -> dict[str, object] | None:
     for method in methods:
         method["computed_rci_width"] = 100.0 * float(method["computed_rci"]) / rci_max
         method["published_rci_width"] = 100.0 * float(method["published_rci"]) / rci_max
-        method["computed_ct_width"] = 100.0 * float(method["computed_ct_seconds"]) / ct_max
-        method["published_ct_width"] = 100.0 * float(method["published_ct_seconds"]) / ct_max
+        method["computed_ct_width"] = (
+            100.0 * float(method["computed_ct_seconds"]) / ct_max
+        )
+        method["published_ct_width"] = (
+            100.0 * float(method["published_ct_seconds"]) / ct_max
+        )
 
     return {
         "methods": methods,
@@ -740,20 +878,23 @@ def _build_results_catalog(outputs_root: str | Path) -> list[dict[str, object]]:
         artifacts = []
         for relative_path, label in definition["artifacts"]:
             absolute_path = root / relative_path
-            artifacts.append({
-                "relative_path": relative_path,
-                "label": label,
-                "available": absolute_path.is_file(),
-                "is_figure": (
-                    absolute_path.is_file()
-                    and absolute_path.suffix.lower() in {".png", ".jpg", ".jpeg", ".webp"}
-                ),
-                "size_kb": (
-                    round(absolute_path.stat().st_size / 1024.0, 1)
-                    if absolute_path.is_file()
-                    else None
-                ),
-            })
+            artifacts.append(
+                {
+                    "relative_path": relative_path,
+                    "label": label,
+                    "available": absolute_path.is_file(),
+                    "is_figure": (
+                        absolute_path.is_file()
+                        and absolute_path.suffix.lower()
+                        in {".png", ".jpg", ".jpeg", ".webp"}
+                    ),
+                    "size_kb": (
+                        round(absolute_path.stat().st_size / 1024.0, 1)
+                        if absolute_path.is_file()
+                        else None
+                    ),
+                }
+            )
 
         primary_path = root / str(definition["primary_artifact"])
         item["artifacts"] = artifacts
@@ -766,9 +907,7 @@ def _build_results_catalog(outputs_root: str | Path) -> list[dict[str, object]]:
             list(definition["preview_columns"]),
         )
         item["table3_visualisation"] = (
-            _table3_visualisation(root)
-            if definition["id"] == "paper2015-d2"
-            else None
+            _table3_visualisation(root) if definition["id"] == "paper2015-d2" else None
         )
         item["lambda_analysis"] = (
             _lambda_analysis_visualisation(root)
@@ -780,7 +919,9 @@ def _build_results_catalog(outputs_root: str | Path) -> list[dict[str, object]]:
         if "command" in item and isinstance(item["command"], str):
             try:
                 mapping = {
-                    "DATASET_2A_LABELS_PATH": app.config.get("DATASET_2A_LABELS_PATH", ""),
+                    "DATASET_2A_LABELS_PATH": app.config.get(
+                        "DATASET_2A_LABELS_PATH", ""
+                    ),
                     "DATASET_2A_PATH": app.config.get("DATASET_2A_PATH", ""),
                     "RESULTS_ROOT": app.config.get("RESULTS_ROOT", ""),
                     "TABLE1_RESULTS_PATH": app.config.get("TABLE1_RESULTS_PATH", ""),
@@ -886,7 +1027,9 @@ def _load_ks_validation_results(outputs_root: str | Path) -> dict[str, object]:
         rows.append(
             {
                 "alarm_time": _normalise_preview_value(source["alarm_time"]),
-                "validation_time": _normalise_preview_value(source.get("validation_time")),
+                "validation_time": _normalise_preview_value(
+                    source.get("validation_time")
+                ),
                 "before_size": int(n1),
                 "after_size": int(n2),
                 "ks_statistic": _normalise_preview_value(ks_statistic),
@@ -956,12 +1099,8 @@ def _load_ks_validation_results(outputs_root: str | Path) -> dict[str, object]:
         "segments": segments,
     }
 
-    evaluated_rows = [
-        row for row in rows if row["status"] in {"confirmed", "rejected"}
-    ]
-    loss_rows = [
-        row for row in rows if row["status"] != "confirmed"
-    ]
+    evaluated_rows = [row for row in rows if row["status"] in {"confirmed", "rejected"}]
+    loss_rows = [row for row in rows if row["status"] != "confirmed"]
 
     return {
         "available": True,
@@ -974,6 +1113,7 @@ def _load_ks_validation_results(outputs_root: str | Path) -> dict[str, object]:
         "alpha": alpha,
         "k_alpha": k_alpha,
     }
+
 
 @app.get("/outputs/<path:filename>")
 def outputs_file(filename: str):
@@ -1042,9 +1182,7 @@ def results_catalog():
     available_experiments = sum(
         group["status"] == "available" for group in result_groups
     )
-    available_artifacts = sum(
-        int(group["available_count"]) for group in result_groups
-    )
+    available_artifacts = sum(int(group["available_count"]) for group in result_groups)
     total_artifacts = sum(int(group["artifact_count"]) for group in result_groups)
 
     return render_template(
