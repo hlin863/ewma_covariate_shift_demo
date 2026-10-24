@@ -1,0 +1,37 @@
+name: Audit initial assessment slide structure
+on:
+  push:
+    branches:
+      - initial-assessment-slide-refinement-20261024
+    paths:
+      - scripts/audit_initial_assessment_slides.py
+      - scripts/curate_initial_assessment_slides.py
+      - .github/workflows/initial-assessment-slide-audit.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  inventory:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install PowerPoint reader
+        run: python -m pip install --disable-pip-version-check python-pptx
+      - name: Audit slide text and overlap
+        run: python scripts/audit_initial_assessment_slides.py
+      - name: Build shorter non-destructive assessment copy
+        run: python scripts/curate_initial_assessment_slides.py
+      - name: Preserve inventory and curated assessment copy on review branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add presentations/initial_assessment_slide_inventory.md presentations/EWMA_Covariate_Shift_Initial_Assessment_Curated.pptx
+          if ! git diff --staged --quiet; then
+            git commit -m "Record slide content inventory for initial assessment review"
+            git push
+          fi
