@@ -32,3 +32,30 @@ The window selector uses only PCA-space history available through the warning ti
 ## Source provenance
 
 Imported and consolidated from the starter files in commit `d03dc519` so there is one canonical executable copy. Git history preserves the original starter tree.
+
+## Integrated optional `run_cse()` mode
+
+The shared CSE API now supports `CSEConfig(validation_mode="adaptive_windows")`.
+All existing fixed-window modes and the published Table 1 runner retain their
+original settings. The adaptive method uses the explicit policy when supplied,
+otherwise builds a policy from `covariance_method` and `covariance_regularization`;
+its default Stage-II alarm gap is 10 when `minimum_alarm_gap=None`.
+
+```python
+from src.cse import CSEConfig, run_cse
+from src.detection.stage2 import WindowSelectionPolicy
+
+config = CSEConfig(
+    pca_components=3,
+    validation_mode="adaptive_windows",
+    minimum_alarm_gap=10,
+    adaptive_window_policy=WindowSelectionPolicy(
+        min_window=2, max_window=40, target_df2=10,
+    ),
+)
+result = run_cse(training_features, testing_features, testing_times, config)
+# Stage-I warning_results and adaptive Stage-II validation_results are retained.
+```
+
+This optional mode does not modify `scripts/run_bci_table1_reproduction.py`.
+The experimental study runner remains the preferred fixed/adaptive comparator.

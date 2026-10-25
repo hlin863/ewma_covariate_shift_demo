@@ -23,6 +23,9 @@ from src.detection.stage1 import (
     run_sd_ewma,
 )
 from src.detection.stage2 import (
+    AdaptiveHotellingConfig,
+    WindowSelectionPolicy,
+    validate_adaptive_window_alarms,
     HotellingConfig,
     PaperTwoSampleHotellingConfig,
     TrainingReferenceHotellingConfig,
@@ -43,6 +46,7 @@ class CSEConfig:
     variance_update_mode: str = "always"
     ewma_initialization: str = "training_final"
     validation_mode: str = "retrospective_windows"
+    adaptive_window_policy: WindowSelectionPolicy | None = None
     validation_before_size: int = 50
     validation_after_size: int = 50
     validation_alpha: float = 0.05
@@ -72,10 +76,11 @@ class CSEConfig:
             "paper_two_sample",
             "algorithm1_training_reference",
             "retrospective_windows",
+            "adaptive_windows",
         }:
             raise ValueError(
                 "validation_mode must be 'paper_two_sample', "
-                "'algorithm1_training_reference', or 'retrospective_windows'."
+                "'algorithm1_training_reference', 'retrospective_windows', or 'adaptive_windows'."
             )
         if self.validation_before_size <= 0:
             raise ValueError("validation_before_size must be positive.")
@@ -236,6 +241,26 @@ def _run_cse_validation_stage(
     warning_results: pd.DataFrame,
     config: CSEConfig,
 ) -> pd.DataFrame:
+    if config.validation_mode == "adaptive_windows":
+        # A separate research extension. Existing fixed-window modes are untouched.
+        policy = config.adaptive_window_policy or WindowSelectionPolicy(
+            covariance_method=config.covariance_method,
+            regularization=config.covariance_regularization,
+        )
+        return validate_adaptive_window_alarms(
+            features=testing_transformed,
+            times=testing_times,
+            stage_1_results=warning_results,
+            config=AdaptiveHotellingConfig(
+                window_policy=policy,
+                alpha=config.validation_alpha,
+                minimum_alarm_gap=(
+                    config.minimum_alarm_gap
+                    if config.minimum_alarm_gap is not None
+                    else 10
+                ),
+            ),
+        )
     if config.validation_mode == "paper_two_sample":
         return validate_paper_two_sample_alarms(
             features=testing_transformed,

@@ -1,8 +1,11 @@
+from dataclasses import replace
+
 import numpy as np
 import pandas as pd
 import pytest
 
 from src.cse import CSEConfig, CSEResult, run_cse
+from src.detection.stage2 import WindowSelectionPolicy
 
 
 def _make_cse_config() -> CSEConfig:
@@ -269,3 +272,45 @@ def test_algorithm1_cse_starts_testing_ewma_from_training_mean() -> None:
     assert np.isclose(first["prediction"], result.ewma_training_result.initial_z)
     assert result.effective_lambda == 0.28
     assert "training_size" in result.validation_results.columns
+
+def test_adaptive_stage2_integrates_without_changing_ewma_warnings() -> None:
+    """Selecting an adaptive Stage II must not modify the Stage-I alarm stream."""
+    training, testing, times = _make_mean_shift_data()
+    fixed_config = replace(
+        _make_cse_config(),
+        validation_mode="paper_two_sample",
+    )
+    adaptive_config = replace(
+        fixed_config,
+        validation_mode="adaptive_windows",
+        adaptive_window_policy=WindowSelectionPolicy(
+            target_df2=10,
+            max_window=30,
+            covariance_method="shrinkage",
+        ),
+    )
+
+    baseline = run_cse(training, testing, times, fixed_config)
+    adaptive = run_cse(training, testing, times, adaptive_config)
+
+    pd.testing.assert_frame_equal(
+        baseline.warning_results,
+        adaptive.warning_results,
+    )
+    assert not adaptive.validation_results.empty
+    assert {
+        "required_min_window",
+        "sample_size",
+        "degrees_of_freedom_2",
+        "reference_condition_number",
+        "status",
+    }.issubset(adaptive.validation_results.columns)
+    evaluated = adaptive.validation_results[
+        adaptive.validation_results["status"].isin(["confirmed", "rejected"])
+    ]
+    assert (evaluated["degrees_of_freedom_2"] >= 10).all()
+
+
+def test_adaptive_cse_config_is_opt_in() -> None:
+    assert CSEConfig().validation_mode == "retrospective_windows"
+    assert CSEConfig(validation_mode="adaptive_windows").adaptive_window_policy is None
