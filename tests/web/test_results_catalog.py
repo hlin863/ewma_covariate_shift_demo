@@ -21,7 +21,7 @@ def _write_lambda_sse(path: Path) -> None:
 
 
 def test_results_catalog_detects_available_primary_result(tmp_path: Path) -> None:
-    comparison_path = tmp_path / "metrics" / "bci_table1_comparison.csv"
+    comparison_path = tmp_path / "metrics" / "table1_pca3_h10.csv"
     _write_results(comparison_path)
     figure_path = tmp_path / "figures" / "cse_lambda_stage1_warnings.png"
     figure_path.parent.mkdir(parents=True, exist_ok=True)
@@ -42,7 +42,7 @@ def test_results_catalog_detects_available_primary_result(tmp_path: Path) -> Non
 def test_results_catalog_page_renders_domains_methods_and_theme_controls(
     tmp_path: Path,
 ) -> None:
-    comparison_path = tmp_path / "metrics" / "bci_table1_comparison.csv"
+    comparison_path = tmp_path / "metrics" / "table1_pca3_h10.csv"
     _write_results(comparison_path)
     figure_path = tmp_path / "figures" / "cse_lambda_stage1_warnings.png"
     figure_path.parent.mkdir(parents=True, exist_ok=True)
@@ -64,7 +64,7 @@ def test_results_catalog_page_renders_domains_methods_and_theme_controls(
     assert response.status_code == 200
     html = response.get_data(as_text=True)
     assert "Research results catalogue" in html
-    assert "BCI Table 1 reproduction" in html
+    assert "BCI Table 1 — PCA3/H10 diagnostic" in html
     assert "Raza 2015 D2 / Table III reproduction" in html
     assert "Datasets" in html
     assert "Methods" in html
