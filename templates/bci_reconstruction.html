@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BCI Reconstruction Results · CSE Research</title>
+<script>(function(){const t=localStorage.getItem("dashboard-theme");document.documentElement.dataset.theme=t==="light"||t==="dark"?t:(matchMedia("(prefers-color-scheme: light)").matches?"light":"dark");})();</script>
+<link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='navigation.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='home.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='abcd.css') }}">
+</head>
+<body class="abcd-page">
+<main class="page-shell home-shell abcd-shell">
+<nav class="home-nav abcd-nav" aria-label="Research navigation">
+<a class="home-brand" href="{{ url_for('home') }}"><span>CSE</span> Research hub</a>
+<div class="home-nav-links abcd-nav-links">
+<a class="theme-button nav-link" href="{{ url_for('results_catalog') }}">All results</a>
+{% include '_research_navigation.html' %}
+<div class="theme-switcher" role="group" aria-label="Colour theme">
+<button class="theme-button" type="button" data-theme-option="light" aria-pressed="false">Light</button>
+<button class="theme-button" type="button" data-theme-option="dark" aria-pressed="false">Dark</button>
+</div></div></nav>
+<header class="abcd-hero"><div class="abcd-hero-copy">
+<p class="eyebrow">WP2 · BCI Competition IV · Reconstruction and CSE comparison</p>
+<h1>Reconstruction loss in real BCI features.</h1>
+<p class="lede">Review saved FBCSP → frozen PCA reconstruction-loss experiments alongside earlier EWMA/Hotelling diagnostics. Different metrics retain different interpretations.</p>
+<a class="secondary-action" href="{{ url_for('abcd.laboratory') }}">ABCD synthetic teaching lab</a>
+</div></header>
+<section class="scope-banner abcd-scope" aria-label="Evidence boundary">
+<div><span class="scope-marker">Experimental comparison</span><strong>Real BCI input; not an ABCD publication reproduction</strong></div>
+<p>No ground-truth drift-point labels are assumed for BCI session transitions. Reconstruction loss is not classification accuracy; a batch Bernstein score is not a calibrated stream-wide p-value. The earlier PCA3/H10 experiment may use a different PCA configuration.</p>
+</section>
+{% if data.available %}
+<section class="abcd-panel" id="comparison">
+<div class="abcd-section-heading"><div><p class="eyebrow">Saved experiment outputs</p><h2>BCI subject-level comparison</h2></div></div>
+<div class="abcd-table-wrap" tabindex="0" role="region" aria-label="BCI reconstruction compared with previous CSE counts">
+<table class="abcd-table"><thead><tr>
+<th>Dataset</th><th>Subject</th><th>PCA d′</th><th>Training MSE</th><th>Evaluation MSE</th><th>Δ mean MSE</th><th>Previous CSW</th><th>Previous CSV</th><th>Trace</th>
+</tr></thead><tbody>
+{% for row in data.subjects %}
+<tr><td>{{ row.dataset }}</td><td>{{ row.subject }}</td><td>{{ row.pca_components }}</td>
+<td>{{ '%.6g'|format(row.mean_training_loss) if row.mean_training_loss is number else '—' }}</td>
+<td>{{ '%.6g'|format(row.mean_evaluation_loss) if row.mean_evaluation_loss is number else '—' }}</td>
+<td>{{ '%.6g'|format(row.mean_evaluation_loss-row.mean_training_loss) if row.mean_evaluation_loss is number and row.mean_training_loss is number else '—' }}</td>
+<td>{{ row.computed_csw if row.computed_csw is not none else '—' }}</td>
+<td>{{ row.computed_csv if row.computed_csv is not none else '—' }}</td>
+<td><a href="{{ url_for('bci_reconstruction.results', subject=row.subject) }}">Inspect</a></td></tr>
+{% endfor %}</tbody></table></div>
+<p class="lede">Previous CSW/CSV are loaded only when the saved PCA3/H10 diagnostic CSV is available. They are not re-computed from the reconstruction trace.</p>
+</section>
+{% if selected %}
+<section class="abcd-panel" id="trace">
+<div class="abcd-section-heading"><div><p class="eyebrow">Selected subject</p><h2>{{ selected.subject }} · trial-level evidence</h2></div>
+<form method="get"><label for="subject">Subject
+<select id="subject" name="subject" onchange="this.form.submit()">
+{% for row in data.subjects %}<option value="{{ row.subject }}" {% if selected.subject==row.subject %}selected{% endif %}>{{ row.subject }}</option>{% endfor %}
+</select></label></form></div>
+<div class="abcd-metrics">
+<article><span>Training mean loss</span><strong>{{ '%.5g'|format(selected.mean_training_loss) }}</strong></article>
+<article><span>Evaluation mean loss</span><strong>{{ '%.5g'|format(selected.mean_evaluation_loss) }}</strong></article>
+<article><span>Previous EWMA warnings</span><strong>{{ selected.computed_csw if selected.computed_csw is not none else 'N/A' }}</strong></article>
+<article><span>Previous Stage-II confirmations</span><strong>{{ selected.computed_csv if selected.computed_csv is not none else 'N/A' }}</strong></article>
+</div>
+{% if selected.trace %}
+<figure class="abcd-chart-card"><figcaption><div><span class="abcd-step">Heyden Eq. (1)</span><h3>Frozen-PCA reconstruction MSE by evaluation trial</h3></div></figcaption>
+<svg id="bci-loss-chart" class="abcd-chart" viewBox="0 0 960 260" role="img" aria-label="Evaluation reconstruction loss trace"></svg>
+<p>Each point is a trial in the saved held-out BCI feature stream. This chart does not claim that a high-loss observation is a validated distribution change.</p>
+</figure>
+<script id="bci-trace-data" type="application/json">{{ selected.trace|tojson }}</script>
+<script src="{{ url_for('static', filename='bci_reconstruction.js') }}" defer></script>
+{% else %}<p>No trace CSV found for this subject. Generate the corresponding experiment output.</p>{% endif %}
+{% if selected.batch_split %}<p>Optional exploratory Bernstein candidate: {{ selected.batch_split.split_after }}; score {{ selected.batch_split.upper_bound_score }}. Not a calibrated p-value.</p>{% endif %}
+</section>
+{% endif %}
+{% else %}
+<section class="abcd-panel abcd-empty-state"><p class="eyebrow">No saved BCI reconstruction results</p><h2>Run the pipeline to populate this view.</h2>
+<p>{{ data.warning }}</p>
+<pre>python -m scripts.run_bci_reconstruction_loss --dataset 2b --subjects 1</pre>
+<p>Dataset 2A additionally requires the released evaluation-label directory. Generated results appear here after reloading the page.</p>
+</section>
+{% endif %}
+<section class="abcd-panel" id="sources"><div class="abcd-section-heading"><div><p class="eyebrow">Comparison validity</p><h2>How to interpret the different methods</h2></div></div>
+<p>The new PCA reconstruction-loss signal evaluates reconstruction mismatch. The previous CSE Table 1 metrics count Stage-I EWMA warnings (CSW) and Stage-II Hotelling confirmations (CSV). Without matched splits, features, PCA settings and ground-truth drift annotations, these are contextual comparisons rather than head-to-head detection-performance claims.</p>
+<p><a href="{{ url_for('results_catalog') }}">Browse existing results</a> · <a href="{{ url_for('abcd.laboratory') }}">Return to ABCD laboratory</a></p></section>
+<footer class="abcd-footer"><span>BCI reconstruction loss · WP2</span><a href="{{ url_for('home') }}">Back to CSE Research hub</a></footer>
+</main><script src="{{ url_for('static', filename='dashboard.js') }}" defer></script></body></html>
