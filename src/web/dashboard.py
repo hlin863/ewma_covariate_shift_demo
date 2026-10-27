@@ -28,6 +28,23 @@ DEFAULT_CHOWDHURY_DATA_PATH = PROJECT_ROOT / "data" / "raw" / "chowdhury_cse_uae
 
 RESULT_DEFINITIONS = (
     {
+        "id": "bci-reconstruction-loss",
+        "title": "BCI reconstruction loss — ABCD comparison",
+        "domain": "bci",
+        "domain_label": "BCI reconstruction diagnostics",
+        "datasets": ["BCI Competition IV 2A", "BCI Competition IV 2B"],
+        "methods": ["FBCSP", "Frozen PCA", "Reconstruction MSE", "Previous EWMA/Hotelling counts"],
+        "purpose": "Compare saved reconstruction-loss traces with the earlier CSE PCA3/H10 warning and confirmation counts, while retaining their distinct interpretation.",
+        "detail_endpoint": "bci_reconstruction.results",
+        "detail_label": "Explore BCI reconstruction results",
+        "command": "python -m scripts.run_bci_reconstruction_loss --dataset 2b --subjects 1",
+        "primary_artifact": "experiments/bci_reconstruction_loss/manifest.json",
+        "preview_columns": [],
+        "artifacts": [
+            ("experiments/bci_reconstruction_loss/manifest.json", "BCI experiment manifest"),
+        ],
+    },
+    {
         "id": "bci-table1",
         "title": "BCI Table 1 — PCA3/H10 diagnostic",
         "domain": "bci",
