@@ -1,0 +1,30 @@
+{
+  "provenance": "BCI Competition IV; repo development FBCSP protocol; Heyden Eq(1) teaching extension",
+  "warning": "Session transitions are not annotated change points; batch Bernstein is exploratory",
+  "config": {
+    "dataset": "2a",
+    "subjects": "[1]",
+    "data_2a": "data\\raw\\bci_competition_iv_2a",
+    "labels_2a": "data\\raw\\bci_competition_iv_2a_labels",
+    "data_2b": "data\\raw\\bci_competition_iv_2b",
+    "output": "outputs\\experiments\\bci_reconstruction_loss",
+    "seed": "42",
+    "validation_fraction": "0.3",
+    "components_per_side": "1",
+    "pca_components": "1",
+    "min_side": "10",
+    "bernstein_M": "None"
+  },
+  "subjects": [
+    {
+      "dataset": "2A",
+      "subject": 1,
+      "training_trials": 100,
+      "evaluation_trials": 144,
+      "pca_components": 1,
+      "mean_training_loss": 0.0643385960691996,
+      "mean_evaluation_loss": 0.08186840944070609,
+      "batch_split": null
+    }
+  ]
+}
