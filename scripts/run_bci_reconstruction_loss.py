@@ -117,11 +117,28 @@ def main():
         }
         summary.append(record)
         print(json.dumps(record, default=str))
+    manifest_path = args.output / "manifest.json"
+    previous = []
+    if manifest_path.is_file():
+        try:
+            prior = json.loads(manifest_path.read_text(encoding="utf-8"))
+            previous = prior.get("subjects", [])
+            if not isinstance(previous, list):
+                raise ValueError("Malformed previous manifest")
+        except (ValueError, OSError) as exc:
+            raise RuntimeError(f"Cannot safely update existing manifest: {exc}") from exc
+    updated_keys = {(row["dataset"], int(row["subject"])) for row in summary}
+    retained = [
+        row for row in previous
+        if isinstance(row, dict)
+        and (str(row.get("dataset", "")).upper(), int(row.get("subject", -1))) not in updated_keys
+    ]
+    combined = sorted(retained + summary, key=lambda row: (row["dataset"], int(row["subject"])))
     (args.output / "manifest.json").write_text(json.dumps({
         "provenance": "BCI Competition IV; repo development FBCSP protocol; Heyden Eq(1) teaching extension",
         "warning": "Session transitions are not annotated change points; batch Bernstein is exploratory",
         "config": {k: str(v) for k, v in vars(args).items()},
-        "subjects": summary,
+        "subjects": combined,
     }, indent=2), encoding="utf-8")
 
 
