@@ -25,3 +25,9 @@ The runner writes per-trial CSV traces, per-feature residual comparisons and a p
 High evaluation loss relative to training may indicate distributional mismatch in directions poorly reconstructed by frozen PCA, but it can also reflect preprocessing, noise or session effects. Low loss does not prove stationarity: changes within the retained PCA subspace may be invisible. Original EEG class labels are not distribution-change annotations. This output is neither a Heyden synthetic benchmark reproduction nor a new Table 1 result.
 
 For genuinely online operation, implement sequentially valid scaling, adaptive ABCD windows, model resets, null calibration and independently established change-point truth. Reuse `src/detection/stage1/complementary.py` for subsequent score-versus-residual comparisons.
+
+## Web display and comparison
+
+The existing Results catalog exposes **BCI reconstruction loss — ABCD comparison** at `/results/abcd/bci`. The page loads only saved artifacts, so HTTP rendering never initiates lengthy BCI analysis. It compares per-subject frozen-PCA training/evaluation loss with the previously saved PCA3/H10 Table 1 EWMA-warning and Hotelling-confirmation counts where available. These are distinct metrics and are not interpreted as interchangeable detection performance. The existing synthetic ABCD page remains unchanged.
+
+To populate both datasets in a shared output directory, run each command separately with the same `--output`; note that the current runner overwrites `manifest.json` on each invocation, so for now run each dataset to separate directories or choose one dataset at a time for the live comparison. A consolidated manifest is an identified follow-up requirement.
