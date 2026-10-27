@@ -65,6 +65,7 @@ def page_path(url: str) -> str:
 def export(base_path: str, destination: Path) -> dict:
     from bs4 import BeautifulSoup
     from src.web import app
+    from src.reporting.bci_comparison_figures import build_bci_comparison_figures
 
     if destination.exists():
         raise ValueError(f'{destination} already exists; use a fresh output directory.')
@@ -78,6 +79,23 @@ def export(base_path: str, destination: Path) -> dict:
     stamp = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')
     queue = deque(['/'])
     pages = {}
+    # Produce exportable charts from committed experiment evidence.
+    figure_dir = destination / 'outputs' / 'figures'
+    baseline = 'outputs/metrics/table1_pca3_h10.csv'
+    reconstruction = 'outputs/experiments/bci_reconstruction_loss/manifest.json'
+    if baseline in tracked and (ROOT / baseline).is_file():
+        build_bci_comparison_figures(
+            metrics_path=ROOT / baseline,
+            reconstruction_path=(ROOT / reconstruction if reconstruction in tracked
+                                 else destination / '_missing_reconstruction.json'),
+            output_dir=figure_dir,
+        )
+    figure_names = {
+        'bci_previous_method_comparison.png',
+        'bci_previous_method_comparison.svg',
+        'bci_reconstruction_comparison.png',
+        'bci_reconstruction_comparison.svg',
+    }
 
     def link(url: str, current: str) -> str:
         if not url or url.startswith('#'):
@@ -86,6 +104,12 @@ def export(base_path: str, destination: Path) -> dict:
         if absolute.netloc != 'export.invalid' or absolute.scheme != 'https':
             return url
         path = unquote(absolute.path).lstrip('/')
+        if absolute.path.startswith('/results/abcd/bci/figures/'):
+            filename = Path(absolute.path).name
+            generated = figure_dir / filename
+            if filename not in figure_names or not generated.is_file():
+                raise ValueError(f'Unavailable exported BCI comparison figure: {filename}')
+            return base + '/outputs/figures/' + quote(filename)
         if absolute.path.startswith('/papers/'):
             return REPOSITORY + '/blob/' + commit + '/' + quote(path)
         if absolute.path.startswith(('/static/', '/outputs/')):
