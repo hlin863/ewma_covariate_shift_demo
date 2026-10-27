@@ -7,7 +7,8 @@ from pathlib import Path
 import json
 
 import pandas as pd
-from flask import Blueprint, current_app, render_template, request
+from flask import Blueprint, current_app, render_template, request, send_from_directory, abort
+from src.reporting.bci_comparison_figures import build_bci_comparison_figures
 
 bci_reconstruction_bp = Blueprint("bci_reconstruction", __name__)
 
@@ -109,9 +110,36 @@ def results():
         output_root = PROJECT_ROOT / output_root
     if not metrics_root.is_absolute():
         metrics_root = PROJECT_ROOT / metrics_root
+    figures_root = Path(current_app.config.get("BCI_FIGURES_PATH", "outputs/figures"))
+    if not figures_root.is_absolute():
+        figures_root = PROJECT_ROOT / figures_root
+    try:
+        build_bci_comparison_figures(
+            metrics_path=metrics_root / "table1_pca3_h10.csv",
+            reconstruction_path=output_root / "manifest.json",
+            output_dir=figures_root,
+        )
+    except (OSError, ValueError, KeyError, TypeError):
+        pass
     data = load_comparison(output_root, metrics_root)
+    data["previous_figure"] = (figures_root / "bci_previous_method_comparison.png").is_file()
+    data["reconstruction_figure"] = (figures_root / "bci_reconstruction_comparison.png").is_file()
     selected = request.args.get("subject", "")
     all_rows = data["subjects"]
     chosen = next((r for r in all_rows if r["subject"] == selected),
                   all_rows[0] if all_rows else None)
     return render_template("bci_reconstruction.html", data=data, selected=chosen)
+
+@bci_reconstruction_bp.get("/results/abcd/bci/figures/<path:filename>")
+def figure(filename):
+    allowed = {
+        "bci_previous_method_comparison.png", "bci_previous_method_comparison.svg",
+        "bci_reconstruction_comparison.png", "bci_reconstruction_comparison.svg",
+    }
+    if filename not in allowed:
+        abort(404)
+    from src.web.dashboard import PROJECT_ROOT
+    folder = Path(current_app.config.get("BCI_FIGURES_PATH", "outputs/figures"))
+    if not folder.is_absolute():
+        folder = PROJECT_ROOT / folder
+    return send_from_directory(folder, filename)
