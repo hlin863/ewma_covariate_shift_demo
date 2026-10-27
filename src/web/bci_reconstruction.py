@@ -123,7 +123,7 @@ def results():
         pass
     data = load_comparison(output_root, metrics_root)
     data["previous_figure"] = (figures_root / "bci_previous_method_comparison.png").is_file()
-    data["reconstruction_figure"] = (figures_root / "bci_reconstruction_comparison.png").is_file()
+    data["reconstruction_figure"] = bool(data["reconstruction_present"] and (figures_root / "bci_reconstruction_comparison.png").is_file())
     selected = request.args.get("subject", "")
     all_rows = data["subjects"]
     chosen = next((r for r in all_rows if r["subject"] == selected),
