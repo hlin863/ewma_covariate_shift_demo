@@ -35,15 +35,15 @@
 <div class="abcd-section-heading"><div><p class="eyebrow">Saved experiment outputs</p><h2>BCI subject-level comparison</h2></div></div>
 <div class="abcd-table-wrap" tabindex="0" role="region" aria-label="BCI reconstruction compared with previous CSE counts">
 <table class="abcd-table"><thead><tr>
-<th>Dataset</th><th>Subject</th><th>PCA d′</th><th>Training MSE</th><th>Evaluation MSE</th><th>Δ mean MSE</th><th>Previous CSW</th><th>Previous CSV</th><th>Trace</th>
+<th>Dataset</th><th>Subject</th><th>PCA d′</th><th>Training MSE</th><th>Evaluation MSE</th><th>Δ mean MSE</th><th>Published CSW</th><th>Previous CSW</th><th>Published CSV</th><th>Previous CSV</th><th>Trace</th>
 </tr></thead><tbody>
 {% for row in data.subjects %}
 <tr><td>{{ row.dataset }}</td><td>{{ row.subject }}</td><td>{{ row.pca_components }}</td>
 <td>{{ '%.6g'|format(row.mean_training_loss) if row.mean_training_loss is number else '—' }}</td>
 <td>{{ '%.6g'|format(row.mean_evaluation_loss) if row.mean_evaluation_loss is number else '—' }}</td>
 <td>{{ '%.6g'|format(row.mean_evaluation_loss-row.mean_training_loss) if row.mean_evaluation_loss is number and row.mean_training_loss is number else '—' }}</td>
-<td>{{ row.computed_csw if row.computed_csw is not none else '—' }}</td>
-<td>{{ row.computed_csv if row.computed_csv is not none else '—' }}</td>
+<td>{{ row.published_csw if row.published_csw is not none else '—' }}</td><td>{{ row.computed_csw if row.computed_csw is not none else '—' }}</td>
+<td>{{ row.published_csv if row.published_csv is not none else '—' }}</td><td>{{ row.computed_csv if row.computed_csv is not none else '—' }}</td>
 <td><a href="{{ url_for('bci_reconstruction.results', subject=row.subject) }}">Inspect</a></td></tr>
 {% endfor %}</tbody></table></div>
 <p class="lede">Previous CSW/CSV are loaded only when the saved PCA3/H10 diagnostic CSV is available. They are not re-computed from the reconstruction trace.</p>
@@ -56,8 +56,8 @@
 {% for row in data.subjects %}<option value="{{ row.subject }}" {% if selected.subject==row.subject %}selected{% endif %}>{{ row.subject }}</option>{% endfor %}
 </select></label></form></div>
 <div class="abcd-metrics">
-<article><span>Training mean loss</span><strong>{{ '%.5g'|format(selected.mean_training_loss) }}</strong></article>
-<article><span>Evaluation mean loss</span><strong>{{ '%.5g'|format(selected.mean_evaluation_loss) }}</strong></article>
+<article><span>Training mean loss</span><strong>{{ '%.5g'|format(selected.mean_training_loss) if selected.mean_training_loss is number else 'Pending' }}</strong></article>
+<article><span>Evaluation mean loss</span><strong>{{ '%.5g'|format(selected.mean_evaluation_loss) if selected.mean_evaluation_loss is number else 'Pending' }}</strong></article>
 <article><span>Previous EWMA warnings</span><strong>{{ selected.computed_csw if selected.computed_csw is not none else 'N/A' }}</strong></article>
 <article><span>Previous Stage-II confirmations</span><strong>{{ selected.computed_csv if selected.computed_csv is not none else 'N/A' }}</strong></article>
 </div>
