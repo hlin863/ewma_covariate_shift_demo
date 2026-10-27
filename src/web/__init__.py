@@ -2,6 +2,7 @@
 
 from src.web.dashboard import app
 from src.web.abcd import abcd_bp
+from src.web.bci_reconstruction import bci_reconstruction_bp
 from src.web.bci_eda import bci_eda_bp
 from src.web.data_structures import data_structures_bp
 from src.web.decision_models import decision_models_bp
@@ -25,6 +26,9 @@ configure_support_defaults(app)
 
 if "abcd" not in app.blueprints:
     app.register_blueprint(abcd_bp)
+
+if "bci_reconstruction" not in app.blueprints:
+    app.register_blueprint(bci_reconstruction_bp)
 
 if "bci_eda" not in app.blueprints:
     app.register_blueprint(bci_eda_bp)
