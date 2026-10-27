@@ -39,4 +39,4 @@ def test_reconstruction_results_generate_additional_backups(tmp_path):
     assert (output / "bci_reconstruction_comparison.png").stat().st_size > 0
     assert (output / "bci_reconstruction_comparison.svg").stat().st_size > 0
     frame = pd.read_csv(output / "bci_reconstruction_comparison.csv")
-    assert frame.iloc[0]["delta_mse"] == 0.06
+    assert abs(frame.iloc[0]["delta_mse"] - 0.06) < 1e-12
