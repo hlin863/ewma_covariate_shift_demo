@@ -31,6 +31,20 @@
 <p>No ground-truth drift-point labels are assumed for BCI session transitions. Reconstruction loss is not classification accuracy; a batch Bernstein score is not a calibrated stream-wide p-value. The earlier PCA3/H10 experiment may use a different PCA configuration.</p>
 </section>
 {% if data.available %}
+<section class="abcd-panel" id="figures" aria-label="Persisted BCI comparison figures">
+<div class="abcd-section-heading"><div><p class="eyebrow">Saved research figures</p><h2>Visual comparison of experimental results</h2></div></div>
+{% if data.previous_figure %}
+<figure class="abcd-chart-card"><figcaption><h3>Published versus computed EWMA and Hotelling counts</h3></figcaption>
+<img src="{{ url_for('bci_reconstruction.figure', filename='bci_previous_method_comparison.png') }}" alt="BCI subject-level published and computed CSW and CSV comparison" style="width:100%;height:auto">
+<p><a href="{{ url_for('bci_reconstruction.figure', filename='bci_previous_method_comparison.svg') }}">Open backup SVG</a></p></figure>
+{% endif %}
+{% if data.reconstruction_figure %}
+<figure class="abcd-chart-card"><figcaption><h3>Frozen-PCA training and evaluation reconstruction loss</h3></figcaption>
+<img src="{{ url_for('bci_reconstruction.figure', filename='bci_reconstruction_comparison.png') }}" alt="Training and evaluation reconstruction-loss comparison for BCI subjects" style="width:100%;height:auto">
+<p><a href="{{ url_for('bci_reconstruction.figure', filename='bci_reconstruction_comparison.svg') }}">Open backup SVG</a></p></figure>
+{% else %}<p>Previous results remain visible. New reconstruction-loss figures will appear when their experiment files are generated.</p>{% endif %}
+<p>Figures are backed up locally in <code>outputs/figures/</code> as PNG and SVG.</p>
+</section>
 <section class="abcd-panel" id="comparison">
 <div class="abcd-section-heading"><div><p class="eyebrow">Saved experiment outputs</p><h2>BCI subject-level comparison</h2></div></div>
 <div class="abcd-table-wrap" tabindex="0" role="region" aria-label="BCI reconstruction compared with previous CSE counts">
