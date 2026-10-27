@@ -1,4 +1,8 @@
-"""Read saved BCI reconstruction outputs without running experiments on page load."""
+"""Join existing BCI Table 1 evidence with optional reconstruction-loss runs.
+
+Always show previous subject results, including when reconstruction outputs do
+not exist yet. This reader neither retrains models nor invents new loss values.
+"""
 from pathlib import Path
 import json
 
@@ -9,53 +13,64 @@ bci_reconstruction_bp = Blueprint("bci_reconstruction", __name__)
 
 
 def load_comparison(root: Path, metrics_root: Path):
-    """Separate diagnostic metrics from reconstruction values; never invent missing runs."""
-    manifest_path = root / "manifest.json"
-    if not manifest_path.is_file():
-        return {"available": False, "subjects": [], "warning": "No BCI reconstruction manifest found. Run the CLI first."}
-    try:
-        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-        entries = manifest.get("subjects", [])
-        if not isinstance(entries, list):
-            raise ValueError("Invalid manifest subjects")
-    except (OSError, ValueError, TypeError) as exc:
-        return {"available": False, "subjects": [], "warning": f"Cannot read manifest: {exc}"}
-
     baseline = {}
     table_path = metrics_root / "table1_pca3_h10.csv"
     if table_path.is_file():
         try:
-            for _, row in pd.read_csv(table_path).iterrows():
-                key = (str(row.get("dataset", "")).upper().replace("DATASET ", "").replace("BCI ", "").strip(),
-                       str(row.get("subject", "")).upper())
-                baseline[key] = row.to_dict()
+            frame = pd.read_csv(table_path)
+            for _, row in frame.iterrows():
+                dataset = str(row.get("dataset", "")).strip().upper()
+                subject = str(row.get("subject", "")).strip().upper()
+                if dataset in {"2A", "2B"} and subject:
+                    baseline[(dataset, subject)] = row.to_dict()
         except (OSError, ValueError, pd.errors.ParserError):
             pass
 
-    results = []
-    for entry in entries:
-        dataset = str(entry.get("dataset", "")).upper()
-        number = entry.get("subject")
-        if dataset not in {"2A", "2B"}:
-            continue
+    manifest = {}
+    entries = []
+    issue = None
+    manifest_path = root / "manifest.json"
+    if manifest_path.is_file():
         try:
-            number = int(number)
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            entries = manifest.get("subjects", [])
+            if not isinstance(entries, list):
+                raise ValueError("Invalid manifest subjects")
+        except (OSError, ValueError, TypeError) as exc:
+            issue = f"Cannot read reconstruction manifest: {exc}"
+            manifest, entries = {}, []
+
+    reconstruction = {}
+    for entry in entries:
+        if not isinstance(entry, dict):
+            continue
+        dataset = str(entry.get("dataset", "")).upper()
+        try:
+            number = int(entry.get("subject"))
         except (TypeError, ValueError):
             continue
-        if not 1 <= number <= 9:
+        if dataset not in {"2A", "2B"} or not 1 <= number <= 9:
             continue
         subject = f"{'A' if dataset == '2A' else 'B'}{number:02d}"
-        trace_path = root / f"{dataset}_{number:02d}_loss_trace.csv"
+        reconstruction[(dataset, subject)] = entry
+
+    results = []
+    for dataset, subject in sorted(set(baseline) | set(reconstruction)):
+        previous = baseline.get((dataset, subject), {})
+        entry = reconstruction.get((dataset, subject), {})
+        number = int(subject[1:])
         trace = []
-        if trace_path.is_file():
+        trace_path = root / f"{dataset}_{number:02d}_loss_trace.csv"
+        if entry and trace_path.is_file():
             try:
-                df = pd.read_csv(trace_path)
-                required = {"trial_index", "reconstruction_mse", "pc1_score"}
-                if required.issubset(df.columns):
-                    trace = df[list(required)].replace([float("inf"), -float("inf")], float("nan")).dropna().to_dict("records")
+                frame = pd.read_csv(trace_path)
+                required = ["trial_index", "reconstruction_mse", "pc1_score"]
+                if set(required).issubset(frame.columns):
+                    trace = frame[required].replace(
+                        [float("inf"), -float("inf")], float("nan")
+                    ).dropna().to_dict("records")
             except (OSError, ValueError, pd.errors.ParserError):
                 pass
-        row = baseline.get((dataset, subject), {})
         results.append({
             "dataset": dataset, "subject": subject, "subject_number": number,
             "training_trials": entry.get("training_trials"),
@@ -64,18 +79,23 @@ def load_comparison(root: Path, metrics_root: Path):
             "mean_training_loss": entry.get("mean_training_loss"),
             "mean_evaluation_loss": entry.get("mean_evaluation_loss"),
             "batch_split": entry.get("batch_split"),
-            "computed_csw": row.get("computed_csw"),
-            "computed_csv": row.get("computed_csv"),
-            "published_csw": row.get("published_csw"),
-            "published_csv": row.get("published_csv"),
-            "previous_pca_components": 3 if row else None,
+            "computed_csw": previous.get("computed_csw"),
+            "computed_csv": previous.get("computed_csv"),
+            "published_csw": previous.get("published_csw"),
+            "published_csv": previous.get("published_csv"),
+            "previous_pca_components": 3 if previous else None,
             "trace": trace,
+            "has_reconstruction": bool(entry),
+            "has_baseline": bool(previous),
         })
-    return {"available": bool(results), "subjects": results,
-            "warning": None if results else "No valid subject runs found in the manifest.",
-            "provenance": manifest.get("provenance"),
-            "limitations": manifest.get("warning"),
-            "baseline_present": bool(baseline)}
+    return {
+        "available": bool(results), "subjects": results,
+        "warning": issue or (None if results else "No saved BCI subject results were found."),
+        "provenance": manifest.get("provenance"),
+        "limitations": manifest.get("warning"),
+        "baseline_present": bool(baseline),
+        "reconstruction_present": bool(reconstruction),
+    }
 
 
 @bci_reconstruction_bp.get("/results/abcd/bci")
@@ -92,5 +112,6 @@ def results():
     data = load_comparison(output_root, metrics_root)
     selected = request.args.get("subject", "")
     all_rows = data["subjects"]
-    chosen = next((r for r in all_rows if r["subject"] == selected), all_rows[0] if all_rows else None)
+    chosen = next((r for r in all_rows if r["subject"] == selected),
+                  all_rows[0] if all_rows else None)
     return render_template("bci_reconstruction.html", data=data, selected=chosen)
