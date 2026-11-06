@@ -146,52 +146,16 @@ def run_sd_ewma(
     if not np.isfinite(initial_z):
         raise ValueError("initial_z must be finite.")
 
-    previous_z = float(initial_z)
-    previous_variance = float(initial_error_variance)
+    state = SD_EWMA_State(
+        z=float(initial_z),
+        error_variance=float(initial_error_variance),
+    )
     records: list[dict[str, float | int | str]] = []
     for time, observation in zip(time_values, observations):
-        previous_std = float(np.sqrt(previous_variance))
-        half_width = config.control_limit_multiplier * previous_std
-        lcl = previous_z - half_width
-        ucl = previous_z + half_width
-        prediction_error = float(observation - previous_z)
-        stage_1_alarm = bool(observation <= lcl or observation >= ucl)
-        current_z = (
-            config.lambda_value * observation + (1.0 - config.lambda_value) * previous_z
+        state, record = step_sd_ewma(
+            state, observation=float(observation), time=int(time), config=config
         )
-        updated_variance = (
-            config.variance_smoothing * prediction_error**2
-            + (1.0 - config.variance_smoothing) * previous_variance
-        )
-        variance_updated = config.variance_update_mode == "always" or (
-            config.variance_update_mode == "non_alarm" and not stage_1_alarm
-        )
-        current_variance = (
-            float(updated_variance) if variance_updated else previous_variance
-        )
-        records.append(
-            {
-                "time": int(time),
-                "x": float(observation),
-                "prediction": float(previous_z),
-                "ewma": float(current_z),
-                "error": prediction_error,
-                "error_variance_before": float(previous_variance),
-                "error_std_before": previous_std,
-                "control_limit_multiplier": float(config.control_limit_multiplier),
-                "control_limit_half_width": float(half_width),
-                "lcl": float(lcl),
-                "ucl": float(ucl),
-                "stage_1_alarm": int(stage_1_alarm),
-                "error_variance_after": float(current_variance),
-                "variance_update_mode": config.variance_update_mode,
-                "lambda": float(config.lambda_value),
-                "variance_smoothing": float(config.variance_smoothing),
-                "variance_updated": int(variance_updated),
-            }
-        )
-        previous_z = float(current_z)
-        previous_variance = float(current_variance)
+        records.append(record)
     return pd.DataFrame(records)
 
 
@@ -234,3 +198,100 @@ class SD_EWMA_State:
         ):
             raise ValueError("n_observations must be a non-negative integer")
         object.__setattr__(self, "n_observations", int(self.n_observations))
+
+
+def step_sd_ewma(
+    state: SD_EWMA_State,
+    observation: float,
+    time: int,
+    config: SD_EWMA_Config,
+) -> tuple[SD_EWMA_State, dict[str, float | int | str]]:
+    """Process one scalar observation; preserve legacy batch semantics and trace schema."""
+    x = float(observation)
+    if not np.isfinite(x):
+        raise ValueError("observation must be finite.")
+    if isinstance(time, (bool, np.bool_)) or not isinstance(time, (int, np.integer)):
+        raise ValueError("time must be an integer observation index.")
+    if state.last_time is not None and int(time) <= state.last_time:
+        raise ValueError("time must be strictly increasing.")
+
+    previous_z = state.z
+    previous_variance = state.error_variance
+    previous_std = float(np.sqrt(previous_variance))
+    half_width = config.control_limit_multiplier * previous_std
+    lcl = previous_z - half_width
+    ucl = previous_z + half_width
+    prediction_error = float(x - previous_z)
+    stage_1_alarm = bool(x <= lcl or x >= ucl)
+    current_z = (
+        config.lambda_value * x + (1.0 - config.lambda_value) * previous_z
+    )
+    updated_variance = (
+        config.variance_smoothing * prediction_error**2
+        + (1.0 - config.variance_smoothing) * previous_variance
+    )
+    variance_updated = config.variance_update_mode == "always" or (
+        config.variance_update_mode == "non_alarm" and not stage_1_alarm
+    )
+    current_variance = (
+        float(updated_variance) if variance_updated else previous_variance
+    )
+    next_state = SD_EWMA_State(
+        z=float(current_z),
+        error_variance=float(current_variance),
+        last_time=int(time),
+        n_observations=state.n_observations + 1,
+    )
+    record: dict[str, float | int | str] = {
+        "time": int(time),
+        "x": float(x),
+        "prediction": float(previous_z),
+        "ewma": float(current_z),
+        "error": prediction_error,
+        "error_variance_before": float(previous_variance),
+        "error_std_before": previous_std,
+        "control_limit_multiplier": float(config.control_limit_multiplier),
+        "control_limit_half_width": float(half_width),
+        "lcl": float(lcl),
+        "ucl": float(ucl),
+        "stage_1_alarm": int(stage_1_alarm),
+        "error_variance_after": float(current_variance),
+        "variance_update_mode": config.variance_update_mode,
+        "lambda": float(config.lambda_value),
+        "variance_smoothing": float(config.variance_smoothing),
+        "variance_updated": int(variance_updated),
+    }
+    return next_state, record
+
+
+class OnlineSDEWMA:
+    """Stateful, one-scalar-at-a-time Stage-I detector."""
+
+    def __init__(self, state: SD_EWMA_State, config: SD_EWMA_Config) -> None:
+        self.state = state
+        self.config = config
+
+    @classmethod
+    def from_training(
+        cls, training: EWMATrainingResult, config: SD_EWMA_Config
+    ) -> "OnlineSDEWMA":
+        if not np.isclose(training.lambda_value, config.lambda_value, rtol=0, atol=1e-12):
+            raise ValueError("config lambda_value must match training lambda_value.")
+        return cls(
+            SD_EWMA_State(
+                z=training.final_z, error_variance=training.error_variance
+            ),
+            config,
+        )
+
+    def update_one(self, observation: float, time: int) -> dict[str, float | int | str]:
+        next_state, record = step_sd_ewma(
+            self.state, observation=observation, time=time, config=self.config
+        )
+        # The state only advances if the entire transition succeeds.
+        self.state = next_state
+        return record
+
+    def update(self, observation: float, time: int) -> dict[str, float | int | str]:
+        """Alias for the one-observation API."""
+        return self.update_one(observation, time)
