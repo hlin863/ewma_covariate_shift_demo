@@ -2,6 +2,9 @@ from dataclasses import dataclass
 
 import numpy as np
 import pandas as pd
+from dataclasses import dataclass
+from typing import Optional
+import numpy as nps
 
 
 @dataclass(frozen=True)
@@ -194,3 +197,44 @@ def run_sd_ewma(
         previous_z = float(current_z)
         previous_variance = float(current_variance)
     return pd.DataFrame(records)
+
+
+@dataclass(frozen=True)
+class SD_EWMA_State:
+    """
+    State for SD-EWMA.
+
+    Attributes:
+        z: Current EWMA value.
+        error_variance: Current error variance.
+        last_time: Last observation time (default: None).
+        n_observations: Number of observations processed (default: 0).
+    """
+
+    z: float
+    error_variance: float
+    last_time: int | None = None
+    n_observations: int = 0
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "z", float(self.z))
+        object.__setattr__(self, "error_variance", float(self.error_variance))
+        if not np.isfinite(self.z):
+            raise ValueError("z must be finite")
+        if not np.isfinite(self.error_variance) or self.error_variance <= 0:
+            raise ValueError("error_variance must be positive and finite")
+
+        if self.last_time is not None:
+            if isinstance(self.last_time, (bool, np.bool_)) or not isinstance(
+                self.last_time, (int, np.integer)
+            ):
+                raise ValueError("last_time must be an integer or None")
+            object.__setattr__(self, "last_time", int(self.last_time))
+
+        if (
+            isinstance(self.n_observations, (bool, np.bool_))
+            or not isinstance(self.n_observations, (int, np.integer))
+            or self.n_observations < 0
+        ):
+            raise ValueError("n_observations must be a non-negative integer")
+        object.__setattr__(self, "n_observations", int(self.n_observations))
