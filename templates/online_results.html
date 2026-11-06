@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Online adaptive learning · EWMA Covariate Shift Demo</title>
+  <script>
+    (function () {
+      const storedTheme = localStorage.getItem("dashboard-theme");
+      const preferredTheme = window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+      document.documentElement.dataset.theme = storedTheme || preferredTheme;
+    })();
+  </script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='navigation.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='process.css') }}">
+  <style>
+    .online-layout{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:1rem;margin:1.2rem 0}
+    .online-panel{padding:1.25rem;border:1px solid var(--border, #71809655);border-radius:14px;background:var(--surface,transparent)}
+    .online-controls{display:flex;flex-wrap:wrap;gap:1rem;align-items:end}
+    .online-controls label{display:flex;flex-direction:column;gap:.35rem;min-width:9rem}
+    .online-controls input,.online-controls select{padding:.5rem;border-radius:6px;max-width:100%;background:var(--surface,transparent);color:inherit}
+    .online-table-wrap{overflow-x:auto}
+    .online-table{width:100%;border-collapse:collapse}
+    .online-table th,.online-table td{padding:.6rem;text-align:left;border-bottom:1px solid #8993a344}
+    .online-code{white-space:pre-wrap;overflow-wrap:anywhere}
+    .online-muted{opacity:.8}
+    .online-warn{border-left:4px solid #c98735;padding:.7rem 1rem}
+    .online-plot{width:100%;height:210px}
+    .online-plot polyline{fill:none;stroke:#14b8a6;stroke-width:2}
+    .online-plot circle{fill:#ef9c37}
+  </style>
+</head>
+<body class="results-page">
+<main class="page-shell results-shell">
+  <header class="hero results-hero">
+    <div><p class="eyebrow">Research results · Continual learning</p>
+      <h1>Online adaptive learning — observation-by-observation tests</h1>
+      <p class="lede">Run the repository's existing PCA → SD-EWMA → delayed Hotelling T² → adaptation-policy → retrainable classifier pipeline, and compare it against the never-update control.</p>
+    </div>
+    <div class="hero-actions">
+      {% include '_research_navigation.html' %}
+      <a class="theme-button nav-link" href="{{ url_for('results_catalog') }}">All research results</a>
+      <a class="theme-button nav-link" href="{{ url_for('test_results.test_results') }}">Pytest cases</a>
+    </div>
+  </header>
+  <section class="online-panel">
+    <p class="eyebrow">Execution boundary</p>
+    <p class="online-warn"><strong>Generated synthetic data, not BCI evidence.</strong> Trials are delivered as one precomputed feature vector per observation. Stage-II decisions require future observations, and true labels are released to the learner only after the selected trial delay. This is not live causal EEG acquisition or a published-paper numerical reproduction.</p>
+  </section>
+  <section class="online-panel">
+    <h2>Run the online learning comparison locally</h2>
+    <form method="post">
+      <div class="online-controls">
+        <label>Scenario
+          <select name="scenario">
+            {% for key, label in [('feature_shift','Input-feature shift'),('relationship_shift','Label-rule shift'),('none','No shift')] %}
+            <option value="{{ key }}"{% if values.scenario == key %} selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label>Seed<input name="seed" type="number" min="0" max="4294967295" value="{{ values.seed }}" required></label>
+        <label>Evaluation trials<input name="trials" type="number" min="80" max="500" value="{{ values.trials }}" required></label>
+        <label>Stage-II window (H)<input name="window_size" type="number" min="4" max="50" value="{{ values.window_size }}" required></label>
+        <label>Periodic interval<input name="interval" type="number" min="1" max="100" value="{{ values.interval }}" required></label>
+        <label>Label delay (trials; −1 = withheld)<input name="label_delay" type="number" min="-1" max="500" value="{{ values.label_delay }}" required></label>
+        <button class="theme-button" type="submit">Run the three policies</button>
+      </div>
+    </form>
+    {% if error %}<p role="alert" class="online-warn">{{ error }}</p>{% endif %}
+  </section>
+  {% if experiment %}
+  <section class="online-panel" id="online-experiment-results">
+    <p class="eyebrow">Measured during this request</p>
+    <h2>Policy comparison — {{ experiment.scenario.replace('_',' ') }}</h2>
+    <p class="online-muted">Seed {{ experiment.seed }} · {{ experiment.trials }} evaluation trials · H={{ experiment.window_size }} · label delay {{ experiment.label_delay if experiment.label_delay is not none else 'withheld' }}. Accuracy and relative improvement are descriptive for this single generated run.</p>
+    <div class="online-table-wrap"><table class="online-table">
+      <caption>All policies receive the same generated feature stream</caption>
+      <thead><tr><th>Policy</th><th>Accuracy</th><th>Gain vs never</th><th>Post-change accuracy</th><th>Stage-I warnings</th><th>Confirmed shifts</th><th>Classifier updates</th><th>Retraining time</th></tr></thead>
+      <tbody>{% for row in experiment.summary %}
+      <tr><td><strong>{{ row.policy }}</strong></td><td>{{ '%.1f'|format(row.accuracy * 100) }}%</td>
+        <td>{{ '%+.1f'|format(row.gain_vs_never * 100) }} pp</td>
+        <td>{% if row.post_change_accuracy is not none %}{{ '%.1f'|format(row.post_change_accuracy * 100) }}%{% else %}Not applicable{% endif %}</td>
+        <td>{{ row.warnings }}</td><td>{{ row.confirmed }}</td><td>{{ row.updates }}</td>
+        <td>{{ '%.4f'|format(row.retrain_seconds) }} s</td></tr>
+      {% endfor %}</tbody>
+    </table></div>
+  </section>
+  <section class="online-layout" aria-label="Online monitoring trajectories">
+    {% for policy, trace in experiment.traces.items() %}
+    <article class="online-panel">
+      <h3>{{ policy|title }} — EWMA and Stage-I alarms</h3>
+      <svg class="online-plot" viewBox="0 0 500 180" role="img" aria-label="{{ policy }} EWMA values over chronological trial observations">
+        {% set ewmas = trace | map(attribute='ewma') | list %}
+        {% set low = ewmas | min %}
+        {% set high = ewmas | max %}
+        {% set spread = (high - low) if high != low else 1 %}
+        <polyline points="{% for item in trace %}{{ '%.2f'|format(10+480*loop.index0/(trace|length-1)) }},{{ '%.2f'|format(165-150*(item.ewma-low)/spread) }} {% endfor %}" />
+        {% for item in trace if item.warning %}
+        <circle cx="{{ '%.2f'|format(10+480*item.time/(trace|length-1)) }}" cy="{{ '%.2f'|format(165-150*(item.ewma-low)/spread) }}" r="3" />
+        {% endfor %}
+      </svg>
+      <p class="online-muted">Turquoise: EWMA. Amber dots: Stage-I alarms. These are model-monitoring events, not ground-truth shift confirmations.</p>
+    </article>
+    {% endfor %}
+  </section>
+  {% else %}
+  <section class="online-panel" aria-label="Online learning results not yet generated">
+    <h2>Ready to generate experiment results</h2>
+    <p>Submit the experiment above to run an actual sequential comparison. No numerical results are displayed until the experiment has executed.</p>
+  </section>
+  {% endif %}
+  <section class="online-panel">
+    <h2>BCI 2A / 2B results from saved experiment outputs</h2>
+    <p class="online-muted">This section reads existing <code>outputs/online/</code> CSV files. It never converts synthetic experiments into real BCI results. BCI raw files and official evaluation labels must be available locally to generate these reports.</p>
+    {% if bci_summaries %}
+    <div class="online-table-wrap"><table class="online-table"><thead><tr><th>Dataset</th><th>Subject</th><th>Policy</th><th>Trials</th><th>Accuracy</th><th>Warnings</th><th>Updates</th><th>Saved CSV</th></tr></thead>
+      <tbody>{% for row in bci_summaries %}<tr><td>{{ row.dataset }}</td><td>{{ row.subject }}</td><td>{{ row.policy }}</td><td>{{ row.trials }}</td><td>{{ '%.1f'|format(row.accuracy*100) }}%</td><td>{{ row.warnings }}</td><td>{{ row.updates }}</td><td><a href="{{ url_for('outputs_file', filename=row.relative_path) }}">summary.csv</a></td></tr>{% endfor %}</tbody>
+    </table></div>
+    {% else %}
+    <p>No saved real-BCI online runs were found. The page deliberately displays no invented BCI accuracy.</p>
+    {% endif %}
+    <p>Example commands:</p>
+    <pre class="online-code">python scripts/run_online_bci.py --dataset 2a --subject 1 --labels-2a data/raw/bci_competition_iv_2a_labels --policy validated
+python scripts/run_online_bci.py --dataset 2b --subject 1 --labels-2b data/raw/bci_competition_iv_2b_labels --policy validated</pre>
+  </section>
+  <footer class="online-panel">
+    <p>Code: <a href="https://github.com/hlin863/ewma_covariate_shift_demo/blob/main/src/online/pipeline.py">OnlineAdaptiveBCI controller</a> · <a href="https://github.com/hlin863/ewma_covariate_shift_demo/tree/main/tests/online">Online tests</a> · <a href="{{ url_for('diethe.laboratory') }}">Previous six-policy laboratory</a></p>
+  </footer>
+</main>
+</body>
+</html>

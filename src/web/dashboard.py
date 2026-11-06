@@ -28,6 +28,26 @@ DEFAULT_CHOWDHURY_DATA_PATH = PROJECT_ROOT / "data" / "raw" / "chowdhury_cse_uae
 
 RESULT_DEFINITIONS = (
     {
+        "id": "online-adaptive-learning",
+        "title": "Online adaptive learning — event-driven feature replay",
+        "domain": "bci",
+        "domain_label": "Online adaptation implementation",
+        "datasets": ["BCI Competition IV 2A/2B (optional saved runs)", "Synthetic feature shift"],
+        "methods": ["FBCSP", "Frozen PCA", "SD-EWMA", "Two-window Hotelling T²", "Adaptation policies", "Linear SVM"],
+        "purpose": "Inspect online per-trial processing, delayed Stage-II decisions, model-version updates and measured never/periodic/validated policy comparisons. Synthetic demonstrations are not published BCI reproductions.",
+        "detail_endpoint": "online_results.results",
+        "detail_label": "Run or inspect online learning results",
+        "command": "python scripts/run_online_demo.py --scenario feature_shift --policy validated",
+        "primary_artifact": "online/synthetic/feature_shift/validated/summary.csv",
+        "preview_columns": ["scenario", "policy", "seed", "trials", "accuracy", "warnings", "updates"],
+        "artifacts": [
+            ("online/synthetic/feature_shift/validated/summary.csv", "Synthetic online adaptive metrics"),
+            ("online/synthetic/feature_shift/validated/trials.csv", "Per-trial prediction and EWMA trace"),
+            ("online/synthetic/feature_shift/validated/stage2.csv", "Stage-II validation events"),
+            ("online/synthetic/feature_shift/validated/updates.csv", "Classifier adaptation events"),
+        ],
+    },
+    {
         "id": "bci-reconstruction-loss",
         "title": "BCI reconstruction loss — ABCD comparison",
         "domain": "bci",
