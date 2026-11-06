@@ -19,7 +19,7 @@ from src.adaptation.policies import (
 from src.online.pipeline import OnlineAdaptiveBCI, OnlineAdaptationConfig
 
 
-def prepare(dataset, subject, data_2a, labels_2a, data_2b, seed):
+def prepare(dataset, subject, data_2a, labels_2a, data_2b, labels_2b, seed):
     if dataset == "2a":
         from src.bci.data import load_bci_competition_iv_2a_session
         from src.bci.datasets.dataset2a import (
@@ -47,10 +47,27 @@ def prepare(dataset, subject, data_2a, labels_2a, data_2b, seed):
         extract_dataset_2b_trials, prepare_cse_uael_2019_protocol,
         build_dataset_2b_development_fbcsp_features,
     )
+    from dataclasses import replace
+    from src.bci.datasets.dataset2b.evaluation_labels import (
+        load_dataset_2b_evaluation_labels, resolve_dataset_2b_evaluation_label_path,
+    )
     sessions = [
         extract_dataset_2b_trials(load_bci_competition_iv_2b_session(data_2b, subject, i))
         for i in range(1, 6)
     ]
+    # Evaluation labels are absent from the GDF files; load official MAT labels,
+    # and align them to the extracted 160 trials in each evaluation session.
+    for session_index in (4, 5):
+        label_file = resolve_dataset_2b_evaluation_label_path(
+            subject, session_index, data_directory=data_2b,
+            labels_directory=labels_2b,
+        )
+        labels = load_dataset_2b_evaluation_labels(label_file)
+        if len(sessions[session_index - 1].labels) != len(labels):
+            raise ValueError("2B evaluation labels must match extracted trial order")
+        sessions[session_index - 1] = replace(
+            sessions[session_index - 1], labels=labels
+        )
     protocol = prepare_cse_uael_2019_protocol(sessions, random_state=seed)
     features = build_dataset_2b_development_fbcsp_features(
         protocol.development, protocol.evaluation
@@ -66,6 +83,7 @@ def main():
     parser.add_argument("--data-2a", type=Path, default=Path("data/raw/bci_competition_iv_2a"))
     parser.add_argument("--labels-2a", type=Path)
     parser.add_argument("--data-2b", type=Path, default=Path("data/raw/bci_competition_iv_2b"))
+    parser.add_argument("--labels-2b", type=Path, default=None, help="Official IV/V classlabel MAT directory (or place them in --data-2b)")
     parser.add_argument("--policy", choices=["never", "periodic", "warning", "validated"], default="validated")
     parser.add_argument("--interval", type=int, default=10)
     parser.add_argument("--window-size", type=int, default=10)
@@ -77,7 +95,7 @@ def main():
     parser.add_argument("--output", type=Path, default=Path("outputs/online"))
     args = parser.parse_args()
     x_train, y_train, x_test, y_test = prepare(
-        args.dataset, args.subject, args.data_2a, args.labels_2a, args.data_2b, args.seed
+        args.dataset, args.subject, args.data_2a, args.labels_2a, args.data_2b, args.labels_2b, args.seed
     )
     policies = dict(
         never=NeverUpdate(),

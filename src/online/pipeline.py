@@ -5,7 +5,7 @@ AdaptationPolicy and RetrainableClassifier. Labels are delivered independently
 of observation arrivals. No future evaluation labels enter prediction or fitting.
 """
 from collections import deque
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from time import perf_counter
 
 import numpy as np
@@ -221,9 +221,6 @@ class OnlineAdaptiveBCI:
         values = np.asarray(evaluation_features, dtype=float)
         if labels is not None and (labels.ndim != 1 or labels.size != len(values)):
             raise ValueError("evaluation labels must match evaluation observations")
-        if labels is not None and self.config.label_delay is None:
-            # No labels are made available to the learner; labels remain scoring-only.
-            pass
         due: deque[tuple[int, int, object]] = deque()
         for index, (time, x) in enumerate(replay_feature_rows(values, evaluation_times)):
             self.process_one(x, time)
@@ -232,6 +229,7 @@ class OnlineAdaptiveBCI:
             while due and due[0][0] <= index:
                 _, trial_time, label = due.popleft()
                 self.receive_label(trial_time, label, available_at=time)
+        unresolved_count = len(self.validator.pending)
         for event in self.validator.finish():
             # The latest status for the same warning is pending at end of stream.
             self.validations.append(event)
@@ -246,5 +244,5 @@ class OnlineAdaptiveBCI:
             validations=pd.DataFrame(self.validations),
             updates=pd.DataFrame(self.updates),
             final_classifier=self.classifier,
-            remaining_pending_warnings=len(self.validator.pending),
+            remaining_pending_warnings=unresolved_count,
         )
