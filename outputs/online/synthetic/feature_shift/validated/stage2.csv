@@ -1,0 +1,16 @@
+alarm_time,validation_time,status,confirmed_shift,reference_start_time,reference_end_time,current_start_time,current_end_time,sample_size,n_features,hotelling_t_squared,f_statistic,degrees_of_freedom_1,degrees_of_freedom_2,critical_value,p_value
+10,,pending_current_window,False,,,,,,,,,,,,
+10,20.0,rejected,False,1.0,10.0,11.0,20.0,10.0,3.0,0.8538163071939434,0.2529826095389462,3.0,16.0,3.2388715174535863,0.8580581129400694
+25,,pending_current_window,False,,,,,,,,,,,,
+25,35.0,rejected,False,16.0,25.0,26.0,35.0,10.0,3.0,3.473450658720483,1.0291705655468097,3.0,16.0,3.2388715174535863,0.4060552553218139
+51,,pending_current_window,False,,,,,,,,,,,,
+51,61.0,rejected,False,42.0,51.0,52.0,61.0,10.0,3.0,1.9573297872366286,0.5799495665886307,3.0,16.0,3.2388715174535863,0.6366087929723266
+74,,pending_current_window,False,,,,,,,,,,,,
+74,84.0,confirmed,True,65.0,74.0,75.0,84.0,10.0,3.0,11.284063501467696,3.343426222657095,3.0,16.0,3.2388715174535863,0.045720673679699626
+91,,pending_current_window,False,,,,,,,,,,,,
+91,101.0,rejected,False,82.0,91.0,92.0,101.0,10.0,3.0,1.132498613421108,0.3355551447173653,3.0,16.0,3.2388715174535863,0.7998365658312175
+116,,pending_current_window,False,,,,,,,,,,,,
+116,126.0,rejected,False,107.0,116.0,117.0,126.0,10.0,3.0,9.034088605710458,2.67676699428458,3.0,16.0,3.2388715174535863,0.08213637443249037
+176,,pending_current_window,False,,,,,,,,,,,,
+180,,skipped_nearby_alarm,False,,,,,,,,,,,,
+176,186.0,rejected,False,167.0,176.0,177.0,186.0,10.0,3.0,3.5151963203729752,1.0415396504808816,3.0,16.0,3.2388715174535863,0.40099658094000484
