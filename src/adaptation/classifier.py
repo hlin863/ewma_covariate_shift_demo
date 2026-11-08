@@ -37,6 +37,22 @@ class RetrainableClassifier(Classifier, Protocol):
     ) -> object: ...
 
 
+class IncrementalLearner(Classifier, Protocol):
+    """Learner that updates only on newly admitted observations.
+
+    The controller owns temporal ordering, labels and update policy.
+    Implementations may keep a bounded memory but must not require
+    refitting the model on the entire historical calibration dataset.
+    """
+
+    @property
+    def training_size(self) -> int: ...
+
+    def update(
+        self, new_features: np.ndarray, new_labels: np.ndarray
+    ) -> object: ...
+
+
 def _as_2d_features(values: ArrayLike, *, name: str) -> np.ndarray:
     array = np.asarray(values, dtype=float)
     if array.ndim != 2:
