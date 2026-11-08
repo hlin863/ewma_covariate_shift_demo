@@ -128,10 +128,11 @@ def main():
         lambda_override=args.lambda_value,
     )
     result = pipeline.run_replay(x_test, np.arange(len(x_test)), y_test)
-    target = (
-        args.output / args.dataset / f"subject_{args.subject:02d}"
-        / args.classifier / args.policy
-    )
+    target = args.output / args.dataset / f"subject_{args.subject:02d}"
+    # Keep the existing SVM output path stable for downstream dashboards.
+    if args.classifier == "mlp":
+        target = target / "mlp"
+    target = target / args.policy
     target.mkdir(parents=True, exist_ok=True)
     result.trials.to_csv(target / "trials.csv", index=False)
     result.validations.to_csv(target / "stage2.csv", index=False)
