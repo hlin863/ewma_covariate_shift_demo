@@ -17,6 +17,7 @@ from src.adaptation.policies import (
     NeverUpdate, PeriodicRetrain, RetrainOnWarning, RetrainOnValidatedShift,
 )
 from src.online.pipeline import OnlineAdaptiveBCI, OnlineAdaptationConfig
+from src.adaptation.neural import OnlineNeuralClassifier
 
 
 def prepare(dataset, subject, data_2a, labels_2a, data_2b, labels_2b, seed):
@@ -85,6 +86,11 @@ def main():
     parser.add_argument("--data-2b", type=Path, default=Path("data/raw/bci_competition_iv_2b"))
     parser.add_argument("--labels-2b", type=Path, default=None, help="Official IV/V classlabel MAT directory (or place them in --data-2b)")
     parser.add_argument("--policy", choices=["never", "periodic", "warning", "validated"], default="validated")
+    parser.add_argument("--classifier", choices=["svm", "mlp"], default="svm",
+                        help="SVM append-and-refit baseline or incremental neural MLP")
+    parser.add_argument("--neural-hidden", type=int, default=32)
+    parser.add_argument("--neural-initial-epochs", type=int, default=30)
+    parser.add_argument("--neural-update-epochs", type=int, default=1)
     parser.add_argument("--interval", type=int, default=10)
     parser.add_argument("--window-size", type=int, default=10)
     parser.add_argument("--label-delay", type=int, default=0,
@@ -107,18 +113,31 @@ def main():
         window_size=args.window_size,
         label_delay=None if args.label_delay < 0 else args.label_delay,
     )
+    learner = (
+        OnlineNeuralClassifier(
+            hidden_layer_sizes=(args.neural_hidden,),
+            initial_epochs=args.neural_initial_epochs,
+            update_epochs=args.neural_update_epochs,
+            random_state=args.seed,
+        )
+        if args.classifier == "mlp" else None
+    )
     pipeline = OnlineAdaptiveBCI.from_calibration(
         x_train, y_train, policy=policies[args.policy], config=config,
-        pca_components=args.pca_components,
+        classifier=learner, pca_components=args.pca_components,
         lambda_override=args.lambda_value,
     )
     result = pipeline.run_replay(x_test, np.arange(len(x_test)), y_test)
-    target = args.output / args.dataset / f"subject_{args.subject:02d}" / args.policy
+    target = (
+        args.output / args.dataset / f"subject_{args.subject:02d}"
+        / args.classifier / args.policy
+    )
     target.mkdir(parents=True, exist_ok=True)
     result.trials.to_csv(target / "trials.csv", index=False)
     result.validations.to_csv(target / "stage2.csv", index=False)
     result.updates.to_csv(target / "updates.csv", index=False)
-    summary = dict(dataset=args.dataset, subject=args.subject, policy=args.policy,
+    summary = dict(dataset=args.dataset, subject=args.subject,
+                   classifier=args.classifier, policy=args.policy,
                    trials=len(result.trials), accuracy=float(result.trials["correct"].mean()),
                    warnings=int(result.trials["stage1_warning"].sum()),
                    validations=int(result.validations["status"].eq("confirmed").sum())
