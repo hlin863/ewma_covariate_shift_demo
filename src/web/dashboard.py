@@ -28,6 +28,21 @@ DEFAULT_CHOWDHURY_DATA_PATH = PROJECT_ROOT / "data" / "raw" / "chowdhury_cse_uae
 
 RESULT_DEFINITIONS = (
     {
+        "id": "twin-adapt-bci",
+        "title": "TWIN-ADAPT — batchwise accuracy-triggered continuous learning on BCI IV",
+        "domain": "bci",
+        "domain_label": "Continuous learning implementation",
+        "datasets": ["BCI Competition IV 2A", "BCI Competition IV 2B"],
+        "methods": ["FBCSP", "Linear SVM", "Sliding accuracy windows", "Adaptive training buffer", "Delayed feedback"],
+        "purpose": "Execute Gupta et al. (2024) Algorithm 1 operational variant and inspect recorded accuracy windows, adaptation state changes and model retraining. Results require real local GDF/MAT files.",
+        "detail_endpoint": "twin_adapt.results",
+        "detail_label": "Run TWIN-ADAPT or inspect BCI evidence",
+        "command": "python -m scripts.run_twin_adapt_bci --dataset 2a --subject 1",
+        "primary_artifact": "experiments/twin_adapt_bci/2a/subject_01/",
+        "preview_columns": [],
+        "artifacts": [],
+    },
+    {
         "id": "online-adaptive-learning",
         "title": "Online adaptive learning — event-driven feature replay",
         "domain": "bci",
