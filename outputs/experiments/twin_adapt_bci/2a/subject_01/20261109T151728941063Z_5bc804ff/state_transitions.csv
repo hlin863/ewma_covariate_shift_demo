@@ -1,0 +1,5 @@
+batch,released_at_batch,old_state,new_state,action
+0,0,0,1,warning_started
+1,1,1,0,recovered_without_update
+2,2,0,1,warning_started
+3,3,1,0,recovered_without_update

@@ -1,0 +1,5 @@
+batch,released_at_batch,buffer_size,dropped_at_capacity,state,status,action
+0,0,40,0,1,evaluated,warning_started
+1,1,0,0,0,evaluated,recovered_without_update
+2,2,40,0,1,evaluated,warning_started
+3,3,0,0,0,evaluated,recovered_without_update

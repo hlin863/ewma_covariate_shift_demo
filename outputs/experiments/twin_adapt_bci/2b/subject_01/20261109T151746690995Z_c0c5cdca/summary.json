@@ -1,0 +1,31 @@
+{
+  "dataset": "2b",
+  "subject": 1,
+  "run_id": "20261109T151746690995Z_c0c5cdca",
+  "classifier": "linear_svm",
+  "training_trials": 280,
+  "evaluation_trials": 320,
+  "feature_count": 20,
+  "accuracy": 0.6625,
+  "updates": 2,
+  "warning_events": 4,
+  "state_transitions": 3,
+  "pending_feedback_batches": 0,
+  "retrain_seconds": 0.007064500008709729,
+  "commit": "31c2823d547b625a1acfe57dde9e78d2014b09ba",
+  "interpretation": "operational TWIN-ADAPT; feature-level replay",
+  "label_protocol": "official evaluation truth released to controller after full prediction batch",
+  "config": {
+    "batch_size": 40,
+    "win_size": 10,
+    "win_size_max": 120,
+    "gamma": 0.95,
+    "delta": 0.85,
+    "label_delay": 0,
+    "seed": 42,
+    "algorithm_mode": "operational",
+    "max_window_unit": "trials",
+    "label_delay_unit": "batches"
+  },
+  "dataset_protocol": "2A: session I development/session II evaluation; 2B: sessions I-III development/IV-V evaluation"
+}

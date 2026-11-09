@@ -1,0 +1,2 @@
+dataset,subject,run_id,classifier,training_trials,evaluation_trials,feature_count,accuracy,updates,warning_events,state_transitions,pending_feedback_batches,retrain_seconds,commit,interpretation,label_protocol,dataset_protocol
+2a,1,20261109T151728941063Z_5bc804ff,linear_svm,100,144,20,0.8819444444444444,0,2,4,0,0.0,31c2823d547b625a1acfe57dde9e78d2014b09ba,operational TWIN-ADAPT; feature-level replay,official evaluation truth released to controller after full prediction batch,2A: session I development/session II evaluation; 2B: sessions I-III development/IV-V evaluation
