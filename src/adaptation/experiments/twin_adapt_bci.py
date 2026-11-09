@@ -76,8 +76,10 @@ def run_bci_experiment(
         "classifier": "linear_svm", "training_trials": int(len(x_train)),
         "evaluation_trials": int(len(x_eval)), "feature_count": int(x_eval.shape[1]),
         "accuracy": float(result.accuracy), "updates": result.update_count,
-        "warning_events": int(result.accuracy_windows["action"].eq("warning_started").sum())
-            if not result.accuracy_windows.empty else 0,
+        "warning_events": int((
+            result.accuracy_windows["curr_accuracy"]
+            < result.accuracy_windows["warning_threshold"]
+        ).sum()) if not result.accuracy_windows.empty else 0,
         "state_transitions": int(len(result.transitions)),
         "pending_feedback_batches": result.pending_feedback_batches,
         "retrain_seconds": float(result.updates["retrain_seconds"].sum())
