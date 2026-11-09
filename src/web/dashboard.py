@@ -38,9 +38,11 @@ RESULT_DEFINITIONS = (
         "detail_endpoint": "twin_adapt.results",
         "detail_label": "Run TWIN-ADAPT or inspect BCI evidence",
         "command": "python -m scripts.run_twin_adapt_bci --dataset 2a --subject 1",
-        "primary_artifact": "experiments/twin_adapt_bci/2a/subject_01/",
-        "preview_columns": [],
-        "artifacts": [],
+        "primary_artifact": "experiments/twin_adapt_bci/latest_summary.csv",
+        "preview_columns": ["dataset", "subject", "classifier", "accuracy", "updates", "run_id"],
+        "artifacts": [
+            ("experiments/twin_adapt_bci/latest_summary.csv", "Latest executed TWIN-ADAPT BCI run"),
+        ],
     },
     {
         "id": "online-adaptive-learning",
