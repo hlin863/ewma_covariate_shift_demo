@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TWIN-ADAPT BCI · Continuous learning</title>
+<script>(function(){var s=localStorage.getItem("dashboard-theme");document.documentElement.dataset.theme=s||(window.matchMedia("(prefers-color-scheme: light)").matches?"light":"dark");})();</script>
+<link rel="stylesheet" href="{{ url_for('static',filename='dashboard.css') }}">
+<link rel="stylesheet" href="{{ url_for('static',filename='navigation.css') }}">
+<style>
+.ta-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:1rem;margin:1rem 0}
+.ta-panel{border:1px solid #8993a344;border-radius:14px;padding:1.1rem;margin:1rem 0;background:var(--surface,transparent)}
+.ta-fields{display:flex;flex-wrap:wrap;gap:.8rem;align-items:end}
+.ta-fields label{display:flex;flex-direction:column;gap:.3rem;min-width:110px;flex:1}
+.ta-fields input,.ta-fields select{max-width:100%;padding:.5rem;background:var(--surface,transparent);color:inherit}
+.ta-scroll{overflow-x:auto;max-height:450px;overflow-y:auto}
+.ta-table{width:100%;border-collapse:collapse;font-size:.9rem}
+.ta-table th,.ta-table td{padding:.55rem;text-align:left;border-bottom:1px solid #8993a344}
+.ta-muted{opacity:.78}.ta-value{font-size:1.7rem;font-weight:700}
+.ta-warn{border-left:4px solid #d29940;padding:.65rem 1rem}
+</style>
+</head>
+<body class="results-page">
+<main class="page-shell results-shell">
+<header class="hero results-hero">
+<div><p class="eyebrow">Research results · BCI Competition IV</p><h1>TWIN-ADAPT — continuous learning with adaptive and sliding windows</h1>
+<p class="lede">Real 2A/2B feature-level replay using development-fitted FBCSP, a linear SVM, released accuracy feedback and Algorithm 1's operational three-state adaptation controller.</p></div>
+<div class="hero-actions">{% include '_research_navigation.html' %}
+<a class="theme-button nav-link" href="{{ url_for('online_results.results') }}">EWMA online comparison</a>
+<a class="theme-button nav-link" href="{{ url_for('results_catalog') }}">Results catalogue</a></div>
+</header>
+<section class="ta-panel">
+<h2>Execute on locally available BCI recordings</h2>
+<p class="ta-muted">This uses the existing BCI Competition IV GDF/MAT loaders. Dataset 2A uses session I development and session II evaluation; 2B uses I–III development and IV–V evaluation. The browser request runs the computation locally on the Flask server; larger runs may take time.</p>
+<form method="post" class="ta-fields">
+<label>Dataset<select name="dataset"><option value="2a" {% if values.dataset=='2a' %}selected{% endif %}>BCI IV 2A</option><option value="2b" {% if values.dataset=='2b' %}selected{% endif %}>BCI IV 2B</option></select></label>
+<label>Subject (1–9)<input type="number" name="subject" min="1" max="9" value="{{ values.subject }}" required></label>
+<label>Batch size<input type="number" name="batch_size" min="2" max="500" value="{{ values.batch_size }}" required></label>
+<label>Current window<input type="number" name="win_size" min="1" max="499" value="{{ values.win_size }}" required></label>
+<label>Max adaptation trials<input type="number" name="win_size_max" min="2" max="5000" value="{{ values.win_size_max }}" required></label>
+<label>Gamma<input type="number" name="gamma" min="0.01" max="0.999" step="0.01" value="{{ values.gamma }}" required></label>
+<label>Delta<input type="number" name="delta" min="0.01" max="0.999" step="0.01" value="{{ values.delta }}" required></label>
+<label>Label delay (batches)<input type="number" name="label_delay" min="-1" max="100" value="{{ values.label_delay if values.label_delay is not none else -1 }}" required></label>
+<label>Seed<input type="number" name="seed" min="0" max="4294967295" value="{{ values.seed }}" required></label>
+<button class="theme-button" type="submit">Run TWIN-ADAPT on BCI</button>
+</form>
+{% if error %}<p class="ta-warn" role="alert">{{ error }}</p>{% endif %}
+<p class="ta-muted">Accuracy is calculated after predictions, using official labels released at the configured feedback time. This is feature-level offline replay, not live EEG acquisition. Operational interpretation of Gupta et al. (2024), Algorithm 1.</p>
+</section>
+<section class="ta-panel"><h2>Saved real-BCI runs</h2>
+{% if runs %}<div class="ta-scroll"><table class="ta-table"><thead><tr><th>Dataset</th><th>Subject</th><th>Run</th><th>Accuracy</th><th>Updates</th><th>Evidence</th></tr></thead><tbody>
+{% for row in runs %}
+<tr><td>{{ row.dataset|upper }}</td><td>{{ row.subject }}</td><td><a href="{{ url_for('twin_adapt.results',run=row.run_id) }}">{{ row.run_id }}</a></td><td>{{ '%.2f'|format(row.accuracy*100) }}%</td><td>{{ row.updates }}</td><td><a href="{{ url_for('outputs_file',filename=row.relative_dir ~ '/summary.json') }}">Summary JSON</a></td></tr>
+{% endfor %}</tbody></table></div>{% else %}<p>No BCI TWIN-ADAPT runs saved yet. Use the form above or <code>python -m scripts.run_twin_adapt_bci --dataset 2a --subject 1</code>.</p>{% endif %}
+</section>
+{% if selected %}
+<section class="ta-grid" aria-label="Measured run statistics">
+<article class="ta-panel"><p>Dataset / subject</p><div class="ta-value">{{ selected.dataset|upper }} / {{ selected.subject }}</div></article>
+<article class="ta-panel"><p>Prequential accuracy</p><div class="ta-value">{{ '%.2f'|format(selected.accuracy*100) }}%</div></article>
+<article class="ta-panel"><p>Model updates</p><div class="ta-value">{{ selected.updates }}</div></article>
+<article class="ta-panel"><p>Retraining duration</p><div class="ta-value">{{ '%.3f'|format(selected.retrain_seconds) }} s</div></article>
+</section>
+<section class="ta-panel"><h2>Window accuracy and state decisions</h2><p class="ta-muted">Thresholds use gamma × PrevAcc (warning) and delta × PrevAcc (adaptation). These rows are read from this run's saved CSV, not generated examples.</p>
+<div class="ta-scroll"><table class="ta-table"><thead><tr><th>Batch</th><th>Released at</th><th>PrevAcc</th><th>CurrAcc</th><th>Warning threshold</th><th>Adapt threshold</th><th>Action</th></tr></thead><tbody>
+{% for row in trace.windows %}
+<tr><td>{{ row.batch }}</td><td>{{ row.released_at_batch }}</td><td>{{ '%.3f'|format(row.prev_accuracy) }}</td><td>{{ '%.3f'|format(row.curr_accuracy) }}</td><td>{{ '%.3f'|format(row.warning_threshold) }}</td><td>{{ '%.3f'|format(row.adaptation_threshold) }}</td><td>{{ row.action }}</td></tr>
+{% endfor %}</tbody></table></div></section>
+<section class="ta-grid"><section class="ta-panel"><h2>State transitions</h2>
+<div class="ta-scroll"><table class="ta-table"><thead><tr><th>Batch</th><th>State</th><th>Action</th></tr></thead><tbody>
+{% for row in trace.transitions %}<tr><td>{{ row.batch }}</td><td>{{ row.old_state }} → {{ row.new_state }}</td><td>{{ row.action }}</td></tr>{% endfor %}
+</tbody></table></div></section>
+<section class="ta-panel"><h2>Model updates</h2><div class="ta-scroll"><table class="ta-table"><thead><tr><th>Batch</th><th>Reason</th><th>Samples</th><th>Duration</th></tr></thead><tbody>
+{% for row in trace.updates %}<tr><td>{{ row.batch }}</td><td>{{ row.reason }}</td><td>{{ row.added_samples }}</td><td>{{ '%.4f'|format(row.retrain_seconds) }}s</td></tr>{% endfor %}
+</tbody></table></div></section></section>
+<section class="ta-panel"><h2>Run provenance and downloadable traces</h2><p>Classifier: {{ selected.classifier }} · feature count: {{ selected.feature_count }} · training trials: {{ selected.training_trials }} · evaluation trials: {{ selected.evaluation_trials }} · code revision: <code>{{ selected.commit }}</code></p>
+<p class="ta-muted">{{ selected.interpretation }}. Pending feedback batches at end: {{ selected.pending_feedback_batches }}.</p>
+{% for filename in ['trials.csv','accuracy_windows.csv','state_transitions.csv','adaptive_windows.csv','updates.csv','summary.json'] %}
+<a class="theme-button nav-link" href="{{ url_for('outputs_file',filename=selected.relative_dir ~ '/' ~ filename) }}">{{ filename }}</a>
+{% endfor %}</section>
+{% endif %}
+</main></body></html>
