@@ -91,4 +91,8 @@ def run_bci_experiment(
     pd.DataFrame([{k: v for k, v in summary.items() if k != "config"}]).to_csv(
         destination / "summary.csv", index=False
     )
+    # Stable catalogue entry; individual run folders remain immutable.
+    pd.DataFrame([{k: v for k, v in summary.items() if k != "config"}]).to_csv(
+        Path(output_root) / "latest_summary.csv", index=False
+    )
     return destination, summary
