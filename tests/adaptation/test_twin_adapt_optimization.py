@@ -144,17 +144,18 @@ def test_optimized_bci_writes_independent_evaluation_and_search_evidence(monkeyp
     assert not (tmp_path / "out" / "latest_summary.csv").exists()
 
 
-def test_bci_results_page_shows_committed_a01_b01_evidence():
+def test_bci_results_page_shows_committed_a01_b01_evidence(monkeypatch):
     """The page must visualise saved genuine BCI data, not fabricate search results."""
     from src.web import app
-    app.config.update(TESTING=True, RESULTS_ROOT="outputs")
+    monkeypatch.setitem(app.config, "TESTING", True)
+    monkeypatch.setitem(app.config, "RESULTS_ROOT", "outputs")
     with app.test_client() as client:
         response = client.get("/results/twin-adapt")
     assert response.status_code == 200
     assert b"88.19%" in response.data
     assert b"66.25%" in response.data
     assert b"Measured accuracy trajectory" in response.data
-    assert b"No real-BCI optimisation runs have been saved yet" in response.data
+    assert b"Saved real-BCI optimisation runs" in response.data
 
 
 def test_optimisation_form_calls_real_runner_and_shows_saved_evidence(monkeypatch, tmp_path):
@@ -188,7 +189,8 @@ def test_optimisation_form_calls_real_runner_and_shows_saved_evidence(monkeypatc
         return dest, summary
 
     monkeypatch.setattr(twin_adapt_view, "run_optimized_bci_experiment", fake_optimised_runner)
-    app.config.update(TESTING=True, RESULTS_ROOT=str(root))
+    monkeypatch.setitem(app.config, "TESTING", True)
+    monkeypatch.setitem(app.config, "RESULTS_ROOT", str(root))
     with app.test_client() as client:
         response = client.post("/results/twin-adapt", data={
             "mode": "optimized", "dataset": "2a", "subject": "1",
