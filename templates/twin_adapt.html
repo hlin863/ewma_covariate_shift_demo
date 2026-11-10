@@ -85,6 +85,31 @@
 </tbody></table></div>
 {% else %}<p class="ta-muted">No real-BCI optimisation runs have been saved yet. Existing A01/B01 fixed-configuration results remain available below; they are not presented as optimisation evidence.</p>{% endif %}
 </section>
+{% if paired_results %}
+<section class="ta-panel" id="bci-adaptation-comparison">
+<p class="eyebrow">Archived real BCI observations · Provenance-aware comparison</p>
+<h2>Fixed vs cost-aware TWIN-ADAPT</h2>
+<p class="ta-muted">Values below come from committed BCI 2A/2B run outputs, not generated examples. Differences are descriptive pilot findings. A different batch size changes the online decision protocol, so such pairs are explicitly marked unaligned.</p>
+<div class="ta-scroll"><table class="ta-table">
+<thead><tr><th>Dataset</th><th>Subject</th><th>Accuracy (fixed → optimised)</th><th>Difference</th><th>Updates (fixed → optimised)</th><th>Retraining (fixed → optimised)</th><th>Protocol comparison</th><th>Traces</th></tr></thead>
+<tbody>{% for row in paired_results %}
+<tr>
+<td>{{ row.dataset|upper }}</td><td>{{ row.subject }}</td>
+<td>
+<strong>{{ '%.2f'|format(row.fixed_accuracy*100) }}% → {{ '%.2f'|format(row.optimized_accuracy*100) }}%</strong>
+<div style="margin-top:6px;width:130px;height:7px;background:#8993a322"><div style="background:#d29940;height:100%;width:{{ '%.1f'|format(row.fixed_accuracy*100) }}%"></div></div>
+<div style="margin-top:3px;width:130px;height:7px;background:#8993a322"><div style="background:#14b8a6;height:100%;width:{{ '%.1f'|format(row.optimized_accuracy*100) }}%"></div></div>
+</td>
+<td>{{ '%+.2f'|format(row.difference_pp) }} pp</td>
+<td>{{ row.fixed_updates }} → {{ row.optimized_updates }}</td>
+<td>{{ '%.4f'|format(row.fixed_retrain) }} → {{ '%.4f'|format(row.optimized_retrain) }} s</td>
+<td>{{ 'Same recorded training/evaluation sizes, batch size, seed and delay' if row.protocol_aligned else 'Not protocol aligned; do not attribute accuracy difference to optimisation alone' }}</td>
+<td><a href="{{ url_for('twin_adapt.results',run=row.fixed_run,optimized_run=row.optimized_run) }}">Inspect both runs</a></td>
+</tr>
+{% endfor %}</tbody></table></div>
+<p class="ta-muted">Amber bars: fixed controller; turquoise bars: optimised controller. Matching listed parameters does not substitute for replicate seeds, statistical uncertainty estimates or verification of all preprocessing decisions.</p>
+</section>
+{% endif %}
 {% if selected_opt %}
 <section class="ta-panel" id="selected-optimisation">
 <p class="eyebrow">Measured optimisation evidence · {{ selected_opt.dataset|upper }} subject {{ selected_opt.subject }}</p>
