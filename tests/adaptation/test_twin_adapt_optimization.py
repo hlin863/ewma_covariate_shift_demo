@@ -142,3 +142,64 @@ def test_optimized_bci_writes_independent_evaluation_and_search_evidence(monkeyp
         "evaluation_used_in_search"
     ] is False
     assert not (tmp_path / "out" / "latest_summary.csv").exists()
+
+
+def test_bci_results_page_shows_committed_a01_b01_evidence():
+    """The page must visualise saved genuine BCI data, not fabricate search results."""
+    from src.web import app
+    app.config.update(TESTING=True, RESULTS_ROOT="outputs")
+    with app.test_client() as client:
+        response = client.get("/results/twin-adapt")
+    assert response.status_code == 200
+    assert b"88.19%" in response.data
+    assert b"66.25%" in response.data
+    assert b"Measured accuracy trajectory" in response.data
+    assert b"No real-BCI optimisation runs have been saved yet" in response.data
+
+
+def test_optimisation_form_calls_real_runner_and_shows_saved_evidence(monkeypatch, tmp_path):
+    """Mock only the expensive data-processing boundary, not the view's result loader."""
+    from src.web import app
+    from src.web import twin_adapt as twin_adapt_view
+
+    root = tmp_path / "outputs"
+    called = []
+    def fake_optimised_runner(**kwargs):
+        called.append(kwargs)
+        dest = (
+            root / "experiments" / "twin_adapt_optimization"
+            / "2a" / "subject_01" / "fixture_run"
+        )
+        dest.mkdir(parents=True)
+        summary = {
+            "run_id": "fixture_run", "dataset": "2a", "subject": 1,
+            "accuracy": 0.75, "updates": 1,
+            "search_seconds": 1.25, "candidate_evaluations": 2,
+            "best_config": {"gamma": 0.95, "delta": 0.85},
+            "objective_config": {"alpha": 0.2, "beta": 0.02},
+        }
+        (dest / "optimization_summary.json").write_text(json.dumps(summary))
+        import pandas as pd
+        pd.DataFrame([{
+            "stage": 0, "budget": 20, "accuracy": 0.75,
+            "updates": 1, "retrain_seconds": 0.05, "replay_seconds": 0.2,
+            "score": 0.74, "promoted": True, "candidate": "{}",
+        }]).to_csv(dest / "candidate_history.csv", index=False)
+        return dest, summary
+
+    monkeypatch.setattr(twin_adapt_view, "run_optimized_bci_experiment", fake_optimised_runner)
+    app.config.update(TESTING=True, RESULTS_ROOT=str(root))
+    with app.test_client() as client:
+        response = client.post("/results/twin-adapt", data={
+            "mode": "optimized", "dataset": "2a", "subject": "1",
+            "opt_batch_size": "10", "budgets": "20 40",
+            "candidates": "2", "seed": "42",
+            "alpha": "0.2", "beta": "0.02",
+            "reference_seconds": "1", "promotion_fraction": "0.5",
+            "label_delay": "0",
+        })
+    assert response.status_code == 200
+    assert len(called) == 1
+    assert called[0]["budgets"] == [20, 40]
+    assert b"fixture_run" in response.data
+    assert b"Selected configuration and candidate history" in response.data
