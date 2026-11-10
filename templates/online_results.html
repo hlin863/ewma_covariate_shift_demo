@@ -113,6 +113,7 @@
   <section class="online-panel">
     <h2>Accuracy-triggered TWIN-ADAPT on real BCI 2A / 2B</h2>
     <p>Use the dedicated <a href="{{ url_for('twin_adapt.results') }}">TWIN-ADAPT experiment page</a> to execute the batchwise controller with the existing BCI loaders and linear SVM. The page displays saved accuracy-window traces, state transitions, model updates, and source configuration for each run.</p>
+    <p>Real A01/B01 cost-aware search evidence, selected configurations and candidate-level cost traces are available in the <a href="{{ url_for('twin_adapt.results') }}#bci-adaptation-comparison">fixed-versus-optimised BCI comparison</a> and <a href="{{ url_for('twin_adapt.results') }}#cost-aware-optimisation">configuration optimisation workspace</a>.</p>
     <p class="online-muted">The TWIN-ADAPT accuracy thresholds are distinct from the EWMA and Hotelling shift-detection triggers tested on this page.</p>
   </section>
   <section class="online-panel">
