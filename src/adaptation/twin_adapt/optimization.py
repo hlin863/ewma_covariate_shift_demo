@@ -1,6 +1,96 @@
 from adaptation.classifier import build_fresh_model
+from objective import measure_adaptation_cost
 from dataclasses import dataclass
 import numpy as np
+from itertools import product
+
+from src.adaptation.twin_adapt.config import TwinAdaptConfig
+from src.adaptation.twin_adapt.controller import adapt_model
+from src.online.batch_stream import make_validation_stream
+
+
+@dataclass(frozen=True)
+class TwinAdaptSearchSpace:
+    """Candidate values for TWIN-ADAPT optimisation."""
+
+    gamma_values: tuple[float, ...] = (0.93, 0.95, 0.97)
+
+    delta_values: tuple[float, ...] = (0.80, 0.85, 0.90)
+
+    win_size_values: tuple[int, ...] = (5, 10, 15)
+
+    win_size_max_values: tuple[int, ...] = (80, 120, 160)
+
+    batch_size: int = 40
+    label_delay: int | None = 0
+    seed: int = 42
+
+
+def sample_valid_configs(
+    config_space: TwinAdaptSearchSpace,
+    *,
+    n: int = 12,
+) -> list[TwinAdaptConfig]:
+    """
+    Sample unique valid TWIN-ADAPT configurations.
+
+    Returns configurations in a reproducibly
+    shuffled order.
+    """
+
+    if n <= 0:
+        raise ValueError("n must be a positive integer")
+
+    candidates = []
+
+    # Construct the Cartesian product of
+    # candidate hyperparameter values.
+    combinations = product(
+        config_space.gamma_values,
+        config_space.delta_values,
+        config_space.win_size_values,
+        config_space.win_size_max_values,
+    )
+
+    for gamma, delta, win_size, win_size_max in combinations:
+
+        try:
+            config = TwinAdaptConfig(
+                batch_size=config_space.batch_size,
+                win_size=win_size,
+                win_size_max=win_size_max,
+                gamma=gamma,
+                delta=delta,
+                label_delay=config_space.label_delay,
+                seed=config_space.seed,
+            )
+
+        except ValueError:
+            # Ignore invalid configurations,
+            # e.g. delta >= gamma.
+            continue
+
+        candidates.append(config)
+
+    # Ensure configurations are unique.
+    candidates = list(dict.fromkeys(candidates))
+
+    if len(candidates) < n:
+        raise ValueError(
+            f"Requested {n} candidates, but only "
+            f"{len(candidates)} valid configurations exist."
+        )
+
+    # Reproducible sampling without replacement.
+    rng = np.random.default_rng(config_space.seed)
+
+    indices = rng.choice(
+        len(candidates),
+        size=n,
+        replace=False,
+    )
+
+    return [candidates[i] for i in indices]
 
 
 @dataclass(frozen=True)
@@ -59,7 +149,9 @@ def optimize_adaptation(
             # A chronological DEVELOPMENT-validation
             # prefix; never final evaluation data.
             stream, labels = make_validation_stream(
-                development_data,
+                development_data.x_validation,
+                development_data.y_validation,
+                batch_size=config.batch_size,
                 budget=budget,
             )
 

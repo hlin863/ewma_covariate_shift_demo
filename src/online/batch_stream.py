@@ -14,6 +14,23 @@ class BCIBatch:
     labels: np.ndarray | None = None
 
 
+def make_validation_stream(
+    x_validation,
+    y_validation,
+    batch_size,
+    budget,
+):
+    x = x_validation[:budget]
+    y = y_validation[:budget]
+
+    stream = make_bci_dataflow(
+        x,
+        batch_size=batch_size,
+    )
+
+    return stream, y
+
+
 def make_bci_dataflow(
     features: np.ndarray,
     *,
