@@ -1,12 +1,47 @@
-from adaptation.classifier import build_fresh_model
-from objective import measure_adaptation_cost
 from dataclasses import dataclass
 import numpy as np
 from itertools import product
 
+from src.adaptation.classifier import build_fresh_model
 from src.adaptation.twin_adapt.config import TwinAdaptConfig
+from src.adaptation.twin_adapt.objective import (
+    measure_adaptation_cost,
+    CostObjectiveConfig,
+)
 from src.adaptation.twin_adapt.controller import adapt_model
 from src.online.batch_stream import make_validation_stream
+
+
+def calculate_objective_score(
+    accuracy: float, cost: dict, objective: CostObjectiveConfig
+) -> float:
+    """
+    Calculate the objective score for a given accuracy and cost.
+
+    Parameters
+    ----------
+    accuracy : float
+        The accuracy of the model.
+    cost : dict
+        The cost of adapting the model, containing 'update_rate' and 'retrain_seconds'.
+    objective : CostObjectiveConfig
+        The configuration for the cost-aware objective.
+
+    Returns
+    -------
+    float
+        The calculated objective score.
+    """
+    update_rate = cost.get("update_rate", 0.0)
+    retrain_seconds = cost.get("retrain_seconds", 0.0)
+
+    normalized_time = retrain_seconds / objective.reference_seconds
+
+    score = (
+        accuracy - (objective.alpha * update_rate) - (objective.beta * normalized_time)
+    )
+
+    return score
 
 
 @dataclass(frozen=True)
@@ -164,8 +199,10 @@ def optimize_adaptation(
 
             cost = measure_adaptation_cost(result)
 
-            score = (
-                result.accuracy - alpha * cost.update_rate - beta * cost.normalized_time
+            config = CostObjectiveConfig()
+
+            score = calculate_objective_score(
+                accuracy=result.accuracy, cost=cost, objective=config
             )
 
             scores.append((score, config))
