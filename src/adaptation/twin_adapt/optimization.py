@@ -157,10 +157,14 @@ def optimize_adaptation(
     budgets,
     initial_candidates=12,
     promotion_fraction=1 / 3,
-):
+    *,
+    objective: CostObjectiveConfig | None = None,
+) -> tuple[TwinAdaptConfig, list[tuple[int, TwinAdaptConfig, float]]]:
     """
     Cost-aware multi-fidelity adaptation optimisation.
     """
+    if objective is None:
+        objective = CostObjectiveConfig()
 
     candidates = sample_valid_configs(
         config_space,
@@ -173,12 +177,12 @@ def optimize_adaptation(
 
         scores = []
 
-        for config in candidates:
+        for candidate in candidates:
 
             # Every candidate starts with the same
             # independently fitted initial model.
             model = build_fresh_model(
-                development_data.x_train, development_data.y_train
+                development_data.x_train, development_data.y_train, seed=candidate.seed
             )
 
             # A chronological DEVELOPMENT-validation
@@ -186,27 +190,25 @@ def optimize_adaptation(
             stream, labels = make_validation_stream(
                 development_data.x_validation,
                 development_data.y_validation,
-                batch_size=config.batch_size,
+                batch_size=candidate.batch_size,
                 budget=budget,
             )
 
             result = adapt_model(
                 stream,
                 model,
-                config=config,
+                config=candidate,
                 evaluation_labels=labels,
             )
 
             cost = measure_adaptation_cost(result)
 
-            config = CostObjectiveConfig()
-
             score = calculate_objective_score(
-                accuracy=result.accuracy, cost=cost, objective=config
+                accuracy=result.accuracy, cost=cost, objective=objective
             )
 
-            scores.append((score, config))
-            history.append((budget, config, score))
+            scores.append((score, candidate))
+            history.append((budget, candidate, score))
 
         scores.sort(
             key=lambda item: item[0],
@@ -218,6 +220,6 @@ def optimize_adaptation(
             round(len(scores) * promotion_fraction),
         )
 
-        candidates = [config for _, config in scores[:keep]]
+        candidates = [candidate for _, candidate in scores[:keep]]
 
     return candidates[0], history
