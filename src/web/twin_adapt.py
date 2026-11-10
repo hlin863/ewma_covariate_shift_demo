@@ -56,6 +56,24 @@ def _trace(root: Path, entry: dict | None) -> dict:
     return result
 
 
+def _local_dataset_readiness(raw_root: Path) -> dict:
+    """Report local data presence only; never infer GDF files from archived CSVs."""
+    checks = {}
+    for dataset in ("2a", "2b"):
+        recordings = raw_root / f"bci_competition_iv_{dataset}"
+        labels = raw_root / f"bci_competition_iv_{dataset}_labels"
+        gdf_count = sum(1 for _ in recordings.rglob("*.gdf")) if recordings.is_dir() else 0
+        mat_count = sum(1 for _ in labels.rglob("*.mat")) if labels.is_dir() else 0
+        checks[dataset] = {
+            "recordings": str(recordings),
+            "labels": str(labels),
+            "gdf_count": gdf_count,
+            "label_count": mat_count,
+            "ready": gdf_count > 0 and mat_count > 0,
+        }
+    return checks
+
+
 def _optimized_runs(root: Path) -> list[dict]:
     """Read only genuine saved optimisation evidence, never synthetic placeholders."""
     base = root / "experiments" / "twin_adapt_optimization"
@@ -196,16 +214,24 @@ def results():
     if selected is None and runs:
         selected = runs[0]
     trace = _trace(root, selected)
+    raw_root = Path(current_app.config.get("BCI_RAW_DATA_ROOT", "data/raw"))
+    data_readiness = _local_dataset_readiness(raw_root)
     optimized_runs = _optimized_runs(root)
     selected_opt = next(
         (row for row in optimized_runs if row["run_id"] == selected_opt_id), None
     )
     if selected_opt is None and optimized_runs:
         selected_opt = optimized_runs[0]
+    fixed_reference = next(
+        (row for row in runs if selected_opt is not None
+         and row["dataset"] == selected_opt["dataset"]
+         and row["subject"] == selected_opt["subject"]), None
+    )
     return render_template(
         "twin_adapt.html", values=values, runs=runs, selected=selected,
         trace=trace, error=error, accuracy_plot=_accuracy_plot(trace.get("windows", [])),
         optimized_runs=optimized_runs, selected_opt=selected_opt,
         optimized_values=optimized_values,
         optimization_history=_optimization_history(root, selected_opt),
+        data_readiness=data_readiness, fixed_reference=fixed_reference,
     ), (400 if error else 200)
