@@ -90,6 +90,49 @@ def _optimized_runs(root: Path) -> list[dict]:
     return entries
 
 
+def _paired_real_bci_results(
+    fixed_runs: list[dict], optimized_runs: list[dict],
+) -> list[dict]:
+    """Descriptive baseline-vs-search comparison with explicit protocol checks."""
+    seen = set()
+    rows = []
+    for optimized in optimized_runs:
+        key = (optimized["dataset"], optimized["subject"])
+        if key in seen:
+            continue
+        seen.add(key)
+        fixed = next(
+            (row for row in fixed_runs
+             if (row["dataset"], row["subject"]) == key), None
+        )
+        if fixed is None:
+            continue
+        config = optimized.get("best_config") or {}
+        original = fixed.get("config") or {}
+        aligned = all((
+            optimized.get("training_trials") == fixed.get("training_trials"),
+            optimized.get("evaluation_trials") == fixed.get("evaluation_trials"),
+            config.get("batch_size") == original.get("batch_size"),
+            config.get("label_delay") == original.get("label_delay"),
+            config.get("seed") == original.get("seed"),
+        ))
+        rows.append({
+            "dataset": optimized["dataset"],
+            "subject": optimized["subject"],
+            "fixed_accuracy": fixed["accuracy"],
+            "optimized_accuracy": optimized["accuracy"],
+            "fixed_updates": fixed["updates"],
+            "optimized_updates": optimized["updates"],
+            "fixed_retrain": fixed.get("retrain_seconds", 0.0),
+            "optimized_retrain": optimized.get("retrain_seconds", 0.0),
+            "difference_pp": 100 * (optimized["accuracy"] - fixed["accuracy"]),
+            "protocol_aligned": aligned,
+            "fixed_run": fixed["run_id"],
+            "optimized_run": optimized["run_id"],
+        })
+    return rows
+
+
 def _optimization_history(root: Path, entry: dict | None) -> list[dict]:
     if entry is None:
         return []
@@ -234,4 +277,5 @@ def results():
         optimized_values=optimized_values,
         optimization_history=_optimization_history(root, selected_opt),
         data_readiness=data_readiness, fixed_reference=fixed_reference,
+        paired_results=_paired_real_bci_results(runs, optimized_runs),
     ), (400 if error else 200)
