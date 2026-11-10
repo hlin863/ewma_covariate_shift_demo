@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from time import perf_counter
 import numpy as np
 from itertools import product
 
@@ -141,6 +142,16 @@ class DevelopmentData:
             raise ValueError("x_train must be a 2D array.")
         if self.x_validation.ndim != 2:
             raise ValueError("x_validation must be a 2D array.")
+        if self.y_train.ndim != 1 or self.y_validation.ndim != 1:
+            raise ValueError("Training and validation labels must be one-dimensional")
+        if len(self.x_train) != len(self.y_train):
+            raise ValueError("x_train and y_train must have the same length")
+        if len(self.x_train) == 0:
+            raise ValueError("Training data must not be empty")
+        if np.unique(self.y_train).size < 2:
+            raise ValueError("SVM training requires at least two training classes")
+        if not np.isfinite(self.x_train).all() or not np.isfinite(self.x_validation).all():
+            raise ValueError("All features must be finite")
         if len(self.x_validation) != len(self.y_validation):
             raise ValueError("x_validation and y_validation must have the same length.")
         if self.x_train.shape[1] != self.x_validation.shape[1]:
@@ -152,74 +163,83 @@ class DevelopmentData:
 
 
 def optimize_adaptation(
-    development_data,
-    config_space,
+    development_data: DevelopmentData,
+    config_space: TwinAdaptSearchSpace,
     budgets,
-    initial_candidates=12,
-    promotion_fraction=1 / 3,
+    initial_candidates: int = 12,
+    promotion_fraction: float = 1 / 3,
     *,
     objective: CostObjectiveConfig | None = None,
-) -> tuple[TwinAdaptConfig, list[tuple[int, TwinAdaptConfig, float]]]:
-    """
-    Cost-aware multi-fidelity adaptation optimisation.
+) -> tuple[TwinAdaptConfig, list[dict]]:
+    """Search training-only configurations using progressively longer validation prefixes.
+
+    Return the best candidate at the largest budget and per-evaluation
+    provenance. Validation labels are released only through the existing controller.
     """
     if objective is None:
         objective = CostObjectiveConfig()
+    budgets = list(budgets)
+    if not budgets or any(type(b) is not int or b <= 0 for b in budgets):
+        raise ValueError("budgets must be nonempty positive integers")
+    if budgets != sorted(set(budgets)):
+        raise ValueError("budgets must be strictly increasing")
+    if budgets[-1] > len(development_data.x_validation):
+        raise ValueError("largest budget exceeds development validation trials")
+    if budgets[0] < config_space.batch_size:
+        raise ValueError("smallest budget must contain a complete batch")
+    if not 0 < promotion_fraction <= 1:
+        raise ValueError("promotion_fraction must be in (0, 1]")
 
-    candidates = sample_valid_configs(
-        config_space,
-        n=initial_candidates,
-    )
+    candidates = sample_valid_configs(config_space, n=initial_candidates)
+    history: list[dict] = []
+    best_config: TwinAdaptConfig | None = None
 
-    history = []
-
-    for budget in budgets:
-
+    for stage, budget in enumerate(budgets):
         scores = []
-
         for candidate in candidates:
-
-            # Every candidate starts with the same
-            # independently fitted initial model.
             model = build_fresh_model(
                 development_data.x_train, development_data.y_train, seed=candidate.seed
             )
-
-            # A chronological DEVELOPMENT-validation
-            # prefix; never final evaluation data.
             stream, labels = make_validation_stream(
-                development_data.x_validation,
-                development_data.y_validation,
-                batch_size=candidate.batch_size,
-                budget=budget,
+                development_data.x_validation, development_data.y_validation,
+                batch_size=candidate.batch_size, budget=budget,
             )
-
+            started = perf_counter()
             result = adapt_model(
-                stream,
-                model,
-                config=candidate,
-                evaluation_labels=labels,
+                stream, model, config=candidate, evaluation_labels=labels,
             )
-
+            elapsed = perf_counter() - started
             cost = measure_adaptation_cost(result)
-
             score = calculate_objective_score(
-                accuracy=result.accuracy, cost=cost, objective=objective
+                accuracy=result.accuracy, cost=cost, objective=objective,
             )
+            if not np.isfinite(score):
+                raise ValueError("candidate objective score must be finite")
+            record = {
+                "stage": stage,
+                "budget": budget,
+                "candidate": candidate.snapshot(),
+                "accuracy": float(result.accuracy),
+                "updates": int(result.update_count),
+                "update_rate": float(cost["update_rate"]),
+                "retrain_seconds": float(cost["retrain_seconds"]),
+                "replay_seconds": float(elapsed),
+                "score": float(score),
+                "promoted": False,
+            }
+            history.append(record)
+            scores.append((score, candidate, record))
 
-            scores.append((score, candidate))
-            history.append((budget, candidate, score))
+        # Stable sorting preserves the seeded candidate order on exact score ties.
+        scores.sort(key=lambda entry: entry[0], reverse=True)
+        best_config = scores[0][1]
+        if stage < len(budgets) - 1:
+            keep = max(1, int(np.ceil(len(scores) * promotion_fraction)))
+        else:
+            keep = 1
+        for _, _, record in scores[:keep]:
+            record["promoted"] = True
+        candidates = [candidate for _, candidate, _ in scores[:keep]]
 
-        scores.sort(
-            key=lambda item: item[0],
-            reverse=True,
-        )
-
-        keep = max(
-            1,
-            round(len(scores) * promotion_fraction),
-        )
-
-        candidates = [candidate for _, candidate in scores[:keep]]
-
-    return candidates[0], history
+    assert best_config is not None
+    return best_config, history
