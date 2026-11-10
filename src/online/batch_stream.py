@@ -20,15 +20,28 @@ def make_validation_stream(
     batch_size,
     budget,
 ):
-    x = x_validation[:budget]
-    y = y_validation[:budget]
+    x = np.asarray(x_validation, dtype=float)
+    y = np.asarray(y_validation)
 
-    stream = make_bci_dataflow(
-        x,
-        batch_size=batch_size,
+    if x.ndim != 2 or y.ndim != 1:
+        raise ValueError("Expected a 2-D feature matrix and 1-D labels")
+    if len(x) != len(y):
+        raise ValueError("Feature and label counts must match")
+    if not 0 < budget <= len(x):
+        raise ValueError(
+            "budget must be positive and no more than the number of samples"
+        )
+    if budget < batch_size:
+        raise ValueError("budget must be at least as large as batch_size")
+
+    return (
+        make_bci_dataflow(
+            x[:budget],
+            batch_size=batch_size,
+            labels=y[:budget],
+        ),
+        y[:budget],
     )
-
-    return stream, y
 
 
 def make_bci_dataflow(
