@@ -50,6 +50,15 @@
 <p class="eyebrow">Algorithm 2 · Development-only search</p>
 <h2>Optimise TWIN-ADAPT on real BCI recordings</h2>
 <p class="ta-muted">Uses the existing GDF/MAT loaders and development-fitted FBCSP pipeline. Candidate configurations are selected on the development-validation partition; the final evaluation session is untouched until the best configuration is frozen. These controls run on the local Flask server, not in the static GitHub Pages snapshot.</p>
+<div class="ta-grid" aria-label="Locally installed BCI data readiness">
+{% for dataset, info in data_readiness.items() %}
+<div class="ta-panel">
+<strong>BCI IV {{ dataset|upper }} — {{ 'GDF/MAT detected' if info.ready else 'Missing local recordings or labels' }}</strong>
+<p class="ta-muted">{{ info.gdf_count }} GDF file(s) · {{ info.label_count }} official-label MAT file(s)</p>
+<small class="ta-muted"><code>{{ info.recordings }}</code> · <code>{{ info.labels }}</code></small>
+</div>
+{% endfor %}
+</div>
 <form method="post" class="ta-fields" aria-label="Run cost-aware BCI optimisation">
 <input type="hidden" name="mode" value="optimized">
 <label>Dataset<select name="dataset"><option value="2a" {% if optimized_values.dataset=='2a' %}selected{% endif %}>BCI IV 2A</option><option value="2b" {% if optimized_values.dataset=='2b' %}selected{% endif %}>BCI IV 2B</option></select></label>
@@ -81,6 +90,10 @@
 <p class="eyebrow">Measured optimisation evidence · {{ selected_opt.dataset|upper }} subject {{ selected_opt.subject }}</p>
 <h2>Selected configuration and candidate history</h2>
 <p>Final accuracy: <strong>{{ '%.2f'|format(selected_opt.accuracy*100) }}%</strong> · Final updates: <strong>{{ selected_opt.updates }}</strong> · Search evaluations: <strong>{{ selected_opt.candidate_evaluations }}</strong> · Total search: <strong>{{ '%.3f'|format(selected_opt.search_seconds) }} s</strong>.</p>
+{% if fixed_reference %}
+<p><strong>Archived fixed-parameter reference — {{ fixed_reference.dataset|upper }} subject {{ fixed_reference.subject }}:</strong> accuracy {{ '%.2f'|format(fixed_reference.accuracy*100) }}%, {{ fixed_reference.updates }} updates. <a href="{{ url_for('twin_adapt.results',run=fixed_reference.run_id,optimized_run=selected_opt.run_id) }}">View reference trace</a>.</p>
+<p class="ta-muted">Descriptive reference only: historical fixed-parameter and newly optimised runs may differ in split or feature-selection protocol. Do not interpret their raw accuracy difference as validated improvement without matched conditions.</p>
+{% endif %}
 <p class="ta-muted">Selected controller settings: <code>{{ selected_opt.best_config|tojson }}</code>. Cost-objective coefficients: <code>{{ selected_opt.objective_config|tojson }}</code>. These final metrics are not an improvement claim without a matched frozen/fixed-controller comparison.</p>
 <div class="ta-scroll"><table class="ta-table"><thead><tr><th>Stage</th><th>Budget</th><th>Validation accuracy</th><th>Updates</th><th>Retraining (s)</th><th>Replay (s)</th><th>Score</th><th>Promoted</th><th>Candidate</th></tr></thead><tbody>
 {% for item in optimization_history %}
