@@ -20,7 +20,13 @@ from src.online.pipeline import OnlineAdaptiveBCI, OnlineAdaptationConfig
 from src.adaptation.neural import OnlineNeuralClassifier
 
 
-def prepare(dataset, subject, data_2a, labels_2a, data_2b, labels_2b, seed):
+def prepare(dataset, subject, data_2a, labels_2a, data_2b, labels_2b, seed, *, include_validation=False):
+    """Return original four-array protocol, or six arrays for development-only search.
+
+    When include_validation=True the order is training X/y, validation X/y,
+    evaluation X/y. Validation arrays are restored to original trial time order.
+    No evaluation observations are used for tuning or FBCSP fitting.
+    """
     if dataset == "2a":
         from src.bci.data import load_bci_competition_iv_2a_session
         from src.bci.datasets.dataset2a import (
@@ -42,6 +48,13 @@ def prepare(dataset, subject, data_2a, labels_2a, data_2b, labels_2b, seed):
         )
         split = split_dataset_2a_session1(first, random_state=seed)
         features = build_dataset_2a_development_fbcsp_features(split, last)
+        if include_validation:
+            order = np.argsort(features.validation.times, kind="stable")
+            return (
+                features.training.features, split.training.labels,
+                features.validation.features[order], split.validation.labels[order],
+                features.testing.features, last.labels,
+            )
         return features.training.features, split.training.labels, features.testing.features, last.labels
     from src.bci.data import load_bci_competition_iv_2b_session
     from src.bci.datasets.dataset2b import (
@@ -73,6 +86,14 @@ def prepare(dataset, subject, data_2a, labels_2a, data_2b, labels_2b, seed):
     features = build_dataset_2b_development_fbcsp_features(
         protocol.development, protocol.evaluation
     )
+    if include_validation:
+        order = np.argsort(features.validation.times, kind="stable")
+        return (
+            features.training.features, protocol.development.training.labels,
+            features.validation.features[order],
+            protocol.development.validation.labels[order],
+            features.evaluation.features, protocol.evaluation.labels,
+        )
     return (features.training.features, protocol.development.training.labels,
             features.evaluation.features, protocol.evaluation.labels)
 
