@@ -46,6 +46,54 @@
 {% if error %}<p class="ta-warn" role="alert">{{ error }}</p>{% endif %}
 <p class="ta-muted">Accuracy is calculated after predictions, using official labels released at the configured feedback time. This is feature-level offline replay, not live EEG acquisition. Operational interpretation of Gupta et al. (2024), Algorithm 1.</p>
 </section>
+<section class="ta-panel" id="cost-aware-optimisation">
+<p class="eyebrow">Algorithm 2 · Development-only search</p>
+<h2>Optimise TWIN-ADAPT on real BCI recordings</h2>
+<p class="ta-muted">Uses the existing GDF/MAT loaders and development-fitted FBCSP pipeline. Candidate configurations are selected on the development-validation partition; the final evaluation session is untouched until the best configuration is frozen. These controls run on the local Flask server, not in the static GitHub Pages snapshot.</p>
+<form method="post" class="ta-fields" aria-label="Run cost-aware BCI optimisation">
+<input type="hidden" name="mode" value="optimized">
+<label>Dataset<select name="dataset"><option value="2a" {% if optimized_values.dataset=='2a' %}selected{% endif %}>BCI IV 2A</option><option value="2b" {% if optimized_values.dataset=='2b' %}selected{% endif %}>BCI IV 2B</option></select></label>
+<label>Subject (1–9)<input type="number" name="subject" min="1" max="9" value="{{ optimized_values.subject }}" required></label>
+<label>Batch size<input type="number" name="opt_batch_size" min="2" max="500" value="{{ optimized_values.batch_size }}" required></label>
+<label>Validation budgets (trials)<input name="budgets" type="text" value="{{ optimized_values.budgets }}" pattern="[0-9, ]+" required aria-describedby="budget-guidance"></label>
+<label>Initial candidates<input type="number" name="candidates" min="1" max="81" value="{{ optimized_values.candidates }}" required></label>
+<label>Promotion fraction<input type="number" name="promotion_fraction" min="0.01" max="1" step="0.01" value="{{ optimized_values.promotion_fraction }}" required></label>
+<label>Alpha (update penalty)<input type="number" name="alpha" min="0" max="10" step="any" value="{{ optimized_values.alpha }}" required></label>
+<label>Beta (retrain penalty)<input type="number" name="beta" min="0" max="10" step="any" value="{{ optimized_values.beta }}" required></label>
+<label>Reference seconds<input type="number" name="reference_seconds" min="0.000001" step="any" value="{{ optimized_values.reference_seconds }}" required></label>
+<label>Label delay (batches; -1 = withheld)<input type="number" name="label_delay" min="-1" max="100" value="{{ optimized_values.label_delay }}" required></label>
+<label>Seed<input type="number" name="seed" min="0" max="4294967295" value="{{ optimized_values.seed }}" required></label>
+<button type="submit" class="theme-button">Run BCI configuration optimisation</button>
+</form>
+<p class="ta-muted" id="budget-guidance">Example 2A: batch 10, budgets 20 40; example 2B: batch 40, budgets 40 80. Available validation trials constrain budgets; this is an illustrative pilot, not a cross-subject result. Existing stratified validation rows preserve order but are not contiguous EEG acquisition. Alpha/beta default values are hypotheses to test.</p>
+</section>
+<section class="ta-panel" id="optimisation-runs"><h2>Saved real-BCI optimisation runs</h2>
+{% if optimized_runs %}
+<div class="ta-scroll"><table class="ta-table"><thead><tr><th>Dataset</th><th>Subject</th><th>Selected run</th><th>Final accuracy</th><th>Updates</th><th>Search evaluations</th><th>Search seconds</th><th>Evidence</th></tr></thead><tbody>
+{% for row in optimized_runs %}
+<tr><td>{{ row.dataset|upper }}</td><td>{{ row.subject }}</td><td><a href="{{ url_for('twin_adapt.results',optimized_run=row.run_id) }}">{{ row.run_id }}</a></td><td>{{ '%.2f'|format(row.accuracy*100) }}%</td><td>{{ row.updates }}</td><td>{{ row.candidate_evaluations }}</td><td>{{ '%.3f'|format(row.search_seconds) }}</td><td><a href="{{ url_for('outputs_file',filename=row.relative_dir ~ '/optimization_summary.json') }}">Summary JSON</a></td></tr>
+{% endfor %}
+</tbody></table></div>
+{% else %}<p class="ta-muted">No real-BCI optimisation runs have been saved yet. Existing A01/B01 fixed-configuration results remain available below; they are not presented as optimisation evidence.</p>{% endif %}
+</section>
+{% if selected_opt %}
+<section class="ta-panel" id="selected-optimisation">
+<p class="eyebrow">Measured optimisation evidence · {{ selected_opt.dataset|upper }} subject {{ selected_opt.subject }}</p>
+<h2>Selected configuration and candidate history</h2>
+<p>Final accuracy: <strong>{{ '%.2f'|format(selected_opt.accuracy*100) }}%</strong> · Final updates: <strong>{{ selected_opt.updates }}</strong> · Search evaluations: <strong>{{ selected_opt.candidate_evaluations }}</strong> · Total search: <strong>{{ '%.3f'|format(selected_opt.search_seconds) }} s</strong>.</p>
+<p class="ta-muted">Selected controller settings: <code>{{ selected_opt.best_config|tojson }}</code>. Cost-objective coefficients: <code>{{ selected_opt.objective_config|tojson }}</code>. These final metrics are not an improvement claim without a matched frozen/fixed-controller comparison.</p>
+<div class="ta-scroll"><table class="ta-table"><thead><tr><th>Stage</th><th>Budget</th><th>Validation accuracy</th><th>Updates</th><th>Retraining (s)</th><th>Replay (s)</th><th>Score</th><th>Promoted</th><th>Candidate</th></tr></thead><tbody>
+{% for item in optimization_history %}
+<tr><td>{{ item.stage }}</td><td>{{ item.budget }}</td><td>{{ '%.2f'|format(item.accuracy*100) }}%</td><td>{{ item.updates }}</td><td>{{ '%.4f'|format(item.retrain_seconds) }}</td><td>{{ '%.4f'|format(item.replay_seconds) }}</td><td>{{ '%.4f'|format(item.score) }}</td><td>{{ 'Yes' if item.promoted else 'No' }}</td><td><code>{{ item.candidate }}</code></td></tr>
+{% endfor %}
+</tbody></table></div>
+<p>
+{% for filename in ['candidate_history.csv','best_config.json','objective_config.json','development_split.json','optimization_summary.json','final_evaluation/trials.csv','final_evaluation/updates.csv'] %}
+<a class="theme-button nav-link" href="{{ url_for('outputs_file',filename=selected_opt.relative_dir ~ '/' ~ filename) }}">{{ filename }}</a>
+{% endfor %}
+</p>
+</section>
+{% endif %}
 <section class="ta-panel"><h2>Saved real-BCI runs</h2>
 {% if runs %}<div class="ta-scroll"><table class="ta-table"><thead><tr><th>Dataset</th><th>Subject</th><th>Run</th><th>Accuracy</th><th>Updates</th><th>Evidence</th></tr></thead><tbody>
 {% for row in runs %}
@@ -58,6 +106,22 @@
 <article class="ta-panel"><p>Prequential accuracy</p><div class="ta-value">{{ '%.2f'|format(selected.accuracy*100) }}%</div></article>
 <article class="ta-panel"><p>Model updates</p><div class="ta-value">{{ selected.updates }}</div></article>
 <article class="ta-panel"><p>Retraining duration</p><div class="ta-value">{{ '%.3f'|format(selected.retrain_seconds) }} s</div></article>
+</section>
+<section class="ta-panel" aria-label="Archived BCI accuracy-window chart">
+<h2>Measured accuracy trajectory — {{ selected.dataset|upper }} / subject {{ selected.subject }}</h2>
+{% if accuracy_plot.count %}
+<svg viewBox="0 0 620 205" role="img" aria-label="Prequential current-window accuracy versus warning threshold, for {{ accuracy_plot.count }} recorded batches" style="width:100%;max-height:280px">
+<line x1="30" y1="25" x2="30" y2="180" stroke="currentColor" opacity=".45"/>
+<line x1="30" y1="180" x2="590" y2="180" stroke="currentColor" opacity=".45"/>
+<line x1="30" y1="102.5" x2="590" y2="102.5" stroke="currentColor" opacity=".17" stroke-dasharray="5 5"/>
+<text x="4" y="28" font-size="12" fill="currentColor">100%</text>
+<text x="8" y="105" font-size="12" fill="currentColor">50%</text>
+<text x="16" y="181" font-size="12" fill="currentColor">0</text>
+<polyline points="{{ accuracy_plot.warning }}" fill="none" stroke="#d29940" stroke-width="2.5" stroke-dasharray="7 4"/>
+<polyline points="{{ accuracy_plot.current }}" fill="none" stroke="#14b8a6" stroke-width="3"/>
+</svg>
+<p class="ta-muted">Turquoise: current-window accuracy. Amber dashed: warning threshold. This visualisation uses the saved <code>accuracy_windows.csv</code> from the selected real-BCI run; these are accuracy triggers, not EWMA/Hotelling shift confirmations.</p>
+{% else %}<p class="ta-muted">No eligible recorded accuracy windows for this run.</p>{% endif %}
 </section>
 <section class="ta-panel"><h2>Window accuracy and state decisions</h2><p class="ta-muted">Thresholds use gamma × PrevAcc (warning) and delta × PrevAcc (adaptation). These rows are read from this run's saved CSV, not generated examples.</p>
 <div class="ta-scroll"><table class="ta-table"><thead><tr><th>Batch</th><th>Released at</th><th>PrevAcc</th><th>CurrAcc</th><th>Warning threshold</th><th>Adapt threshold</th><th>Action</th></tr></thead><tbody>
