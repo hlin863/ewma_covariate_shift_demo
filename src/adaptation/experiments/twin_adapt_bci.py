@@ -98,3 +98,127 @@ def run_bci_experiment(
         Path(output_root) / "latest_summary.csv", index=False
     )
     return destination, summary
+
+
+
+def run_optimized_bci_experiment(
+    *, dataset: str, subject: int, search_space, budgets,
+    objective=None, initial_candidates: int = 12,
+    promotion_fraction: float = 1 / 3,
+    data_root: Path = DEFAULT_DATA,
+    output_root: Path = Path("outputs/experiments/twin_adapt_optimization"),
+) -> tuple[Path, dict]:
+    """Select settings on development data, then perform one held-out BCI replay.
+
+    This is a separate experiment path: the original fixed-config runner and
+    historical outputs are intentionally unchanged.
+    """
+    from time import perf_counter
+    from src.adaptation.classifier import build_fresh_model
+    from src.adaptation.experiments.bci_optimisation_protocol import (
+        prepare_bci_optimization_protocol,
+    )
+    from src.adaptation.twin_adapt.objective import CostObjectiveConfig
+    from src.adaptation.twin_adapt.optimization import optimize_adaptation
+
+    if dataset not in ("2a", "2b") or not 1 <= subject <= 9:
+        raise ValueError("dataset must be 2a/2b and subject must be 1..9")
+    if objective is None:
+        objective = CostObjectiveConfig()
+
+    prepared = prepare_bci_optimization_protocol(
+        dataset=dataset, subject=subject, data_root=data_root, seed=search_space.seed,
+    )
+    started = perf_counter()
+    best_config, history = optimize_adaptation(
+        development_data=prepared.development,
+        config_space=search_space,
+        budgets=budgets,
+        initial_candidates=initial_candidates,
+        promotion_fraction=promotion_fraction,
+        objective=objective,
+    )
+    search_seconds = perf_counter() - started
+
+    # No reuse of a candidate's mutated fitted model; no final-evaluation data
+    # was accessed during configuration search.
+    model = build_fresh_model(
+        prepared.development.x_train, prepared.development.y_train,
+        seed=best_config.seed,
+    )
+    stream = make_bci_dataflow(
+        prepared.x_evaluation, batch_size=best_config.batch_size,
+    )
+    final_result = adapt_model(
+        stream, model, config=best_config,
+        evaluation_labels=prepared.y_evaluation,
+    )
+
+    run_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ") + "_" + uuid4().hex[:8]
+    destination = Path(output_root) / dataset / f"subject_{subject:02d}" / run_id
+    destination.mkdir(parents=True, exist_ok=False)
+
+    def save_json(name, value):
+        (destination / name).write_text(
+            json.dumps(value, indent=2, allow_nan=False), encoding="utf-8",
+        )
+
+    pd.DataFrame(history).assign(
+        candidate=lambda df: df["candidate"].map(json.dumps)
+    ).to_csv(destination / "candidate_history.csv", index=False)
+    save_json("search_space.json", {
+        "gamma_values": search_space.gamma_values,
+        "delta_values": search_space.delta_values,
+        "win_size_values": search_space.win_size_values,
+        "win_size_max_values": search_space.win_size_max_values,
+        "batch_size": search_space.batch_size,
+        "label_delay": search_space.label_delay,
+        "seed": search_space.seed,
+    })
+    save_json("objective_config.json", asdict(objective))
+    save_json("best_config.json", best_config.snapshot())
+    save_json("development_split.json", {
+        "dataset": dataset,
+        "subject": subject,
+        "training_trials": len(prepared.development.y_train),
+        "validation_trials": len(prepared.development.y_validation),
+        "evaluation_trials": len(prepared.y_evaluation),
+        "validation_protocol": "seeded stratified development holdout, ordered by original trial indices",
+        "fbcsp_fit": "development training only",
+        "evaluation_used_in_search": False,
+        "selected_budgets": list(budgets),
+    })
+
+    final_dir = destination / "final_evaluation"
+    final_dir.mkdir()
+    for name, table in (
+        ("trials.csv", final_result.trials),
+        ("accuracy_windows.csv", final_result.accuracy_windows),
+        ("state_transitions.csv", final_result.transitions),
+        ("adaptive_windows.csv", final_result.adaptive_windows),
+        ("updates.csv", final_result.updates),
+    ):
+        table.to_csv(final_dir / name, index=False)
+
+    summary = {
+        "run_id": run_id,
+        "dataset": dataset,
+        "subject": subject,
+        "accuracy": float(final_result.accuracy),
+        "updates": final_result.update_count,
+        "retrain_seconds": float(final_result.updates["retrain_seconds"].sum())
+            if not final_result.updates.empty else 0.0,
+        "search_seconds": float(search_seconds),
+        "candidate_evaluations": len(history),
+        "best_config": best_config.snapshot(),
+        "objective_config": asdict(objective),
+        "training_trials": len(prepared.development.y_train),
+        "validation_trials": len(prepared.development.y_validation),
+        "evaluation_trials": len(prepared.y_evaluation),
+        "interpretation": "operational TWIN-ADAPT; development-only configuration search",
+    }
+    save_json("optimization_summary.json", summary)
+    (final_dir / "summary.json").write_text(
+        json.dumps(summary, indent=2), encoding="utf-8",
+    )
+    return destination, summary
