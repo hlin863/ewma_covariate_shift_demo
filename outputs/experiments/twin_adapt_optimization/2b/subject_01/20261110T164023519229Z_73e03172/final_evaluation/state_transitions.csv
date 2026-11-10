@@ -1,0 +1,7 @@
+batch,released_at_batch,old_state,new_state,action
+0,0,0,2,initial_update
+2,2,2,0,new_concept_update
+3,3,0,1,warning_started
+4,4,1,2,initial_update
+6,6,2,0,new_concept_update
+7,7,0,2,initial_update

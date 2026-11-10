@@ -1,0 +1,16 @@
+batch,released_at_batch,buffer_size,dropped_at_capacity,state,status,action
+0,0,0,0,0,evaluated,none
+1,1,0,0,0,evaluated,none
+2,2,0,0,0,evaluated,none
+3,3,0,0,0,evaluated,none
+4,4,0,0,0,evaluated,none
+5,5,0,0,0,evaluated,none
+6,6,0,0,0,evaluated,none
+7,7,0,0,0,evaluated,none
+8,8,0,0,0,evaluated,none
+9,9,0,0,0,evaluated,none
+10,10,0,0,0,evaluated,none
+11,11,0,0,0,evaluated,none
+12,12,0,0,0,evaluated,none
+13,13,0,0,0,evaluated,none
+14,14,0,0,0,ineligible_short_batch,none
