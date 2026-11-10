@@ -16,8 +16,11 @@ from sklearn.neighbors import KNeighborsClassifier as SKKNeighborsClassifier
 from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier as SKDecisionTreeClassifier
 
-
 ArrayLike = np.ndarray
+
+
+def build_fresh_model(x_train, y_train, seed=42):
+    return LinearSVMClassifier(random_state=seed).fit(x_train, y_train)
 
 
 class Classifier(Protocol):
@@ -48,9 +51,7 @@ class IncrementalLearner(Classifier, Protocol):
     @property
     def training_size(self) -> int: ...
 
-    def update(
-        self, new_features: np.ndarray, new_labels: np.ndarray
-    ) -> object: ...
+    def update(self, new_features: np.ndarray, new_labels: np.ndarray) -> object: ...
 
 
 def _as_2d_features(values: ArrayLike, *, name: str) -> np.ndarray:
@@ -135,7 +136,9 @@ class LinearSVMClassifier:
         x = _as_2d_features(features, name="features")
         y = _as_1d_labels(labels, name="labels")
         if x.shape[0] != y.size:
-            raise ValueError("features and labels must contain the same number of samples.")
+            raise ValueError(
+                "features and labels must contain the same number of samples."
+            )
         if np.unique(y).size < 2:
             raise ValueError("Linear SVM training requires at least two classes.")
 
@@ -194,7 +197,9 @@ class LinearSVMClassifier:
 
     def _require_fitted(self) -> None:
         if not self.is_fitted:
-            raise RuntimeError("Classifier must be fitted before prediction or adaptation.")
+            raise RuntimeError(
+                "Classifier must be fitted before prediction or adaptation."
+            )
 
     def _validate_feature_count(self, features: np.ndarray) -> None:
         if self.n_features is not None and features.shape[1] != self.n_features:
@@ -202,7 +207,6 @@ class LinearSVMClassifier:
                 "Feature dimension does not match the fitted classifier: "
                 f"expected {self.n_features}, received {features.shape[1]}."
             )
-
 
 
 @dataclass
@@ -241,11 +245,19 @@ class KNNClassifier:
 
     @property
     def training_size(self) -> int:
-        return 0 if self._training_features is None else int(self._training_features.shape[0])
+        return (
+            0
+            if self._training_features is None
+            else int(self._training_features.shape[0])
+        )
 
     @property
     def n_features(self) -> int | None:
-        return None if self._training_features is None else int(self._training_features.shape[1])
+        return (
+            None
+            if self._training_features is None
+            else int(self._training_features.shape[1])
+        )
 
     @property
     def training_features(self) -> np.ndarray:
@@ -268,7 +280,9 @@ class KNNClassifier:
         x = _as_2d_features(features, name="features")
         y = _as_1d_labels(labels, name="labels")
         if x.shape[0] != y.size:
-            raise ValueError("features and labels must contain the same number of samples.")
+            raise ValueError(
+                "features and labels must contain the same number of samples."
+            )
         if np.unique(y).size < 2:
             raise ValueError("KNN training requires at least two classes.")
         self._model = self._new_model(min(self.n_neighbors, int(x.shape[0])))
@@ -303,7 +317,9 @@ class KNNClassifier:
         x_new = _as_2d_features(new_features, name="new_features")
         y_new = _as_1d_labels(new_labels, name="new_labels")
         if x_new.shape[0] != y_new.size:
-            raise ValueError("new_features and new_labels must contain the same number of samples.")
+            raise ValueError(
+                "new_features and new_labels must contain the same number of samples."
+            )
         self._validate_feature_count(x_new)
         return self.fit(
             np.vstack([self._training_features, x_new]),
@@ -312,7 +328,9 @@ class KNNClassifier:
 
     def _require_fitted(self) -> None:
         if not self.is_fitted:
-            raise RuntimeError("Classifier must be fitted before prediction or adaptation.")
+            raise RuntimeError(
+                "Classifier must be fitted before prediction or adaptation."
+            )
 
     def _validate_feature_count(self, features: np.ndarray) -> None:
         if self.n_features is not None and features.shape[1] != self.n_features:
@@ -362,11 +380,19 @@ class DecisionTreeClassifier:
 
     @property
     def training_size(self) -> int:
-        return 0 if self._training_features is None else int(self._training_features.shape[0])
+        return (
+            0
+            if self._training_features is None
+            else int(self._training_features.shape[0])
+        )
 
     @property
     def n_features(self) -> int | None:
-        return None if self._training_features is None else int(self._training_features.shape[1])
+        return (
+            None
+            if self._training_features is None
+            else int(self._training_features.shape[1])
+        )
 
     @property
     def training_features(self) -> np.ndarray:
@@ -399,7 +425,9 @@ class DecisionTreeClassifier:
         x = _as_2d_features(features, name="features")
         y = _as_1d_labels(labels, name="labels")
         if x.shape[0] != y.size:
-            raise ValueError("features and labels must contain the same number of samples.")
+            raise ValueError(
+                "features and labels must contain the same number of samples."
+            )
         if np.unique(y).size < 2:
             raise ValueError("Decision-tree training requires at least two classes.")
         self._model = self._new_model()
@@ -433,7 +461,9 @@ class DecisionTreeClassifier:
         x_new = _as_2d_features(new_features, name="new_features")
         y_new = _as_1d_labels(new_labels, name="new_labels")
         if x_new.shape[0] != y_new.size:
-            raise ValueError("new_features and new_labels must contain the same number of samples.")
+            raise ValueError(
+                "new_features and new_labels must contain the same number of samples."
+            )
         self._validate_feature_count(x_new)
         return self.fit(
             np.vstack([self._training_features, x_new]),
@@ -442,7 +472,9 @@ class DecisionTreeClassifier:
 
     def _require_fitted(self) -> None:
         if not self.is_fitted:
-            raise RuntimeError("Classifier must be fitted before prediction or adaptation.")
+            raise RuntimeError(
+                "Classifier must be fitted before prediction or adaptation."
+            )
 
     def _validate_feature_count(self, features: np.ndarray) -> None:
         if self.n_features is not None and features.shape[1] != self.n_features:
