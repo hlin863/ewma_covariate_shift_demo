@@ -38,7 +38,6 @@ def make_validation_stream(
         make_bci_dataflow(
             x[:budget],
             batch_size=batch_size,
-            labels=y[:budget],
         ),
         y[:budget],
     )
