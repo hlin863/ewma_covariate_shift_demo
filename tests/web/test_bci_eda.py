@@ -4,7 +4,7 @@ from types import SimpleNamespace
 import numpy as np
 from flask import Flask
 
-from src.web.bci_eda import _summarise_trials, bci_eda_bp
+from src.web.bci_eda import _summarise_trials, bci_eda_bp, _load_dataset_2a_feature_timelines
 from src.web.data_structures import data_structures_bp
 
 
@@ -76,3 +76,63 @@ def test_data_distributions_page_handles_missing_local_raw_data(tmp_path: Path) 
     assert "0 / 18" in page
     assert "0 / 9" in page
     assert "0 / 45" in page
+
+
+def test_2a_feature_page_renders_timeline_when_payload_available(monkeypatch, tmp_path: Path) -> None:
+    from src.web import bci_eda
+
+    project_root = Path(__file__).resolve().parents[2]
+    app = Flask(__name__, template_folder=str(project_root / "templates"),
+                static_folder=str(project_root / "static"))
+    app.add_url_rule("/", endpoint="home", view_func=lambda: "home")
+    app.add_url_rule("/figure-1", endpoint="figure_1", view_func=lambda: "figure")
+    app.add_url_rule("/table-1", endpoint="dashboard", view_func=lambda: "table")
+    app.register_blueprint(bci_eda_bp)
+    app.register_blueprint(data_structures_bp)
+    app.config.update(TESTING=True, DATASET_2A_PATH=str(tmp_path / "2a"),
+                      DATASET_2A_LABELS_PATH=str(tmp_path / "labels"),
+                      DATASET_2B_PATH=str(tmp_path / "2b"))
+
+    dummy = {"timelines": [{"name": "8_12Hz_csp_high_1",
+             "development": [{"cue_onset_seconds": 2.0, "trial_index": 0,
+                              "original_cue_index": 2, "feature_value": 1.0}],
+             "evaluation": [{"cue_onset_seconds": 5.0, "trial_index": 0,
+                             "original_cue_index": 3, "feature_value": 1.2}]}],
+             "development_count": 1, "evaluation_count": 1,
+             "development_session": "T", "evaluation_session": "E", "seed": 42}
+    monkeypatch.setattr(bci_eda, "_load_dataset_2a_feature_timelines",
+                        lambda subject: (dummy, ""))
+    monkeypatch.setattr(bci_eda, "_load_dataset_2a",
+                        lambda subject: ([_summarise_trials(
+                            _synthetic_trials(), label="Session I", role="training")], []))
+    page = app.test_client().get("/data-distributions?dataset=2a&subject=1")
+    assert page.status_code == 200
+    html = page.get_data(as_text=True)
+    assert 'id="fbcsp-timeline-canvas"' in html
+    assert 'id="fbcsp-density-canvas"' in html
+    assert 'id="fbcsp-feature-select"' in html
+    assert '"original_cue_index": 2' in html or '"original_cue_index":2' in html
+
+
+def test_2a_feature_loader_explains_missing_official_labels(tmp_path: Path) -> None:
+    app = Flask(__name__)
+    app.config.update(DATASET_2A_PATH=str(tmp_path / "2a"),
+                      DATASET_2A_LABELS_PATH=str(tmp_path / "labels"))
+    with app.app_context():
+        payload, message = _load_dataset_2a_feature_timelines(1)
+    assert payload is None
+    assert "Official Session-II MAT labels" in message
+
+
+def test_detector_canvas_layout_fills_cards_and_heatmap_scrolls() -> None:
+    """Regression for the 300px default canvas width seen in local screenshots."""
+    root = Path(__file__).resolve().parents[2]
+    css = (root / "static" / "bci_eda.css").read_text(encoding="utf-8")
+    template = (root / "templates" / "bci_eda.html").read_text(encoding="utf-8")
+    assert ".eda-detection-views canvas," in css
+    assert "width: 100%;" in css.split(".eda-detection-views canvas,", 1)[1].split("}", 1)[0]
+    assert ".eda-heatmap-scroll" in css
+    assert 'class="eda-heatmap-scroll"' in template
+    for canvas_id in ("fbcsp-shift-heatmap", "fbcsp-ewma-trace", "fbcsp-stage2-events"):
+        assert f'id="{canvas_id}"' in template
+        assert f"'{canvas_id}': Math.max" in template

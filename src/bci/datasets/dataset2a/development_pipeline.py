@@ -51,6 +51,8 @@ def _as_feature_result(
         feature_names=names,
         cue_descriptions=np.asarray(trials.cue_descriptions),
         session_id=trials.session_id,
+        original_cue_indices=np.asarray(trials.original_cue_indices, dtype=int),
+        cue_onset_seconds=np.asarray(trials.cue_onset_seconds, dtype=float),
     )
 
 
