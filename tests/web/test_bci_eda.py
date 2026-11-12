@@ -126,7 +126,7 @@ def test_2a_feature_loader_explains_missing_official_labels(tmp_path: Path) -> N
 
 def test_detector_canvas_layout_fills_cards_and_heatmap_scrolls() -> None:
     """Regression for the 300px default canvas width seen in local screenshots."""
-    root = Path(__file__).resolve().parents[3]
+    root = Path(__file__).resolve().parents[2]
     css = (root / "static" / "bci_eda.css").read_text(encoding="utf-8")
     template = (root / "templates" / "bci_eda.html").read_text(encoding="utf-8")
     assert ".eda-detection-views canvas," in css
