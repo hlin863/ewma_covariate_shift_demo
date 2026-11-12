@@ -149,3 +149,46 @@ def test_dataset_2a_fbcsp_produces_paper_filter_bank_features() -> None:
     assert len(pipeline.training.feature_names) == 20
     assert np.isfinite(pipeline.training.features).all()
     assert np.isfinite(pipeline.testing.features).all()
+
+
+def test_feature_timeline_uses_real_onset_seconds_and_retains_provenance() -> None:
+    from src.bci.datasets.dataset2a.experiment import build_feature_timeline
+
+    result = extract_dataset_2a_trials(_session("T"))
+    np.testing.assert_array_equal(result.original_cue_indices, np.arange(8))
+    np.testing.assert_allclose(result.cue_onset_seconds, np.arange(8) * 5 + 2)
+    fitted = build_dataset_2a_fbcsp_features(result, result)
+    timeline = build_feature_timeline(fitted.testing)
+    observations = timeline["observations"]
+    assert len(observations) == fitted.testing.features.shape[0]
+    assert observations[0]["cue_onset_seconds"] == 2.0
+    assert observations[0]["trial_index"] == 0
+    assert observations[0]["original_cue_index"] == 0
+    for i, observation in enumerate(observations):
+        assert observation["feature_value"] == fitted.testing.features[i, 0]
+
+
+def test_development_fbcsp_preserves_cue_metadata_through_split() -> None:
+    from src.bci.datasets.dataset2a import (
+        split_dataset_2a_session1, build_dataset_2a_development_fbcsp_features
+    )
+    first = extract_dataset_2a_trials(_session("T", n_trials=20))
+    last = extract_dataset_2a_trials(_session("E", n_trials=288),
+                                     evaluation_labels=_official_size_evaluation_labels())
+    split = split_dataset_2a_session1(first, random_state=42)
+    fitted = build_dataset_2a_development_fbcsp_features(split, last)
+    np.testing.assert_array_equal(fitted.training.original_cue_indices,
+                                  split.training.original_cue_indices)
+    np.testing.assert_allclose(fitted.training.cue_onset_seconds,
+                               split.training.cue_onset_seconds)
+    np.testing.assert_array_equal(fitted.testing.original_cue_indices,
+                                  last.original_cue_indices)
+    np.testing.assert_allclose(fitted.testing.cue_onset_seconds,
+                               last.cue_onset_seconds)
+    timeline = build_feature_timeline_for_test(fitted.testing)
+    assert len(timeline["observations"]) == len(last.labels)
+
+
+def build_feature_timeline_for_test(result):
+    from src.bci.datasets.dataset2a.experiment import build_feature_timeline
+    return build_feature_timeline(result)
