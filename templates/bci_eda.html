@@ -178,6 +178,63 @@
           </article>
         </div>
         <p class="eda-feature-note">Blue: Session-I development training. Red: Session-II evaluation. A smoothed line, if enabled, is descriptive only.</p>
+        <section class="eda-detection-views" aria-label="Exploratory shift monitoring">
+          <div class="eda-section-heading">
+            <div><p class="eyebrow">Window-based differences</p><h2>FBCSP feature-shift heatmap</h2></div>
+            <p>All 20 feature dimensions against the development-training mean and standard deviation.
+              Non-overlapping complete {{ feature_chart.heatmap.window_size }}-trial evaluation windows.
+              This is descriptive, not an alarm statistic.</p>
+          </div>
+          <article class="eda-channel-card">
+            <canvas id="fbcsp-shift-heatmap" aria-label="Standardised feature differences by evaluation window"></canvas>
+            <p class="eda-feature-note">Blue/teal means higher than development reference; red means lower.
+              White/grey means approximately zero. Empty cells indicate an unstable reference standard deviation.
+              Window start/end indices are shown in the labels; no ground-truth change points are claimed.</p>
+          </article>
+          <div class="eda-section-heading">
+            <div><p class="eyebrow">Computed detector evidence</p><h2>Stage-I warnings and Stage-II validation decisions</h2></div>
+            <p>Exploratory recomputation on the same FBCSP evaluation rows: PCA={{ feature_chart.cse_events.config.pca_components }},
+              λ={{ feature_chart.cse_events.config.lambda }}, training-final EWMA initialisation,
+              H={{ feature_chart.cse_events.config.window_size }}, Hotelling two-sample/shrinkage,
+              α={{ feature_chart.cse_events.config.alpha }}.
+              These event counts are not a claim of reproduction agreement.</p>
+          </div>
+          <div class="eda-event-counters">
+            <div><strong>{{ feature_chart.cse_events.warning_count }}</strong><span>Stage-I warnings</span></div>
+            <div><strong>{{ feature_chart.cse_events.confirmed_count }}</strong><span>Confirmed Stage-II decisions</span></div>
+            <div><strong>{{ feature_chart.cse_events.validations|length }}</strong><span>Stage-II candidate records</span></div>
+          </div>
+          <article class="eda-channel-card">
+            <h3>Stage-I EWMA warning trace</h3>
+            <canvas id="fbcsp-ewma-trace" aria-label="Stage-I EWMA trace with warning markers"></canvas>
+            <p class="eda-feature-note">Horizontal axis: sequential evaluation observation index; warning markers use
+              the original source cue-onset metadata for event inspection. Stage-I outputs are computed using
+              frozen development PCA and no evaluation labels.</p>
+          </article>
+          <article class="eda-channel-card">
+            <h3>Stage-II event timeline</h3>
+            <canvas id="fbcsp-stage2-events" aria-label="Stage-II event decisions and validation completion times"></canvas>
+            <p class="eda-feature-note">Warning time and validation-completion time are different events.
+              Pending, skipped and ineligible windows are retained explicitly, not counted as confirmed shifts.</p>
+          </article>
+          <div class="eda-event-table-wrap">
+            <table class="eda-event-table">
+              <caption>Stage-II event log — computed on the current subject, not published reference counts</caption>
+              <thead><tr><th>Warning row</th><th>Cue time (s)</th><th>Validation row</th><th>Status</th><th>p-value</th></tr></thead>
+              <tbody>
+              {% for event in feature_chart.cse_events.validations %}
+                <tr><td>{{ event.alarm_index }}</td><td>{{ '%.2f'|format(event.alarm_cue_onset_seconds) }}</td>
+                  <td>{{ event.validation_index if event.validation_index is not none else '—' }}</td>
+                  <td>{{ event.status }}</td>
+                  <td>{{ '%.5f'|format(event.p_value) if event.p_value is not none else '—' }}</td></tr>
+              {% else %}
+                <tr><td colspan="5">No Stage-I warnings required Stage-II decisions in this run.</td></tr>
+              {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
         {% else %}
         <div class="eda-feature-unavailable" role="status">{{ feature_status }}</div>
         {% endif %}
@@ -568,6 +625,107 @@
       ctx.textAlign = 'right'; ctx.fillText(hi.toFixed(2), margin.left + plotW, margin.top + plotH + 18);
     }
 
+    function drawShiftHeatmap() {
+      const canvas = document.getElementById('fbcsp-shift-heatmap');
+      const data = edaData.feature_chart?.heatmap;
+      if (!canvas || !data || !data.windows.length) return;
+      const {ctx, width, height} = prepCanvas(canvas, 590);
+      const margin = {left: 165, right: 22, top: 28, bottom: 78};
+      const plotW = width - margin.left - margin.right;
+      const plotH = height - margin.top - margin.bottom;
+      ctx.fillStyle = css('--eda-plot-bg');
+      ctx.fillRect(margin.left, margin.top, plotW, plotH);
+      const rows = data.feature_names.length, cols = data.windows.length;
+      const cellW = plotW / cols, cellH = plotH / rows;
+      data.feature_names.forEach((name, row) => {
+        ctx.font = '10px system-ui'; ctx.textAlign = 'right'; ctx.fillStyle = css('--muted');
+        ctx.fillText(name, margin.left - 6, margin.top + (row + .65) * cellH);
+        data.windows.forEach((win, col) => {
+          const v = win.values[row];
+          const intensity = v === null ? 0 : Math.min(1, Math.abs(v) / 2.5);
+          ctx.fillStyle = v === null ? '#999999' :
+             v >= 0 ? `rgba(26,149,139,${.08 + intensity*.85})` :
+                      `rgba(209,83,88,${.08 + intensity*.85})`;
+          ctx.fillRect(margin.left + col*cellW+.6, margin.top+row*cellH+.6,
+                       Math.max(1,cellW-1.2), Math.max(1,cellH-1.2));
+        });
+      });
+      ctx.fillStyle = css('--muted'); ctx.textAlign = 'center'; ctx.font = '10px system-ui';
+      data.windows.forEach((win,col) => {
+        if (cols > 20 && col % 2) return;
+        ctx.save();
+        ctx.translate(margin.left + (col+.5)*cellW, margin.top+plotH+7);
+        ctx.rotate(-Math.PI/3);
+        ctx.fillText(win.start_index+'–'+win.end_index, 0, 0);
+        ctx.restore();
+      });
+      ctx.textAlign='center';
+      ctx.fillText('Evaluation window (inclusive trial indices)',margin.left+plotW/2,height-12);
+    }
+
+    function drawEWMAWarnings() {
+      const canvas=document.getElementById('fbcsp-ewma-trace');
+      const data=edaData.feature_chart?.cse_events?.warnings;
+      if(!canvas || !data?.length) return;
+      const finite=data.filter(p=>p.ewma!==null);
+      if(!finite.length) return;
+      const {ctx,width,height}=prepCanvas(canvas,260);
+      const margin={left:65,right:24,top:24,bottom:52};
+      const {plotW,plotH}=drawAxes(ctx,width,height,margin,'Evaluation trial index','EWMA');
+      const minX=data[0].index,maxX=data[data.length-1].index;
+      const ys=finite.map(p=>p.ewma),lo=Math.min(...ys),hi=Math.max(...ys);
+      const pad=Math.max((hi-lo)*.12,1e-6);
+      const sx=x=>margin.left+(x-minX)/Math.max(maxX-minX,1)*plotW;
+      const sy=y=>margin.top+plotH-(y-lo+pad)/(hi-lo+2*pad)*plotH;
+      ctx.beginPath();ctx.strokeStyle=palette()[0];ctx.lineWidth=2;
+      finite.forEach((p,i)=>i?ctx.lineTo(sx(p.index),sy(p.ewma)):ctx.moveTo(sx(p.index),sy(p.ewma)));
+      ctx.stroke();
+      ctx.fillStyle=palette()[1];
+      finite.filter(p=>p.warning).forEach(p=>{
+        ctx.beginPath();ctx.arc(sx(p.index),sy(p.ewma),4.5,0,Math.PI*2);ctx.fill();
+      });
+      ctx.fillStyle=css('--muted');ctx.textAlign='left';
+      ctx.fillText(String(minX),margin.left,margin.top+plotH+18);
+      ctx.textAlign='right';ctx.fillText(String(maxX),margin.left+plotW,margin.top+plotH+18);
+    }
+
+    function drawStage2Events() {
+      const canvas=document.getElementById('fbcsp-stage2-events');
+      const data=edaData.feature_chart?.cse_events;
+      if(!canvas || !data) return;
+      const events=data.validations;
+      const {ctx,width,height}=prepCanvas(canvas,250);
+      const margin={left:85,right:24,top:24,bottom:54};
+      const {plotW,plotH}=drawAxes(ctx,width,height,margin,'Evaluation trial index','Decision status');
+      const maxIndex=Math.max(1,data.warnings.length-1);
+      const sx=x=>margin.left+x/maxIndex*plotW;
+      const sy={confirmed:margin.top+plotH*.19,rejected:margin.top+plotH*.43,
+        pending_current_window:margin.top+plotH*.67,
+        skipped_nearby_alarm:margin.top+plotH*.85,
+        insufficient_reference_window:margin.top+plotH*.85,
+        insufficient_degrees_of_freedom:margin.top+plotH*.85};
+      const colors={confirmed:'#168f80',rejected:'#d68a34',
+        pending_current_window:'#7886a1',skipped_nearby_alarm:'#7886a1',
+        insufficient_reference_window:'#7886a1',insufficient_degrees_of_freedom:'#7886a1'};
+      ['confirmed','rejected','pending','skipped/ineligible'].forEach((label,i)=>{
+        ctx.fillStyle=css('--muted');ctx.textAlign='right';ctx.font='10px system-ui';
+        ctx.fillText(label,margin.left-6,[.19,.43,.67,.85][i]*plotH+margin.top+3);
+      });
+      events.forEach(e=>{
+        const y=sy[e.status] ?? margin.top+plotH*.85;
+        ctx.strokeStyle=colors[e.status]||'#7886a1';
+        if(e.validation_index!==null) {
+          ctx.beginPath();ctx.moveTo(sx(e.alarm_index),y);ctx.lineTo(sx(e.validation_index),y);
+          ctx.lineWidth=1.8;ctx.stroke();
+        }
+        ctx.fillStyle=ctx.strokeStyle;
+        ctx.beginPath();ctx.arc(sx(e.alarm_index),y,3,0,Math.PI*2);ctx.fill();
+        if(e.validation_index!==null) {
+          ctx.fillRect(sx(e.validation_index)-3,y-3,6,6);
+        }
+      });
+    }
+
     function drawAll() {
       document.querySelectorAll('.eda-histogram').forEach(canvas => {
         drawHistogram(canvas, canvas.dataset.metric);
@@ -575,6 +733,9 @@
       drawChannelSummary();
       drawFeatureTimeline();
       drawFeatureDensity();
+      drawShiftHeatmap();
+      drawEWMAWarnings();
+      drawStage2Events();
     }
 
     ['fbcsp-feature-select', 'fbcsp-x-axis', 'fbcsp-rolling'].forEach(id => {
