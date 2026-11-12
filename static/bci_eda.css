@@ -414,3 +414,16 @@
   color: var(--muted); background: var(--panel-alpha);
 }
 @media (max-width: 880px) { .eda-feature-grid { grid-template-columns: 1fr; } }
+
+.eda-detection-views { display:grid; gap:14px; margin-top:26px; }
+.eda-detection-views .eda-section-heading { margin-top:18px; }
+.eda-event-counters {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;}
+.eda-event-counters > div {padding:15px;border:1px solid var(--line);background:var(--panel-alpha);border-radius:13px;display:grid;gap:4px;}
+.eda-event-counters strong {font-size:1.6rem;color:var(--text);}
+.eda-event-counters span {font-size:.75rem;color:var(--muted);}
+.eda-event-table-wrap {max-height:360px;overflow:auto;border:1px solid var(--line);border-radius:14px;background:var(--panel-alpha);}
+.eda-event-table {width:100%;border-collapse:collapse;font-size:.8rem;text-align:left;}
+.eda-event-table caption {text-align:left;padding:12px;color:var(--muted);}
+.eda-event-table th,.eda-event-table td {padding:10px 13px;border-bottom:1px solid var(--line);white-space:nowrap;}
+.eda-event-table thead {position:sticky;top:0;background:var(--panel-2);color:var(--text);}
+@media(max-width:620px){.eda-event-counters{grid-template-columns:1fr;}}
