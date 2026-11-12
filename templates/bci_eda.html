@@ -178,6 +178,7 @@
           </article>
         </div>
         <p class="eda-feature-note">Blue: Session-I development training. Red: Session-II evaluation. A smoothed line, if enabled, is descriptive only.</p>
+        {% if feature_chart.heatmap is defined and feature_chart.cse_events is defined %}
         <section class="eda-detection-views" aria-label="Exploratory shift monitoring">
           <div class="eda-section-heading">
             <div><p class="eyebrow">Window-based differences</p><h2>FBCSP feature-shift heatmap</h2></div>
@@ -234,6 +235,7 @@
             </table>
           </div>
         </section>
+        {% endif %}
 
         {% else %}
         <div class="eda-feature-unavailable" role="status">{{ feature_status }}</div>
