@@ -130,6 +130,60 @@
         {% endfor %}
       </section>
 
+      {% if dataset == '2a' %}
+      <section class="eda-feature-section" aria-label="FBCSP feature timeline">
+        <div class="eda-section-heading">
+          <div>
+            <p class="eyebrow">Development-fitted FBCSP · Dataset 2A</p>
+            <h2>Chronological feature evolution</h2>
+          </div>
+          <p>
+            Model fitted on Session-I development training (70/30 split, seed 42).
+            Evaluation Session II uses the same fitted transform. These are descriptive
+            feature values, not verified shift events.
+          </p>
+        </div>
+        {% if feature_chart %}
+        <div class="eda-feature-controls">
+          <label for="fbcsp-feature-select">FBCSP feature
+            <select id="fbcsp-feature-select">
+              {% for item in feature_chart.timelines %}
+                <option value="{{ loop.index0 }}">{{ item.name }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label for="fbcsp-x-axis">Horizontal axis
+            <select id="fbcsp-x-axis">
+              <option value="seconds">Original cue onset (seconds per session)</option>
+              <option value="index">Retained trial index (per session)</option>
+            </select>
+          </label>
+          <label class="eda-check"><input type="checkbox" id="fbcsp-rolling" checked> Trailing 10-trial mean</label>
+        </div>
+        <p class="eda-feature-note">
+          Session I: {{ feature_chart.development_count }} development-training trials;
+          Session II: {{ feature_chart.evaluation_count }} left/right evaluation trials.
+          Original onset times restart at each session boundary. Source annotation indices
+          and retained trial indices are distinct.
+        </p>
+        <div class="eda-feature-grid">
+          <article class="eda-channel-card">
+            <h3>Feature value versus original cue time</h3>
+            <canvas id="fbcsp-timeline-canvas" aria-label="Chronological FBCSP feature timeline by session"></canvas>
+          </article>
+          <article class="eda-channel-card">
+            <h3>Development versus evaluation distribution</h3>
+            <canvas id="fbcsp-density-canvas" aria-label="FBCSP feature distribution histogram by session"></canvas>
+            <p class="eda-feature-note">Shared histogram bins; values are percentages of observations in each session.</p>
+          </article>
+        </div>
+        <p class="eda-feature-note">Blue: Session-I development training. Red: Session-II evaluation. A smoothed line, if enabled, is descriptive only.</p>
+        {% else %}
+        <div class="eda-feature-unavailable" role="status">{{ feature_status }}</div>
+        {% endif %}
+      </section>
+      {% endif %}
+
       <section class="eda-chart-section">
         <div class="eda-section-heading">
           <div>
@@ -412,13 +466,120 @@
       });
     }
 
+    function selectedFeature() {
+      const select = document.getElementById('fbcsp-feature-select');
+      const features = edaData.feature_chart?.timelines;
+      return select && features ? features[Number(select.value)] : null;
+    }
+
+    function drawFeatureTimeline() {
+      const canvas = document.getElementById('fbcsp-timeline-canvas');
+      const feature = selectedFeature();
+      if (!canvas || !feature) return;
+      const axis = document.getElementById('fbcsp-x-axis').value;
+      const showRolling = document.getElementById('fbcsp-rolling').checked;
+      const key = axis === 'seconds' ? 'cue_onset_seconds' : 'trial_index';
+      const series = [feature.development, feature.evaluation];
+      const points = series.flat();
+      if (!points.length) return;
+      const xs = points.map(p => p[key]);
+      const ys = points.map(p => p.feature_value);
+      let xmin = Math.min(...xs), xmax = Math.max(...xs);
+      let ymin = Math.min(...ys), ymax = Math.max(...ys);
+      const xpad = Math.max((xmax - xmin) * .04, 1e-6);
+      const ypad = Math.max((ymax - ymin) * .12, 1e-6);
+      xmin -= xpad; xmax += xpad; ymin -= ypad; ymax += ypad;
+      const {ctx, width, height} = prepCanvas(canvas, 330);
+      const margin = {left: 65, right: 20, top: 24, bottom: 56};
+      const {plotW, plotH} = drawAxes(ctx, width, height, margin,
+        axis === 'seconds' ? 'Cue onset (seconds within each session)' : 'Retained trial index (per session)',
+        'FBCSP log-variance');
+      const sx = x => margin.left + (x - xmin) / (xmax - xmin) * plotW;
+      const sy = y => margin.top + plotH - (y - ymin) / (ymax - ymin) * plotH;
+      ctx.fillStyle = css('--muted');
+      ctx.textAlign = 'left';
+      ctx.fillText(xmin.toFixed(1), margin.left, margin.top + plotH + 18);
+      ctx.textAlign = 'right';
+      ctx.fillText(xmax.toFixed(1), margin.left + plotW, margin.top + plotH + 18);
+      ctx.textAlign = 'left';
+      ctx.fillText(ymax.toFixed(2), 8, margin.top + 12);
+      ctx.fillText(ymin.toFixed(2), 8, margin.top + plotH);
+      const colors = palette();
+      series.forEach((items, si) => {
+        ctx.strokeStyle = colors[si];
+        ctx.fillStyle = colors[si];
+        ctx.lineWidth = 1.25;
+        ctx.beginPath();
+        items.forEach((p, i) => i ? ctx.lineTo(sx(p[key]), sy(p.feature_value)) : ctx.moveTo(sx(p[key]), sy(p.feature_value)));
+        ctx.stroke();
+        items.forEach(p => {
+          ctx.beginPath(); ctx.arc(sx(p[key]), sy(p.feature_value), 2, 0, Math.PI * 2); ctx.fill();
+        });
+        if (showRolling && items.length >= 10) {
+          ctx.strokeStyle = colors[si]; ctx.lineWidth = 3.2;
+          ctx.beginPath();
+          for (let i = 9; i < items.length; i++) {
+            const mean = items.slice(i - 9, i + 1).reduce((sum, p) => sum + p.feature_value, 0) / 10;
+            if (i === 9) ctx.moveTo(sx(items[i][key]), sy(mean));
+            else ctx.lineTo(sx(items[i][key]), sy(mean));
+          }
+          ctx.stroke();
+        }
+      });
+    }
+
+    function drawFeatureDensity() {
+      const canvas = document.getElementById('fbcsp-density-canvas');
+      const feature = selectedFeature();
+      if (!canvas || !feature) return;
+      const series = [feature.development, feature.evaluation];
+      const all = series.flat().map(p => p.feature_value);
+      if (!all.length) return;
+      let lo = Math.min(...all), hi = Math.max(...all);
+      const padding = Math.max((hi - lo) * .05, 1e-6);
+      lo -= padding; hi += padding;
+      const binCount = 24;
+      const counts = series.map(items => {
+        const bins = Array(binCount).fill(0);
+        items.forEach(p => {
+          const idx = Math.min(binCount - 1, Math.max(0, Math.floor((p.feature_value - lo) / (hi - lo) * binCount)));
+          bins[idx] += 100 / items.length;
+        });
+        return bins;
+      });
+      const peak = Math.max(1, ...counts.flat());
+      const {ctx, width, height} = prepCanvas(canvas, 330);
+      const margin = {left: 60, right: 20, top: 24, bottom: 56};
+      const {plotW, plotH} = drawAxes(ctx, width, height, margin,
+        'FBCSP log-variance', 'Observations per bin (%)');
+      const colors = palette();
+      counts.forEach((bins, si) => {
+        ctx.strokeStyle = colors[si]; ctx.lineWidth = 2.4;
+        ctx.beginPath();
+        bins.forEach((value, i) => {
+          const x = margin.left + (i + .5) / binCount * plotW;
+          const y = margin.top + plotH - value / peak * plotH;
+          if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+      });
+      ctx.fillStyle = css('--muted'); ctx.font = '11px system-ui';
+      ctx.textAlign = 'left'; ctx.fillText(lo.toFixed(2), margin.left, margin.top + plotH + 18);
+      ctx.textAlign = 'right'; ctx.fillText(hi.toFixed(2), margin.left + plotW, margin.top + plotH + 18);
+    }
+
     function drawAll() {
       document.querySelectorAll('.eda-histogram').forEach(canvas => {
         drawHistogram(canvas, canvas.dataset.metric);
       });
       drawChannelSummary();
+      drawFeatureTimeline();
+      drawFeatureDensity();
     }
 
+    ['fbcsp-feature-select', 'fbcsp-x-axis', 'fbcsp-rolling'].forEach(id => {
+      document.getElementById(id)?.addEventListener('change', drawAll);
+    });
     let timer;
     window.addEventListener('resize', () => {
       clearTimeout(timer);
