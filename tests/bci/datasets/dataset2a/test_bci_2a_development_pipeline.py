@@ -36,6 +36,8 @@ def _trials(session_id: str, n_trials: int, *, labelled: bool) -> Dataset2ATrial
         channel_names=DATASET_2A_CHANNELS,
         sampling_frequency=sfreq,
         session_id=session_id,
+        original_cue_indices=np.arange(n_trials, dtype=int),
+        cue_onset_seconds=2.0 + 5.0 * np.arange(n_trials, dtype=float),
     )
 
 
