@@ -122,3 +122,17 @@ def test_2a_feature_loader_explains_missing_official_labels(tmp_path: Path) -> N
         payload, message = _load_dataset_2a_feature_timelines(1)
     assert payload is None
     assert "Official Session-II MAT labels" in message
+
+
+def test_detector_canvas_layout_fills_cards_and_heatmap_scrolls() -> None:
+    """Regression for the 300px default canvas width seen in local screenshots."""
+    root = Path(__file__).resolve().parents[3]
+    css = (root / "static" / "bci_eda.css").read_text(encoding="utf-8")
+    template = (root / "templates" / "bci_eda.html").read_text(encoding="utf-8")
+    assert ".eda-detection-views canvas," in css
+    assert "width: 100%;" in css.split(".eda-detection-views canvas,", 1)[1].split("}", 1)[0]
+    assert ".eda-heatmap-scroll" in css
+    assert 'class="eda-heatmap-scroll"' in template
+    for canvas_id in ("fbcsp-shift-heatmap", "fbcsp-ewma-trace", "fbcsp-stage2-events"):
+        assert f'id="{canvas_id}"' in template
+        assert f"'{canvas_id}': Math.max" in template
