@@ -24,6 +24,8 @@ def _session1_trials() -> Dataset2ATrialSignalResult:
         channel_names=DATASET_2A_CHANNELS,
         sampling_frequency=250.0,
         session_id="T",
+        original_cue_indices=np.arange(n_trials, dtype=int),
+        cue_onset_seconds=2.0 + 5.0 * np.arange(n_trials, dtype=float),
     )
 
 
@@ -62,6 +64,8 @@ def test_session1_split_rejects_evaluation_data() -> None:
         channel_names=trials.channel_names,
         sampling_frequency=trials.sampling_frequency,
         session_id="E",
+        original_cue_indices=trials.original_cue_indices,
+        cue_onset_seconds=trials.cue_onset_seconds,
     )
 
     with pytest.raises(ValueError, match="Session-I/T"):
