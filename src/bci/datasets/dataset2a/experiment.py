@@ -89,6 +89,8 @@ class Dataset2ATrialFeatureResult:
     feature_names: tuple[str, ...]
     cue_descriptions: np.ndarray
     session_id: str
+    original_cue_indices: np.ndarray
+    cue_onset_seconds: np.ndarray
 
 
 @dataclass(frozen=True)
@@ -126,6 +128,10 @@ def _subset_trial_signal_result(
         channel_names=trials.channel_names,
         sampling_frequency=float(trials.sampling_frequency),
         session_id=trials.session_id,
+        original_cue_indices=np.asarray(
+            trials.original_cue_indices[selected], dtype=int
+        ),
+        cue_onset_seconds=np.asarray(trials.cue_onset_seconds[selected], dtype=float),
     )
 
 
@@ -383,6 +389,8 @@ def build_dataset_2a_fbcsp_features(
             feature_names=names,
             cue_descriptions=training.cue_descriptions,
             session_id=training.session_id,
+            original_cue_indices=training.original_cue_indices,
+            cue_onset_seconds=training.cue_onset_seconds,
         ),
         testing=Dataset2ATrialFeatureResult(
             features=test_features,
@@ -390,6 +398,8 @@ def build_dataset_2a_fbcsp_features(
             feature_names=names,
             cue_descriptions=testing.cue_descriptions,
             session_id=testing.session_id,
+            original_cue_indices=testing.original_cue_indices,
+            cue_onset_seconds=testing.cue_onset_seconds,
         ),
     )
 
