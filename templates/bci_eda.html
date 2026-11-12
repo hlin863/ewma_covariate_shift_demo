@@ -187,7 +187,7 @@
               This is descriptive, not an alarm statistic.</p>
           </div>
           <article class="eda-channel-card">
-            <canvas id="fbcsp-shift-heatmap" aria-label="Standardised feature differences by evaluation window"></canvas>
+            <div class="eda-heatmap-scroll" tabindex="0" aria-label="Scroll horizontally to inspect feature-shift heatmap"><canvas id="fbcsp-shift-heatmap" aria-label="Standardised feature differences by evaluation window"></canvas></div>
             <p class="eda-feature-note">Blue/teal means higher than development reference; red means lower.
               White/grey means approximately zero. Empty cells indicate an unstable reference standard deviation.
               Window start/end indices are shown in the labels; no ground-truth change points are claimed.</p>
@@ -364,7 +364,14 @@
       const ratio = window.devicePixelRatio || 1;
       const rect = canvas.getBoundingClientRect();
       const width = Math.max(rect.width, 320);
-      const height = Math.max(width * 0.5, minHeight);
+      // Full-width detector plots need readable but bounded height; the heatmap
+      // requires enough vertical room for all 20 FBCSP feature names.
+      const chartHeights = {
+        'fbcsp-shift-heatmap': Math.max(590, Math.min(680, width * 0.64)),
+        'fbcsp-ewma-trace': Math.max(320, Math.min(430, width * 0.38)),
+        'fbcsp-stage2-events': Math.max(310, Math.min(420, width * 0.34))
+      };
+      const height = chartHeights[canvas.id] ?? Math.max(width * 0.5, minHeight);
       canvas.width = Math.round(width * ratio);
       canvas.height = Math.round(height * ratio);
       canvas.style.height = height + 'px';
