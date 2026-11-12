@@ -485,23 +485,31 @@ def run_dataset_2a_subject(
 
 
 def build_feature_timeline(feature_result, feature_index=0):
+    """Serialise one fitted FBCSP feature in original cue-onset order.
+
+    The times field is a retained-trial index; genuine cue onset seconds
+    are stored separately. Include both for unambiguous axes.
+    """
     X = np.asarray(feature_result.features, dtype=float)
-    times = np.asarray(feature_result.times, dtype=int)
-    indices = np.asarray(feature_result.original_cue_indices, dtype=int)
+    onsets = np.asarray(feature_result.cue_onset_seconds, dtype=float)
+    trial_indices = np.asarray(feature_result.times, dtype=int)
+    cue_indices = np.asarray(feature_result.original_cue_indices, dtype=int)
+    if X.ndim != 2 or not 0 <= feature_index < X.shape[1]:
+        raise ValueError(f"Invalid feature index: {feature_index}")
+    if any(len(values) != len(X) for values in (onsets, trial_indices, cue_indices)):
+        raise ValueError("Trial features and cue provenance must be row-aligned")
+    if not np.isfinite(onsets).all() or not np.isfinite(X[:, feature_index]).all():
+        raise ValueError("Timeline requires finite cue times and feature values")
 
-    if not 0 <= feature_index < X.shape[1]:
-        raise ValueError(
-            f"feature_index must be in [0, {X.shape[1]}) but received {feature_index}."
-        )
-
-    order = np.argsort(times, kind="stable")
+    order = np.argsort(onsets, kind="stable")
     return {
         "feature_name": feature_result.feature_names[feature_index],
         "observations": [
             {
-                "cue_onset_seconds": float(times[i]),
+                "cue_onset_seconds": float(onsets[i]),
+                "trial_index": int(trial_indices[i]),
                 "feature_value": float(X[i, feature_index]),
-                "original_cue_index": int(indices[i]),
+                "original_cue_index": int(cue_indices[i]),
             }
             for i in order
         ],
