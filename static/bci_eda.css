@@ -390,3 +390,27 @@
     grid-template-columns: 1fr;
   }
 }
+
+
+.eda-feature-section { margin: 30px 0; }
+.eda-feature-controls {
+  display: flex; flex-wrap: wrap; align-items: end; gap: 16px;
+  padding: 16px 18px; border: 1px solid var(--line);
+  border-radius: 16px; background: var(--panel-alpha);
+}
+.eda-feature-controls label { display: grid; gap: 7px; color: var(--muted); font-weight: 750; font-size: .82rem; }
+.eda-feature-controls select {
+  min-height: 42px; min-width: 205px; max-width: 100%;
+  padding: 8px; border: 1px solid var(--line); border-radius: 10px;
+  color: var(--text); background: var(--panel-2);
+}
+.eda-feature-controls .eda-check { display: flex; align-items: center; min-height: 42px; gap: 8px; }
+.eda-feature-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 14px; }
+.eda-feature-grid h3 { margin: 0 0 12px; }
+.eda-feature-grid canvas { display: block; width: 100%; border-radius: 12px; background: var(--eda-plot-bg); }
+.eda-feature-note { color: var(--muted); font-size: .82rem; line-height: 1.55; }
+.eda-feature-unavailable {
+  padding: 18px; border: 1px dashed var(--line); border-radius: 14px;
+  color: var(--muted); background: var(--panel-alpha);
+}
+@media (max-width: 880px) { .eda-feature-grid { grid-template-columns: 1fr; } }
