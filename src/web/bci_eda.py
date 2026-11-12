@@ -29,6 +29,7 @@ from src.bci.datasets.dataset2a.evaluation_labels import (
 )
 from src.bci.datasets.dataset2b import extract_dataset_2b_trials
 from src.bci.datasets.dataset2a.experiment import build_feature_timeline
+from src.web.bci_shift_views import feature_window_heatmap, detection_event_payload
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_DATASET_2A_PATH = PROJECT_ROOT / "data" / "raw" / "bci_competition_iv_2a"
@@ -330,6 +331,7 @@ def _load_dataset_2a_feature_timelines(subject: int) -> tuple[dict | None, str]:
         split = split_dataset_2a_session1(first, random_state=42)
         fitted = build_dataset_2a_development_fbcsp_features(split, last)
         train = fitted.training
+        validation = fitted.validation
         evaluation = fitted.testing
         if tuple(train.feature_names) != tuple(evaluation.feature_names):
             raise ValueError("Development and evaluation FBCSP columns differ")
@@ -341,8 +343,17 @@ def _load_dataset_2a_feature_timelines(subject: int) -> tuple[dict | None, str]:
             }
             for index, name in enumerate(train.feature_names)
         ]
+        heatmap = feature_window_heatmap(
+            train.features, evaluation.features, train.feature_names,
+        )
+        cse_events = detection_event_payload(
+            train.features, evaluation.features, evaluation.cue_onset_seconds,
+        )
         return {
             "timelines": timelines,
+            "heatmap": heatmap,
+            "cse_events": cse_events,
+            "validation_count": int(len(validation.features)),
             "development_count": int(len(train.features)),
             "evaluation_count": int(len(evaluation.features)),
             "development_session": str(train.session_id),
