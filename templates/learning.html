@@ -14,7 +14,7 @@
   <div class="learning-heading">
     <p class="eyebrow">Research learning laboratory · WP2</p>
     <h1>Learning progress</h1>
-    <p class="lede">A structured reading roadmap linking Park et al. (2023), worked mathematics and the implementation evidence.</p>
+    <p class="lede">Research learning objectives from project discussions and current GitHub evidence: Park CUSUM, EEG timelines, Stage-I/II validation, TWIN-ADAPT and benchmark methodology.</p>
   </div>
   <nav class="learning-nav" aria-label="Learning navigation">
     <a class="theme-button nav-link" href="{{ url_for('home') }}">Home</a>
@@ -30,7 +30,7 @@
   <div class="learning-overview-copy">
     <p class="eyebrow">Your milestones · locally saved</p>
     <h2 id="learning-overview-title">Study overview</h2>
-    <p>Track what you have learned, revisit worked derivations, and identify your next paper-reading priority.</p>
+    <p>Review completed code activities, choose a paper-linked coding objective, and separately record your own learning progress.</p>
     <div class="learning-progress-track" role="progressbar" aria-label="Completed learning milestones" aria-valuemin="0" aria-valuemax="{{ learning.total }}" aria-valuenow="{{ learning.completed }}">
       <span style="width: {{ 100 * learning.completed / learning.total if learning.total else 0 }}%"></span>
     </div>
@@ -44,8 +44,8 @@
 </section>
 
 <div class="learning-section-heading">
-  <div><p class="eyebrow">Current reading plan</p><h2>Park et al. (2023) · Section 2.1</h2></div>
-  <p>Six progressive topics, from the two-window mean contrast to interpreting and confirming candidate change points.</p>
+  <div><p class="eyebrow">Paper and code learning objectives</p><h2>Research learning roadmap · Park, EWMA/BCI and benchmarking</h2></div>
+  <p>Original six Park topics are retained alongside recent code-linked exercises and the three suggested benchmarking papers.</p>
 </div>
 <section class="learning-roadmap" aria-label="Learning roadmap">
 {% for topic in learning.topics %}
@@ -57,6 +57,7 @@
   <p class="learning-source">{{ topic.source }}</p>
   <h3>{{ topic.title }}</h3>
   <p class="learning-description">{{ topic.detail }}</p>
+  {% if topic.objective %}<p class="learning-description"><strong>Next practical objective:</strong> {{ topic.objective }}</p>{% endif %}
   <div class="learning-card-bottom">
     <p class="learning-checkpoint"><span>Research checkpoint</span>{{ topic.stage }}</p>
     <form class="learning-form" action="{{ url_for('park_worked_example.save_progress') }}" method="post">
@@ -71,7 +72,29 @@
         <button class="learning-save" type="submit">Save</button>
       </div>
     </form>
-    <a class="learning-resource" href="{{ url_for(topic.url, **topic.get('args', {})) }}">Open study material <span aria-hidden="true">↗</span></a>
+    {% if topic.url %}<a class="learning-resource" href="{{ url_for(topic.url, **topic.get('args', {})) }}">Open study material <span aria-hidden="true">↗</span></a>{% endif %}
+    {% if topic.evidence %}<p><a class="learning-resource" href="{{ topic.evidence }}" target="_blank" rel="noopener noreferrer">{{ topic.evidence_label or 'Review repository evidence' }} <span aria-hidden="true">↗</span></a></p>{% endif %}
+  </div>
+</article>
+{% endfor %}
+</section>
+<section class="learning-feature" aria-labelledby="learning-code-title">
+  <div>
+    <p class="eyebrow">Development history · source-qualified</p>
+    <h2 id="learning-code-title">Recent code progress and learning checkpoints</h2>
+    <p>Repository commits establish implementation activity, not concept mastery. Discussion and suggested readings are recorded separately from tested code and confirmed experimental results.</p>
+  </div>
+  <div class="learning-equation"><span>Important evidence boundary</span><strong>Code ≠ mastery</strong><small>Saved learning status remains user-controlled; unresolved reproduction differences remain open.</small></div>
+</section>
+<section class="learning-roadmap" aria-label="Recent research development evidence">
+{% for event in learning.recent_evidence %}
+<article class="learning-card">
+  <div class="learning-card-top"><span class="learning-source">{{ event.date }}</span><span class="learning-status">{{ event.status }}</span></div>
+  <h3>{{ event.title }}</h3>
+  <p class="learning-description">{{ event.detail }}</p>
+  <div class="learning-card-bottom">
+    <p class="learning-checkpoint"><span>Related learning objective</span>{{ event.topic_id }}</p>
+    <a class="learning-resource" href="{{ event.url }}" target="_blank" rel="noopener noreferrer">Inspect source evidence <span aria-hidden="true">↗</span></a>
   </div>
 </article>
 {% endfor %}
@@ -87,7 +110,7 @@
 </section>
 <section class="learning-footnote">
   <h2>Learning evidence is not experimental evidence</h2>
-  <p>Worked calculations establish mathematical understanding. The <a href="{{ url_for('data_structures.inspect_dataset', dataset='park') }}">Park data inspection</a> page explores candidate curves, while the Results section contains experimental outputs. Progress is stored locally in <code>outputs/learning/progress.json</code>.</p>
+  <p>Worked calculations demonstrate a particular derivation; they do not automatically establish independent mathematical mastery. The <a href="{{ url_for('data_structures.inspect_dataset', dataset='park') }}">Park data inspection</a> page explores candidate curves, while the Results section contains experimental outputs. Progress is stored locally in <code>outputs/learning/progress.json</code>.</p>
 </section>
 </main>
 <script src="{{ url_for('static', filename='dashboard.js') }}" defer></script>
