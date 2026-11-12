@@ -78,6 +78,8 @@ class Dataset2ATrialSignalResult:
     channel_names: tuple[str, ...]
     sampling_frequency: float
     session_id: str
+    original_cue_indices: np.ndarray
+    cue_onset_seconds: np.ndarray
 
 
 @dataclass(frozen=True)
@@ -242,7 +244,10 @@ def extract_dataset_2a_trials(
 
     evaluation_index = 0
 
-    for onset, _, description in session.annotations:
+    original_cue_indices: list[int] = []
+    cue_onset_seconds: list[float] = []
+
+    for annotation_index, (onset, _, description) in enumerate(session.annotations):
         code = str(description).strip()
 
         # -------------------------
@@ -305,6 +310,9 @@ def extract_dataset_2a_trials(
         labels.append(binary_label)
         descriptions.append(code)
 
+        original_cue_indices.append(annotation_index)
+        cue_onset_seconds.append(float(onset))
+
     # Validate that every Session-II cue had a released label.
     if is_evaluation and evaluation_index != evaluation_labels.size:
         raise ValueError(
@@ -331,6 +339,8 @@ def extract_dataset_2a_trials(
         channel_names=DATASET_2A_CHANNELS,
         sampling_frequency=sfreq,
         session_id=str(session.session),
+        original_cue_indices=np.asarray(original_cue_indices, dtype=int),
+        cue_onset_seconds=np.asarray(cue_onset_seconds, dtype=float),
     )
 
 
