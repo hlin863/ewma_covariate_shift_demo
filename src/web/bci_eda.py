@@ -19,7 +19,11 @@ from src.bci.data import (
     load_bci_competition_iv_2a_session,
     load_bci_competition_iv_2b_session,
 )
-from src.bci.datasets.dataset2a import extract_dataset_2a_trials
+from src.bci.datasets.dataset2a import (
+    extract_dataset_2a_trials,
+    split_dataset_2a_session1,
+    build_dataset_2a_development_fbcsp_features,
+)
 from src.bci.datasets.dataset2a.evaluation_labels import (
     load_dataset_2a_evaluation_labels,
 )
@@ -300,6 +304,55 @@ def _load_dataset_2b(subject: int) -> tuple[list[dict[str, object]], list[str]]:
     return sessions, errors
 
 
+def _load_dataset_2a_feature_timelines(subject: int) -> tuple[dict | None, str]:
+    """Reuse the reproduction's development-fitted FBCSP protocol for EDA.
+
+    Unavailable raw data/official evaluation labels produce an honest empty state.
+    Values shown are descriptive and are not drift detections.
+    """
+    data_directory = Path(current_app.config.get("DATASET_2A_PATH", DEFAULT_DATASET_2A_PATH))
+    labels_directory = Path(current_app.config.get("DATASET_2A_LABELS_PATH", DEFAULT_DATASET_2A_LABELS_PATH))
+    label_path = labels_directory / f"A{subject:02d}E.mat"
+    if not label_path.is_file():
+        return None, "Official Session-II MAT labels are required for left/right FBCSP evaluation."
+    if not all((data_directory / dataset_2a_filename(subject, sess)).is_file()
+               for sess in ("T", "E")):
+        return None, "Both Session-I and Session-II GDF recordings are required."
+
+    try:
+        first = extract_dataset_2a_trials(
+            load_bci_competition_iv_2a_session(data_directory, subject, "T")
+        )
+        last = extract_dataset_2a_trials(
+            load_bci_competition_iv_2a_session(data_directory, subject, "E"),
+            evaluation_labels=load_dataset_2a_evaluation_labels(label_path),
+        )
+        split = split_dataset_2a_session1(first, random_state=42)
+        fitted = build_dataset_2a_development_fbcsp_features(split, last)
+        train = fitted.training
+        evaluation = fitted.testing
+        if tuple(train.feature_names) != tuple(evaluation.feature_names):
+            raise ValueError("Development and evaluation FBCSP columns differ")
+        timelines = [
+            {
+                "name": name,
+                "development": build_feature_timeline(train, index)["observations"],
+                "evaluation": build_feature_timeline(evaluation, index)["observations"],
+            }
+            for index, name in enumerate(train.feature_names)
+        ]
+        return {
+            "timelines": timelines,
+            "development_count": int(len(train.features)),
+            "evaluation_count": int(len(evaluation.features)),
+            "development_session": str(train.session_id),
+            "evaluation_session": str(evaluation.session_id),
+            "seed": 42,
+        }, ""
+    except (ValueError, OSError, ImportError) as exc:
+        return None, f"FBCSP feature timeline unavailable: {exc}"
+
+
 @bci_eda_bp.get("/data-distributions")
 def data_distributions():
     """Render interactive descriptive EDA for local Dataset 2A/2B recordings."""
@@ -309,8 +362,11 @@ def data_distributions():
         dataset = "2a"
     subject = _safe_subject(request.args.get("subject"))
 
+    feature_chart = None
+    feature_status = "Chronological FBCSP feature charts currently support Dataset 2A only."
     if dataset == "2a":
         sessions, errors = _load_dataset_2a(subject)
+        feature_chart, feature_status = _load_dataset_2a_feature_timelines(subject)
         dataset_label = "BCI Competition IV Dataset 2A"
         subject_label = f"A{subject:02d}"
     else:
@@ -327,6 +383,7 @@ def data_distributions():
     chart_payload = {
         "sessions": public_sessions,
         "histograms": histograms,
+        "feature_chart": feature_chart,
     }
 
     return render_template(
@@ -338,6 +395,8 @@ def data_distributions():
         subjects=range(1, 10),
         sessions=public_sessions,
         chart_payload=chart_payload,
+        feature_status=feature_status,
+        feature_chart=feature_chart,
         inventory=_inventory(),
         errors=errors,
     )
