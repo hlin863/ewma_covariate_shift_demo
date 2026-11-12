@@ -49,7 +49,9 @@ def _extract_unlabelled_dataset_2a_evaluation(
 
     rows: list[np.ndarray] = []
     descriptions: list[str] = []
-    for onset, _, description in session.annotations:
+    original_cue_indices: list[int] = []
+    cue_onset_seconds: list[float] = []
+    for annotation_index, (onset, _, description) in enumerate(session.annotations):
         code = str(description).strip()
         if code != _EVALUATION_CUE:
             continue
@@ -65,6 +67,8 @@ def _extract_unlabelled_dataset_2a_evaluation(
 
         rows.append(segment)
         descriptions.append(code)
+        original_cue_indices.append(annotation_index)
+        cue_onset_seconds.append(float(onset))
 
     if not rows:
         raise ValueError("no finite Dataset 2A Session-II evaluation trials were found.")
@@ -78,6 +82,8 @@ def _extract_unlabelled_dataset_2a_evaluation(
         channel_names=DATASET_2A_CHANNELS,
         sampling_frequency=sfreq,
         session_id=str(session.session),
+        original_cue_indices=np.asarray(original_cue_indices, dtype=int),
+        cue_onset_seconds=np.asarray(cue_onset_seconds, dtype=float),
     )
 
 
