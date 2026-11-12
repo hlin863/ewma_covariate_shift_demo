@@ -482,3 +482,27 @@ def run_dataset_2a_subject(
         validation_calibration=calibration,
         cse_result=result,
     )
+
+
+def build_feature_timeline(feature_result, feature_index=0):
+    X = np.asarray(feature_result.features, dtype=float)
+    times = np.asarray(feature_result.times, dtype=int)
+    indices = np.asarray(feature_result.original_cue_indices, dtype=int)
+
+    if not 0 <= feature_index < X.shape[1]:
+        raise ValueError(
+            f"feature_index must be in [0, {X.shape[1]}) but received {feature_index}."
+        )
+
+    order = np.argsort(times, kind="stable")
+    return {
+        "feature_name": feature_result.feature_names[feature_index],
+        "observations": [
+            {
+                "cue_onset_seconds": float(times[i]),
+                "feature_value": float(X[i, feature_index]),
+                "original_cue_index": int(indices[i]),
+            }
+            for i in order
+        ],
+    }

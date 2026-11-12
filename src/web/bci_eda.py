@@ -24,7 +24,7 @@ from src.bci.datasets.dataset2a.evaluation_labels import (
     load_dataset_2a_evaluation_labels,
 )
 from src.bci.datasets.dataset2b import extract_dataset_2b_trials
-
+from src.bci.datasets.dataset2a.experiment import build_feature_timeline
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_DATASET_2A_PATH = PROJECT_ROOT / "data" / "raw" / "bci_competition_iv_2a"
@@ -62,7 +62,9 @@ def _band_power_db_uv2(
         raise ValueError("trial signals must have shape (trials, channels, samples).")
     n_samples = int(values.shape[-1])
     if n_samples < 4:
-        raise ValueError("at least four samples per trial are required for spectral EDA.")
+        raise ValueError(
+            "at least four samples per trial are required for spectral EDA."
+        )
 
     sfreq = float(sampling_frequency)
     frequencies = np.fft.rfftfreq(n_samples, d=1.0 / sfreq)
@@ -103,12 +105,8 @@ def _summarise_trials(trials, *, label: str, role: str) -> dict[str, object]:
     scaled_uv = signals * 1e6
     trial_rms_uv = np.sqrt(np.mean(np.square(scaled_uv), axis=(1, 2)))
     trial_p2p_uv = np.ptp(scaled_uv, axis=-1).mean(axis=1)
-    mu_db = _band_power_db_uv2(
-        signals, float(trials.sampling_frequency), 8.0, 12.0
-    )
-    beta_db = _band_power_db_uv2(
-        signals, float(trials.sampling_frequency), 16.0, 24.0
-    )
+    mu_db = _band_power_db_uv2(signals, float(trials.sampling_frequency), 8.0, 12.0)
+    beta_db = _band_power_db_uv2(signals, float(trials.sampling_frequency), 16.0, 24.0)
 
     channel_summaries = []
     for index, channel_name in enumerate(trials.channel_names):
@@ -201,26 +199,18 @@ def _serialise_sessions(sessions: list[dict[str, object]]) -> list[dict[str, obj
 
 
 def _inventory() -> list[dict[str, object]]:
-    data_2a = Path(
-        current_app.config.get("DATASET_2A_PATH", DEFAULT_DATASET_2A_PATH)
-    )
+    data_2a = Path(current_app.config.get("DATASET_2A_PATH", DEFAULT_DATASET_2A_PATH))
     labels_2a = Path(
-        current_app.config.get(
-            "DATASET_2A_LABELS_PATH", DEFAULT_DATASET_2A_LABELS_PATH
-        )
+        current_app.config.get("DATASET_2A_LABELS_PATH", DEFAULT_DATASET_2A_LABELS_PATH)
     )
-    data_2b = Path(
-        current_app.config.get("DATASET_2B_PATH", DEFAULT_DATASET_2B_PATH)
-    )
+    data_2b = Path(current_app.config.get("DATASET_2B_PATH", DEFAULT_DATASET_2B_PATH))
 
     expected_2a = [
         data_2a / dataset_2a_filename(subject, session)
         for subject in range(1, 10)
         for session in ("T", "E")
     ]
-    expected_labels = [
-        labels_2a / f"A{subject:02d}E.mat" for subject in range(1, 10)
-    ]
+    expected_labels = [labels_2a / f"A{subject:02d}E.mat" for subject in range(1, 10)]
     expected_2b = [
         data_2b / dataset_2b_filename(subject, session)
         for subject in range(1, 10)
@@ -250,9 +240,7 @@ def _load_dataset_2a(subject: int) -> tuple[list[dict[str, object]], list[str]]:
         current_app.config.get("DATASET_2A_PATH", DEFAULT_DATASET_2A_PATH)
     )
     labels_directory = Path(
-        current_app.config.get(
-            "DATASET_2A_LABELS_PATH", DEFAULT_DATASET_2A_LABELS_PATH
-        )
+        current_app.config.get("DATASET_2A_LABELS_PATH", DEFAULT_DATASET_2A_LABELS_PATH)
     )
     sessions: list[dict[str, object]] = []
     errors: list[str] = []
