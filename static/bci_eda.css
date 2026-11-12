@@ -475,3 +475,22 @@
   .eda-detection-views .eda-section-heading { margin-top: 20px; }
   .eda-event-table-wrap { overflow-x: auto; }
 }
+
+/* Keep heatmap cells and long FBCSP labels legible on narrow viewports. */
+.eda-heatmap-scroll {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  border-radius: 12px;
+  scrollbar-gutter: stable;
+}
+.eda-heatmap-scroll canvas { width: 100%; }
+@media (max-width: 880px) {
+  .eda-heatmap-scroll canvas {
+    min-width: 760px;
+    max-width: none;
+  }
+}
