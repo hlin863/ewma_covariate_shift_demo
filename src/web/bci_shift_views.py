@@ -94,6 +94,10 @@ def detection_event_payload(training_features, evaluation_features,
             "index": idx,
             "cue_onset_seconds": float(onsets[idx]),
             "ewma": _optional_number(record.get("ewma")),
+            "feature_value": _optional_number(record.get("x")),
+            "prediction": _optional_number(record.get("prediction")),
+            "lcl": _optional_number(record.get("lcl")),
+            "ucl": _optional_number(record.get("ucl")),
             "warning": bool(record["stage_1_alarm"]),
         })
     validations = []
