@@ -1,0 +1,29 @@
+{
+  "source": "development-fitted BCI IV 2A GDF + official evaluation labels",
+  "subject": "A01",
+  "experiment_type": "real_eeg_exploratory",
+  "validation_protocol": {
+    "pca_components": 2,
+    "lambda": 0.2,
+    "initialization": "training_final",
+    "validation_mode": "paper_two_sample",
+    "window_size": 10,
+    "covariance_method": "shrinkage",
+    "alpha": 0.05,
+    "status": "exploratory recomputation, not a published-count reproduction"
+  },
+  "development_trials": 100,
+  "evaluation_trials": 144,
+  "seed": 42,
+  "figures": [
+    "C:\\Users\\b01085983\\Documents\\GitHub\\ewma_covariate_shift_demo\\outputs\\presentations\\naint_2026_11_20\\bci_2a\\A01\\01_fbcsp_chronological_feature.svg",
+    "C:\\Users\\b01085983\\Documents\\GitHub\\ewma_covariate_shift_demo\\outputs\\presentations\\naint_2026_11_20\\bci_2a\\A01\\01_fbcsp_chronological_feature.png",
+    "C:\\Users\\b01085983\\Documents\\GitHub\\ewma_covariate_shift_demo\\outputs\\presentations\\naint_2026_11_20\\bci_2a\\A01\\02_stage1_ewma_warning_trace.svg",
+    "C:\\Users\\b01085983\\Documents\\GitHub\\ewma_covariate_shift_demo\\outputs\\presentations\\naint_2026_11_20\\bci_2a\\A01\\02_stage1_ewma_warning_trace.png",
+    "C:\\Users\\b01085983\\Documents\\GitHub\\ewma_covariate_shift_demo\\outputs\\presentations\\naint_2026_11_20\\bci_2a\\A01\\03_stage2_validation_timeline.svg",
+    "C:\\Users\\b01085983\\Documents\\GitHub\\ewma_covariate_shift_demo\\outputs\\presentations\\naint_2026_11_20\\bci_2a\\A01\\03_stage2_validation_timeline.png",
+    "C:\\Users\\b01085983\\Documents\\GitHub\\ewma_covariate_shift_demo\\outputs\\presentations\\naint_2026_11_20\\bci_2a\\A01\\04_fbcsp_window_shift_heatmap.svg",
+    "C:\\Users\\b01085983\\Documents\\GitHub\\ewma_covariate_shift_demo\\outputs\\presentations\\naint_2026_11_20\\bci_2a\\A01\\04_fbcsp_window_shift_heatmap.png"
+  ],
+  "caveat": "Not a numerical reproduction of the published CSW/CSV counts; no clinical online trial"
+}

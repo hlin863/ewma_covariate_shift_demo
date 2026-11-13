@@ -1,0 +1,11 @@
+{
+  "source": "outputs\\metrics\\paper2015\\d2",
+  "experiment_type": "synthetic_d2_archived",
+  "trace_rows": 4500,
+  "validation_records": 246,
+  "figures": [
+    "C:\\Users\\b01085983\\Documents\\GitHub\\ewma_covariate_shift_demo\\outputs\\presentations\\naint_2026_11_20\\synthetic_d2\\05_synthetic_d2_ewma_ks_timeline.svg",
+    "C:\\Users\\b01085983\\Documents\\GitHub\\ewma_covariate_shift_demo\\outputs\\presentations\\naint_2026_11_20\\synthetic_d2\\05_synthetic_d2_ewma_ks_timeline.png"
+  ],
+  "caveat": "Independent D2 EWMA/K\u2013S diagnostic, not the 2A EEG Hotelling experiment"
+}
