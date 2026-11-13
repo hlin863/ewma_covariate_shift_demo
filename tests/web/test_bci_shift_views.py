@@ -32,6 +32,12 @@ def test_detector_events_use_observation_indices_and_source_cue_times():
     assert payload["config"]["window_size"] == WINDOW_SIZE
     assert len(payload["warnings"]) == len(evaluation)
     assert [row["index"] for row in payload["warnings"]] == list(range(70))
+    for row in payload["warnings"]:
+        assert np.isfinite(row["feature_value"])
+        assert np.isfinite(row["prediction"])
+        assert np.isfinite(row["lcl"])
+        assert np.isfinite(row["ucl"])
+        assert row["lcl"] < row["ucl"]
     for row in payload["validations"]:
         assert row["alarm_cue_onset_seconds"] == cue_times[row["alarm_index"]]
         if row["validation_index"] is not None:
