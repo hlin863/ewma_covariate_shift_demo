@@ -1,5 +1,8 @@
 """Regression checks for provenance-aware, presentation-ready figure export."""
 from pathlib import Path
+import os
+import subprocess
+import sys
 
 import matplotlib
 matplotlib.use("Agg")
@@ -89,3 +92,30 @@ def test_d2_missing_sources_fail_without_placeholder_figures(tmp_path: Path):
     with pytest.raises(FileNotFoundError):
         export_d2_saved(tmp_path / "out", tmp_path / "missing")
     assert not (tmp_path / "out").exists()
+
+
+
+def test_direct_script_invocation_finds_repository_src(tmp_path: Path):
+    """Reproduce the Windows-style direct command without relying on PYTHONPATH."""
+    repo_root = Path(__file__).resolve().parents[2]
+    script = repo_root / "scripts" / "export_naint_slide_figures.py"
+    env = dict(os.environ)
+    env.pop("PYTHONPATH", None)
+    result = subprocess.run(
+        [
+            sys.executable, str(script), "--source", "2a", "--subject", "1",
+            "--data-2a", str(tmp_path / "missing_gdf"),
+            "--labels-2a", str(tmp_path / "missing_labels"),
+        ],
+        cwd=tmp_path,
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=30,
+        check=False,
+    )
+    # The data are intentionally absent: the expected failure is a clear
+    # input-data error, not ModuleNotFoundError for the repository src package.
+    assert result.returncode != 0
+    assert "Official Session-II MAT labels are required" in result.stderr
+    assert "ModuleNotFoundError" not in result.stderr
