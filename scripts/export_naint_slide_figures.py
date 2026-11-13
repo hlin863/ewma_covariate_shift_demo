@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from pathlib import Path
 
 import matplotlib
@@ -17,6 +18,11 @@ import numpy as np
 import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[1]
+# Direct invocation (python scripts/export_naint_slide_figures.py) sets sys.path[0]
+# to scripts/, not the repository root where the src package lives.
+# Keep module invocation (python -m scripts.export_naint_slide_figures) working too.
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 DEFAULT_OUTPUT = ROOT / "outputs" / "presentations" / "naint_2026_11_20"
 
 
