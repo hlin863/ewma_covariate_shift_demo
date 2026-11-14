@@ -150,7 +150,10 @@ class DevelopmentData:
             raise ValueError("Training data must not be empty")
         if np.unique(self.y_train).size < 2:
             raise ValueError("SVM training requires at least two training classes")
-        if not np.isfinite(self.x_train).all() or not np.isfinite(self.x_validation).all():
+        if (
+            not np.isfinite(self.x_train).all()
+            or not np.isfinite(self.x_validation).all()
+        ):
             raise ValueError("All features must be finite")
         if len(self.x_validation) != len(self.y_validation):
             raise ValueError("x_validation and y_validation must have the same length.")
@@ -160,6 +163,61 @@ class DevelopmentData:
             )
         if len(self.x_validation) == 0:
             raise ValueError("x_validation and y_validation must not be empty.")
+
+
+def compare_candidate_set(candidate_results, atol=1e-8):
+    """Compare candidate predictions and objective scores."""
+
+    if not candidate_results:
+        raise ValueError("No candidate results to compare")
+
+    scores = np.array(
+        [item["score"] for item in candidate_results],
+        dtype=float,
+    )
+
+    predictions = [
+        item["result"].trials["prediction"].to_numpy() for item in candidate_results
+    ]
+
+    trial_indices = [
+        item["result"].trials["trial_index"].to_numpy() for item in candidate_results
+    ]
+
+    # Ensure all candidates used the same validation trials
+    for indices in trial_indices[1:]:
+        if not np.array_equal(indices, trial_indices[0]):
+            raise ValueError("Candidate validation trials differ")
+
+    disagreements = []
+
+    for i in range(len(predictions)):
+        for j in range(i + 1, len(predictions)):
+            difference = np.mean(predictions[i] != predictions[j])
+            disagreements.append(float(difference))
+
+    prediction_diversity = max(disagreements) if disagreements else 0.0
+
+    score_spread = float(np.max(scores) - np.min(scores))
+
+    scores_equal = bool(np.allclose(scores, scores[0], atol=atol, rtol=0.0))
+
+    predictions_equal = prediction_diversity == 0.0
+
+    if scores_equal and predictions_equal:
+        status = "prediction_and_score_tied"
+    elif scores_equal:
+        status = "score_tied"
+    else:
+        status = "ranked"
+
+    return {
+        "selection_status": status,
+        "prediction_diversity": prediction_diversity,
+        "score_spread": score_spread,
+        "scores_equal": scores_equal,
+        "predictions_equal": predictions_equal,
+    }
 
 
 def optimize_adaptation(
@@ -193,25 +251,46 @@ def optimize_adaptation(
     candidates = sample_valid_configs(config_space, n=initial_candidates)
     history: list[dict] = []
     best_config: TwinAdaptConfig | None = None
+    candidate_traces = []
 
     for stage, budget in enumerate(budgets):
         scores = []
+
+        candidate_results = []
+
         for candidate in candidates:
             model = build_fresh_model(
                 development_data.x_train, development_data.y_train, seed=candidate.seed
             )
             stream, labels = make_validation_stream(
-                development_data.x_validation, development_data.y_validation,
-                batch_size=candidate.batch_size, budget=budget,
+                development_data.x_validation,
+                development_data.y_validation,
+                batch_size=candidate.batch_size,
+                budget=budget,
             )
             started = perf_counter()
             result = adapt_model(
-                stream, model, config=candidate, evaluation_labels=labels,
+                stream,
+                model,
+                config=candidate,
+                evaluation_labels=labels,
             )
+
+            candidate_traces.append(
+                {
+                    "config": candidate.snapshot(),
+                    "predictions": result.trials["prediction"].to_numpy().copy(),
+                    "updates": result.update_count,
+                    "score": score,
+                }
+            )
+
             elapsed = perf_counter() - started
             cost = measure_adaptation_cost(result)
             score = calculate_objective_score(
-                accuracy=result.accuracy, cost=cost, objective=objective,
+                accuracy=result.accuracy,
+                cost=cost,
+                objective=objective,
             )
             if not np.isfinite(score):
                 raise ValueError("candidate objective score must be finite")
@@ -227,11 +306,31 @@ def optimize_adaptation(
                 "score": float(score),
                 "promoted": False,
             }
+
             history.append(record)
             scores.append((score, candidate, record))
+            candidate_results.append(
+                {
+                    "candidate": candidate,
+                    "result": result,
+                    "score": score,
+                    "record": record,
+                }
+            )
 
         # Stable sorting preserves the seeded candidate order on exact score ties.
         scores.sort(key=lambda entry: entry[0], reverse=True)
+
+        # NEW: compare candidates evaluated on the same budget
+        diagnostics = compare_candidate_set(candidate_results)
+
+        for comparison in candidate_results:
+            record = comparison["record"]
+
+            record["selection_status"] = diagnostics["selection_status"]
+            record["prediction_diversity"] = diagnostics["prediction_diversity"]
+            record["score_spread"] = diagnostics["score_spread"]
+
         best_config = scores[0][1]
         if stage < len(budgets) - 1:
             keep = max(1, int(np.ceil(len(scores) * promotion_fraction)))
