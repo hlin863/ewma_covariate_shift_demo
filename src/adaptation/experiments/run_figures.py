@@ -57,7 +57,10 @@ def export_run_figures(run_dir: Path) -> dict:
             "description": description,
         })
 
-    windows = pd.read_csv(windows_path)
+    try:
+        windows = pd.read_csv(windows_path)
+    except pd.errors.EmptyDataError:
+        windows = pd.DataFrame()
     if not windows.empty:
         required = {"batch", "prev_accuracy", "curr_accuracy",
                     "warning_threshold", "adaptation_threshold"}
@@ -81,7 +84,10 @@ def export_run_figures(run_dir: Path) -> dict:
         emit(fig, "accuracy_windows", [str(windows_path.relative_to(run_dir))],
              "Measured within-batch accuracies and configured decision thresholds")
 
-    updates = pd.read_csv(updates_path)
+    try:
+        updates = pd.read_csv(updates_path)
+    except pd.errors.EmptyDataError:
+        updates = pd.DataFrame()
     fig, ax = plt.subplots(figsize=(10, 3.8))
     if not updates.empty:
         if not {"batch", "version", "reason"}.issubset(updates):
