@@ -1,0 +1,31 @@
+{
+  "run_id": "20261114T145309426597Z_6535b2a3",
+  "dataset": "2b",
+  "subject": 1,
+  "accuracy": 0.69375,
+  "updates": 5,
+  "retrain_seconds": 0.020188799942843616,
+  "search_seconds": 0.08452889998443425,
+  "candidate_evaluations": 8,
+  "best_config": {
+    "batch_size": 40,
+    "win_size": 15,
+    "win_size_max": 80,
+    "gamma": 0.95,
+    "delta": 0.9,
+    "label_delay": 0,
+    "seed": 42,
+    "algorithm_mode": "operational",
+    "max_window_unit": "trials",
+    "label_delay_unit": "batches"
+  },
+  "objective_config": {
+    "alpha": 0.2,
+    "beta": 0.02,
+    "reference_seconds": 1.0
+  },
+  "training_trials": 280,
+  "validation_trials": 120,
+  "evaluation_trials": 320,
+  "interpretation": "operational TWIN-ADAPT; development-only configuration search"
+}

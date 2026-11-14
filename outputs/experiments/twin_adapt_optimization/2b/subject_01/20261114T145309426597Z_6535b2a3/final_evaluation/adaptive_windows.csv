@@ -1,0 +1,9 @@
+batch,released_at_batch,buffer_size,dropped_at_capacity,state,status,action
+0,0,0,0,2,evaluated,initial_update
+1,1,40,0,2,evaluated,collect_new_concept
+2,2,0,0,0,evaluated,new_concept_update
+3,3,40,0,1,evaluated,warning_started
+4,4,0,0,2,evaluated,initial_update
+5,5,40,0,2,evaluated,collect_new_concept
+6,6,0,0,0,evaluated,new_concept_update
+7,7,0,0,2,evaluated,initial_update

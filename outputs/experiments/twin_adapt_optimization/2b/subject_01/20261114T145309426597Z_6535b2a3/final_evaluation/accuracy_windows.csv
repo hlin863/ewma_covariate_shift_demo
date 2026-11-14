@@ -1,0 +1,9 @@
+batch,released_at_batch,prev_accuracy,curr_accuracy,gamma,delta,warning_threshold,adaptation_threshold,original_model_version,reference_new_concept_accuracy,action
+0,0,0.6,0.4666666666666667,0.95,0.9,0.57,0.54,0,,initial_update
+1,1,0.88,0.6,0.95,0.9,0.836,0.792,1,0.6,collect_new_concept
+2,2,0.8,0.6,0.95,0.9,0.76,0.7200000000000001,1,,new_concept_update
+3,3,0.8,0.7333333333333333,0.95,0.9,0.76,0.7200000000000001,2,,warning_started
+4,4,0.8,0.6666666666666666,0.95,0.9,0.76,0.7200000000000001,2,,initial_update
+5,5,0.72,0.7333333333333333,0.95,0.9,0.6839999999999999,0.648,3,0.7333333333333333,collect_new_concept
+6,6,0.72,0.6,0.95,0.9,0.6839999999999999,0.648,3,,new_concept_update
+7,7,0.6,0.5333333333333333,0.95,0.9,0.57,0.54,4,,initial_update

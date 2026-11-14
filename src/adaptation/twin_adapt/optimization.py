@@ -251,7 +251,6 @@ def optimize_adaptation(
     candidates = sample_valid_configs(config_space, n=initial_candidates)
     history: list[dict] = []
     best_config: TwinAdaptConfig | None = None
-    candidate_traces = []
 
     for stage, budget in enumerate(budgets):
         scores = []
@@ -269,6 +268,7 @@ def optimize_adaptation(
                 budget=budget,
             )
             started = perf_counter()
+
             result = adapt_model(
                 stream,
                 model,
@@ -276,24 +276,18 @@ def optimize_adaptation(
                 evaluation_labels=labels,
             )
 
-            candidate_traces.append(
-                {
-                    "config": candidate.snapshot(),
-                    "predictions": result.trials["prediction"].to_numpy().copy(),
-                    "updates": result.update_count,
-                    "score": score,
-                }
-            )
-
             elapsed = perf_counter() - started
             cost = measure_adaptation_cost(result)
+
             score = calculate_objective_score(
                 accuracy=result.accuracy,
                 cost=cost,
                 objective=objective,
             )
+
             if not np.isfinite(score):
                 raise ValueError("candidate objective score must be finite")
+
             record = {
                 "stage": stage,
                 "budget": budget,
@@ -309,11 +303,12 @@ def optimize_adaptation(
 
             history.append(record)
             scores.append((score, candidate, record))
+
             candidate_results.append(
                 {
                     "candidate": candidate,
                     "result": result,
-                    "score": score,
+                    "score": float(score),
                     "record": record,
                 }
             )

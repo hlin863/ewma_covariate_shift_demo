@@ -1,0 +1,14 @@
+{
+  "dataset": "2b",
+  "subject": 1,
+  "training_trials": 280,
+  "validation_trials": 120,
+  "evaluation_trials": 320,
+  "validation_protocol": "seeded stratified development holdout, ordered by original trial indices",
+  "fbcsp_fit": "development training only",
+  "evaluation_used_in_search": false,
+  "selected_budgets": [
+    40,
+    80
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "batch_size": 40,
+  "win_size": 15,
+  "win_size_max": 80,
+  "gamma": 0.95,
+  "delta": 0.9,
+  "label_delay": 0,
+  "seed": 42,
+  "algorithm_mode": "operational",
+  "max_window_unit": "trials",
+  "label_delay_unit": "batches"
+}
