@@ -75,6 +75,24 @@ The independent output root is
 - `optimization_summary.json`: final evaluation metrics and search totals
 - `final_evaluation/`: trial predictions, accuracy windows, transitions,
   adaptive buffers, updates and summary
+- `figures/`: run-scoped SVG/PNG visualisations of candidate scores, stage-level
+  prediction diversity (when available), accuracy/threshold timelines, and
+  recorded update events, with a `manifest.json` pointing to source CSVs.
+
+The runner now exports figures immediately after saving the CSV evidence.
+To regenerate plots for a previously archived run (including the B01 run on
+14 November 2026), use:
+
+```powershell
+python scripts/export_twin_adapt_run_figures.py --run-dir outputs/experiments/twin_adapt_optimization/2b/subject_01/20261114T145309426597Z_6535b2a3
+```
+
+The exporter writes only to the run's `figures/` subdirectory and retains
+all original JSON/CSV files and their paths. Charts are derived solely from
+saved run evidence. The stage-level prediction-diversity figure is not a
+pairwise comparison matrix; it uses the current stage-wide summary field.
+Presentation-specific exports continue to live under
+`outputs/presentations/<event>/`, separate from experiment evidence.
 
 Do **not** compare these results to historical fixed-parameter outputs as a
 controlled performance improvement unless subjects, preprocessing splits,
