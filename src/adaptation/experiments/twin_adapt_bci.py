@@ -19,6 +19,7 @@ from src.adaptation.classifier import LinearSVMClassifier
 from src.adaptation.twin_adapt.config import TwinAdaptConfig
 from src.adaptation.twin_adapt.controller import adapt_model
 from src.online.batch_stream import make_bci_dataflow
+from src.adaptation.experiments.run_figures import export_run_figures
 
 
 DEFAULT_DATA = Path("data/raw")
@@ -97,6 +98,7 @@ def run_bci_experiment(
     pd.DataFrame([{k: v for k, v in summary.items() if k != "config"}]).to_csv(
         Path(output_root) / "latest_summary.csv", index=False
     )
+    export_run_figures(destination)
     return destination, summary
 
 
@@ -221,4 +223,5 @@ def run_optimized_bci_experiment(
     (final_dir / "summary.json").write_text(
         json.dumps(summary, indent=2), encoding="utf-8",
     )
+    export_run_figures(destination)
     return destination, summary
