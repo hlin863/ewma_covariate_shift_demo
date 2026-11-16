@@ -1,4 +1,5 @@
 """Regression tests for isolated multivariate structural-change scenarios."""
+
 import numpy as np
 import pytest
 
@@ -39,20 +40,29 @@ def test_only_intended_stationary_target_changes():
 
 def test_ar_shift_keeps_zero_lag_covariance_but_changes_innovations():
     pre, post = get_regimes("ar_shift")
-    np.testing.assert_allclose(pre["stationary_covariance"], post["stationary_covariance"])
+    np.testing.assert_allclose(
+        pre["stationary_covariance"], post["stationary_covariance"]
+    )
     assert pre["ar"] != post["ar"]
     assert not np.allclose(pre["innovation_covariance"], post["innovation_covariance"])
     for p in (pre, post):
         np.testing.assert_allclose(
             p["innovation_covariance"],
-            (1 - p["ar"]**2) * np.asarray(p["stationary_covariance"]),
+            (1 - p["ar"] ** 2) * np.asarray(p["stationary_covariance"]),
         )
 
 
-@pytest.mark.parametrize("scenario", [
-    "stationary", "mean_shift", "variance_shift",
-    "correlation_shift", "ar_shift", "combined",
-])
+@pytest.mark.parametrize(
+    "scenario",
+    [
+        "stationary",
+        "mean_shift",
+        "variance_shift",
+        "correlation_shift",
+        "ar_shift",
+        "combined",
+    ],
+)
 def test_reproducibility_and_metadata(scenario):
     a, m1 = generate_structural_stream(7, scenario, n_observations=256, change_at=128)
     b, m2 = generate_structural_stream(7, scenario, n_observations=256, change_at=128)
@@ -64,11 +74,17 @@ def test_reproducibility_and_metadata(scenario):
 
 def test_same_seed_scenarios_are_no_longer_identical():
     streams = [
-        generate_structural_stream(42, s, n_observations=100)[0]
-        for s in ("mean_shift", "variance_shift", "correlation_shift", "ar_shift", "combined")
+        generate_structural_stream(42, s, n_observations=100, change_at=50)[0]
+        for s in (
+            "mean_shift",
+            "variance_shift",
+            "correlation_shift",
+            "ar_shift",
+            "combined",
+        )
     ]
     for i, x in enumerate(streams):
-        for y in streams[i + 1:]:
+        for y in streams[i + 1 :]:
             assert not np.array_equal(x, y)
 
 
@@ -116,14 +132,18 @@ def test_boundary_conventions_and_aliases():
         assert info["resolved_scenario"] == expected
 
 
-@pytest.mark.parametrize("kwargs", [
-    {"scenario": "typo"}, {"scenario": "combined", "variance_ratio": 0},
-    {"scenario": "combined", "variance_ratio": float("nan")},
-    {"scenario": "combined", "ar_after": 1},
-    {"scenario": "combined", "correlation_after": -1},
-    {"scenario": "combined", "change_at": -1},
-    {"scenario": "combined", "n_observations": 1},
-])
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        {"scenario": "typo"},
+        {"scenario": "combined", "variance_ratio": 0},
+        {"scenario": "combined", "variance_ratio": float("nan")},
+        {"scenario": "combined", "ar_after": 1},
+        {"scenario": "combined", "correlation_after": -1},
+        {"scenario": "combined", "change_at": -1},
+        {"scenario": "combined", "n_observations": 1},
+    ],
+)
 def test_reject_invalid_configuration(kwargs):
     with pytest.raises(ValueError):
         generate_structural_stream(1, **kwargs)
