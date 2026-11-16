@@ -1,5 +1,30 @@
+"""Controlled, two-channel piecewise AR(1) structural-change simulations.
 
+The scenarios isolate changes to stationary-target mean, zero-lag covariance
+variance/correlation, or autoregressive dependence. This is a Park-inspired
+illustration, NOT a reproduction of Park et al. (2023) wavelet/DPCA tests.
+
+The scalar-AR model is X[t] = mu + phi * (X[t-1] - mu) + eps[t].
+Stationary covariance Sigma and innovation covariance Q obey
+Q = (1 - phi**2) * Sigma. Therefore ar_shift can hold Sigma constant.
+At the change point, sample moments converge toward post-change stationary
+targets; transient moments need not equal those targets immediately.
+"""
 import numpy as np
+
+
+def _regime(mean, variance, correlation, ar):
+    """Construct coherent stationary and innovation covariance matrices."""
+    stationary_covariance = float(variance) * np.array(
+        [[1.0, correlation], [correlation, 1.0]], dtype=float
+    )
+    return {
+        "mean": np.asarray(mean, dtype=float).copy(),
+        "phi": float(ar),
+        "stationary_covariance": stationary_covariance,
+        "innovation_covariance": (1.0 - ar**2) * stationary_covariance,
+    }
+
 
 def generate_structural_stream(
     seed: int,
@@ -13,160 +38,108 @@ def generate_structural_stream(
     ar_before: float = 0.0,
     ar_after: float = 0.7,
 ) -> tuple[np.ndarray, dict]:
-    """Generate a two-feature piecewise AR(1) stream with a known breakpoint.
+    """Generate an isolated structural-change stream and effective metadata.
 
-    Model (t >= 1):
-        X_t = mu_r + phi_r * (X_(t-1) - mu_r) + epsilon_t
-        epsilon_t ~ N(0, Q_r),  r = 1[t >= change_at]
-
-    mu_r is the target stationary mean, phi_r the AR coefficient and Q_r
-    the innovation covariance. For |phi_r| < 1, the stationary process
-    covariance is Gamma_r = Q_r/(1 - phi_r**2), NOT Q_r. At a regime
-    transition, observations initially retain previous-regime dependence.
-
-    Park, Im & Lim (2023), Section 3.1: Model A changes AR-series
-    means; Model B(i) changes AR coefficients; Model B(ii) introduces
-    correlated innovations; Model C changes MA coefficients. This
-    two-feature generator is Park-inspired, NOT an exact reproduction of
-    the paper's 50-dimensional simulations or wavelet/DPCA detector.
-
-    Scenario labels express intent: in this version covariance and AR
-    coefficients can change together across multiple named scenarios.
-    Returned metadata records parameters, not exact population moments.
+    `variance_ratio` scales *stationary marginal variance*, not innovation
+    variance. Names `covariance_shift` and `autocorrelation_shift` remain
+    supported as aliases for correlation_shift and ar_shift respectively.
+    `default` is a historical alias for combined, retained for notebook
+    compatibility; new experiments should name their scenario explicitly.
     """
+    if not isinstance(n_observations, (int, np.integer)) or n_observations < 2:
+        raise ValueError("n_observations must be an integer >= 2.")
+    if not isinstance(change_at, (int, np.integer)) or not 0 <= change_at <= n_observations:
+        raise ValueError("change_at must be in [0, n_observations].")
+    if not np.isfinite(variance_ratio) or variance_ratio <= 0:
+        raise ValueError("variance_ratio must be finite and positive.")
+    for name, value in (
+        ("correlation_before", correlation_before),
+        ("correlation_after", correlation_after),
+        ("ar_before", ar_before),
+        ("ar_after", ar_after),
+    ):
+        if not np.isfinite(value) or abs(value) >= 1:
+            raise ValueError(f"{name} must be finite and strictly between -1 and 1.")
 
-    # T = n_observations; tau = change_at (first post-change index).
-    # tau=0 and tau=T are accepted boundary cases, not two-regime streams.
-    if n_observations <= 0:
-        raise ValueError("n_observations must be positive.")
+    aliases = {
+        "covariance_shift": "correlation_shift",
+        "autocorrelation_shift": "ar_shift",
+        "default": "combined",
+    }
+    scenario_key = str(scenario).lower()
+    resolved = aliases.get(scenario_key, scenario_key)
+    valid = {"stationary", "mean_shift", "variance_shift", "correlation_shift", "ar_shift", "combined"}
+    if resolved not in valid:
+        raise ValueError(f"Unknown scenario: {scenario!r}. Choose from {sorted(valid)}.")
 
-    if not 0 <= change_at <= n_observations:
-        raise ValueError("change_at must be between 0 and n_observations.")
+    # Target parameters before and after the change. Only explicitly selected
+    # fields change. For the scalar AR coefficient, hold stationary Sigma fixed
+    # in ar_shift by adjusting innovation covariance Q accordingly.
+    baseline = {
+        "mean": np.zeros(2, dtype=float),
+        "variance": 1.0,
+        "correlation": float(correlation_before),
+        "ar": float(ar_before),
+    }
+    after_params = {
+        "mean": baseline["mean"].copy(),
+        "variance": baseline["variance"],
+        "correlation": baseline["correlation"],
+        "ar": baseline["ar"],
+    }
+    if resolved in ("mean_shift", "combined"):
+        after_params["mean"] = np.array([2.0, 1.0], dtype=float)
+    if resolved in ("variance_shift", "combined"):
+        after_params["variance"] = float(variance_ratio)
+    if resolved in ("correlation_shift", "combined"):
+        after_params["correlation"] = float(correlation_after)
+    if resolved in ("ar_shift", "combined"):
+        after_params["ar"] = float(ar_after)
 
-    if variance_ratio <= 0:
-        raise ValueError("variance_ratio must be positive.")
-
-    # Local seeded generator ensures reproducibility for fixed parameters.
+    before = _regime(**baseline)
+    after = _regime(**after_params)
     rng = np.random.default_rng(seed)
+    stream = np.empty((n_observations, 2), dtype=float)
 
-    scenario_key = scenario.lower()
-
-    # rho is the innovation cross-correlation. Clipping silently adjusts
-    # invalid requested values; the function does not reject them.
-    corr_before = float(np.clip(correlation_before, -0.99, 0.99))
-    corr_after = float(np.clip(correlation_after, -0.99, 0.99))
-
-    # phi controls serial dependence; |phi| < 1 for stable AR(1) regimes.
-    ar_prev = float(np.clip(ar_before, -0.99, 0.99))
-    ar_post = float(np.clip(ar_after, -0.99, 0.99))
-
-    # Q_0 = [[1, rho_0], [rho_0, 1]]: pre-change innovation covariance.
-    cov_before = np.array(
-        [[1.0, corr_before], [corr_before, 1.0]],
-        dtype=float
+    # At change_at=0 the first sample is post-change; at n, no samples
+    # come from the post-change regime. Draw X0 from the selected target
+    # stationary covariance to avoid an artificial initialization bias.
+    initial = before if 0 < change_at else after
+    stream[0] = rng.multivariate_normal(
+        initial["mean"], initial["stationary_covariance"]
     )
+    for t in range(1, n_observations):
+        regime = before if t < change_at else after
+        innovation = rng.multivariate_normal(
+            np.zeros(2, dtype=float), regime["innovation_covariance"]
+        )
+        stream[t] = (
+            regime["mean"]
+            + regime["phi"] * (stream[t - 1] - regime["mean"])
+            + innovation
+        )
 
-    # Q_1 = v*[[1, rho_1], [rho_1, 1]], v = variance_ratio.
-    # Defaults: Q_1=[[4,2.8],[2.8,4]], innovation correlation = 0.7.
-    # v is NOT necessarily the stationary process variance ratio when phi changes.
-    cov_after = np.array(
-        [
-            [variance_ratio, corr_after * variance_ratio],
-            [corr_after * variance_ratio, variance_ratio],
-        ],
-        dtype=float,
-    )
+    def serialise(regime):
+        return {
+            "mean": regime["mean"].tolist(),
+            "ar": regime["phi"],
+            "stationary_covariance": regime["stationary_covariance"].tolist(),
+            "innovation_covariance": regime["innovation_covariance"].tolist(),
+        }
 
-    # mu_0 and mu_1 are target stationary means, NOT AR intercepts:
-    # intercept c_r = (1 - phi_r)*mu_r in the mean-centred recursion.
-    mean_before = np.zeros(2, dtype=float)
-
-    mean_after = np.array([2.0, 1.0], dtype=float)
-
-    # Mark post-break observations; switched is not consumed or returned yet.
-    switched = np.zeros(n_observations, dtype=bool)
-    switched[change_at:] = True
-
-    # Stream rows are two-dimensional observations X_t; shape = (T, 2).
-    stream = np.zeros((n_observations, 2), dtype=float)
-
-    for i in range(n_observations):
-
-        # Choose default regime parameters, then apply scenario overrides.
-        # At tau=0 the first observation still uses baseline parameters.
-        if i == 0:
-            mean = mean_before
-            cov = cov_before
-
-        else:
-
-            mean = mean_after if i >= change_at else mean_before
-            cov = cov_after if i >= change_at else cov_before
-
-        # Scenarios are not yet isolated: covariance and phi change by default.
-        # variance/correlation/AR shift names produce identical streams for
-        # the same seed; mean_shift and combined likewise match.
-        if scenario_key == "mean_shift":
-
-            mean = mean_before if i < change_at else mean_after
-
-        elif scenario_key == "variance_shift":
-
-            mean = mean_before
-
-        elif scenario_key in {"correlation_shift", "covariance_shift"}:
-
-            mean = mean_before
-            cov = cov_before if i < change_at else cov_after
-
-        elif scenario_key in {"ar_shift", "autocorrelation_shift"}:
-
-            mean = mean_before
-
-        elif scenario_key == "combined":
-
-            mean = mean_before if i < change_at else mean_after
-            cov = cov_before if i < change_at else cov_after
-
-        else:
-
-            mean = mean_before if i < change_at else mean_after
-            cov = cov_before if i < change_at else cov_after
-
-        if i == 0:
-
-            # X_0 ~ N(mu,Q): not an AR stationary draw when phi != 0.
-            stream[i] = rng.multivariate_normal(mean, cov)
-
-        else:
-
-            # The AR switch applies to every scenario, not only ar_shift.
-            phi = ar_prev if i < change_at else ar_post
-
-            # epsilon_t ~ N(0,Q_r): sampled bivariate Gaussian innovation.
-            noise = rng.multivariate_normal(
-                mean=np.zeros(2),
-                cov=cov,
-            )
-
-            # Mean-centred recursion: X_t = mu_r + phi_r*(X_(t-1)-mu_r) + epsilon_t.
-            stream[i] = (
-                phi * (stream[i - 1] - mean)
-                + noise
-                + mean
-            )
-
-    # Configuration metadata, not population moments: Gamma=Q/(1-phi**2).
     metadata = {
         "scenario": scenario,
-        "n_observations": n_observations,
-        "change_at": change_at,
-        "variance_ratio": variance_ratio,
-        "correlation_before": corr_before,
-        "correlation_after": corr_after,
-        "ar_before": ar_prev,
-        "ar_after": ar_post,
+        "resolved_scenario": resolved,
+        "model": "two-feature scalar AR(1); stationary covariance parameterization",
+        "n_observations": int(n_observations),
+        "change_at": int(change_at),
+        "variance_ratio": float(variance_ratio),
+        "correlation_before": float(correlation_before),
+        "correlation_after": float(correlation_after),
+        "ar_before": float(ar_before),
+        "ar_after": float(ar_after),
+        "before": serialise(before),
+        "after": serialise(after),
         "shape": stream.shape,
     }
-
     return stream, metadata
