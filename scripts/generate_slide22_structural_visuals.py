@@ -3,7 +3,7 @@
 Run: python -m scripts.generate_slide22_structural_visuals
 Figures are descriptive simulations, NOT detector performance measurements.
 This generator deliberately isolates mean, variance, and AR dependence changes;
-src/simulation/structural_changes.py currently allows confounding shifts.
+src/simulation/structural_changes.py now also isolates stationary-target shifts for two-feature streams; this script remains the independent univariate illustrative generator.
 """
 import argparse
 import json
