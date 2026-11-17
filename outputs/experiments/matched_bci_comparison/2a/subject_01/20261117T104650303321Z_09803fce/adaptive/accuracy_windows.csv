@@ -1,0 +1,5 @@
+batch,released_at_batch,prev_accuracy,curr_accuracy,gamma,delta,warning_threshold,adaptation_threshold,original_model_version,reference_new_concept_accuracy,action
+0,0,0.9333333333333333,0.8,0.95,0.85,0.8866666666666666,0.7933333333333333,0,,warning_started
+1,1,0.8666666666666667,1.0,0.95,0.85,0.8233333333333334,0.7366666666666667,0,,recovered_without_update
+2,2,0.9,0.8,0.95,0.85,0.855,0.765,0,,warning_started
+3,3,0.7857142857142857,0.9,0.95,0.85,0.7464285714285713,0.6678571428571428,0,,recovered_without_update

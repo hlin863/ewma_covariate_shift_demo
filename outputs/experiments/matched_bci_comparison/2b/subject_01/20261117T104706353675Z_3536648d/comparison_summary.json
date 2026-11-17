@@ -1,0 +1,41 @@
+{
+  "dataset": "2b",
+  "subject": 1,
+  "seed": 42,
+  "data_fingerprint": "3e762af0fea313d3768761ab12d43eb5441e9742f0d03d4325613b58c3697f1e",
+  "training_trials": 280,
+  "evaluation_trials": 320,
+  "frozen_accuracy": 0.640625,
+  "adaptive_accuracy": 0.6625,
+  "accuracy_difference_pp": 2.187499999999998,
+  "frozen_updates": 0,
+  "adaptive_updates": 2,
+  "adaptive_retrain_seconds": 0.005011700093746185,
+  "adaptive_config": {
+    "batch_size": 40,
+    "win_size": 10,
+    "win_size_max": 120,
+    "gamma": 0.95,
+    "delta": 0.85,
+    "label_delay": 0,
+    "seed": 42,
+    "algorithm_mode": "operational",
+    "max_window_unit": "trials",
+    "label_delay_unit": "batches"
+  },
+  "frozen_config": {
+    "batch_size": 40,
+    "win_size": 10,
+    "win_size_max": 120,
+    "gamma": 0.95,
+    "delta": 0.85,
+    "label_delay": null,
+    "seed": 42,
+    "algorithm_mode": "operational",
+    "max_window_unit": "trials",
+    "label_delay_unit": "batches"
+  },
+  "comparison": "matched_frozen_vs_accuracy_triggered",
+  "evaluation_type": "offline_feature_level_replay",
+  "commit": "64c96543576e0addd5a853cf99999847adf41fa6"
+}
