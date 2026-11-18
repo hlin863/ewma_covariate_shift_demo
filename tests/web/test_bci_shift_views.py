@@ -59,3 +59,41 @@ def test_all_20_fbcsp_feature_labels_remain_distinct():
     assert payload["feature_names"] == list(names)
     assert len(payload["windows"]) == 3
     assert all(len(row["values"]) == 20 for row in payload["windows"])
+
+
+def test_kl_event_payload_uses_eligible_stage2_windows_and_calibration_bins():
+    rng = np.random.default_rng(102)
+    training = rng.normal(size=(90, 4))
+    testing = rng.normal(size=(90, 4))
+    testing[38:] += 4
+    times = 1.2 + 3 * np.arange(90)
+    payload = detection_event_payload(training, testing, times)
+    kl = payload["kl_diagnostics"]
+    assert kl["n_bins"] == 8
+    assert kl["pseudocount"] == 0.5
+    assert len(kl["events"]) == len(payload["validations"])
+    assert kl["feature_names"] == ["PC1", "PC2"]
+    for event, baseline in zip(kl["events"], payload["validations"]):
+        assert event["alarm_index"] == baseline["alarm_index"]
+        assert event["hotelling_status"] == baseline["status"]
+        if event["kl_status"] == "diagnostic_only":
+            assert event["forward"] >= 0
+            assert event["reverse"] >= 0
+            assert len(event["per_feature"]) == 2
+            assert event["validation_index"] == baseline["validation_index"]
+            assert event["reference_window"][1] == event["alarm_index"]
+            assert event["current_window"][0] == event["alarm_index"] + 1
+            assert len(event["histograms"]) == 2
+            for histogram in event["histograms"]:
+                assert len(histogram["reference"]) == 8
+                assert len(histogram["current"]) == 8
+                assert abs(sum(histogram["reference"]) - 1) < 1e-10
+                assert abs(sum(histogram["current"]) - 1) < 1e-10
+                assert histogram["edges"][0] == "-inf"
+                assert histogram["edges"][-1] == "+inf"
+        else:
+            assert event["forward"] is None
+            assert event["histograms"] == []
+    assert kl["eligible_count"] == sum(
+        e["kl_status"] == "diagnostic_only" for e in kl["events"]
+    )

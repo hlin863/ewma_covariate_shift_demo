@@ -494,3 +494,26 @@
     max-width: none;
   }
 }
+
+
+/* Stage-II KL divergence inspector: stays directly below the existing event log. */
+.eda-kl-inspector { display: grid; gap: 15px; min-width: 0; }
+.eda-kl-inspector .eda-section-heading { margin-top: 26px; }
+.eda-kl-inspector .eda-channel-card { min-width: 0; }
+.eda-kl-inspector canvas { display: block; width: 100%; max-width: 100%; min-width: 0;
+  border-radius: 12px; background: var(--eda-plot-bg); }
+.eda-kl-controls { display: flex; gap: 15px; flex-wrap: wrap; align-items: end; margin-bottom: 12px; }
+.eda-kl-controls label { display: grid; gap: 7px; min-width: min(260px, 100%);
+  color: var(--muted); font-size: .8rem; font-weight: 750; }
+.eda-kl-controls select { min-height: 42px; max-width: 100%; border-radius: 10px;
+  padding: 8px; color: var(--text); background: var(--panel-2); border: 1px solid var(--line); }
+.eda-kl-values { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 12px; margin: 16px 0; }
+.eda-kl-values > div { display: grid; gap: 5px; min-width: 0; padding: 14px;
+  background: var(--panel-2); border: 1px solid var(--line); border-radius: 12px; }
+.eda-kl-values span { font-size: .77rem; color: var(--muted); }
+.eda-kl-values strong { font-size: clamp(1rem, 2vw, 1.4rem); font-variant-numeric: tabular-nums; }
+.eda-kl-charts { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 14px; }
+.eda-kl-charts > section { min-width: 0; }
+.eda-kl-charts h4 { margin: 8px 0 13px; font-size: .96rem; }
+@media (max-width: 850px) { .eda-kl-charts { grid-template-columns: 1fr; } }
+@media (max-width: 620px) { .eda-kl-values { grid-template-columns: 1fr; } }
