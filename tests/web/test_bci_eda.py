@@ -136,3 +136,20 @@ def test_detector_canvas_layout_fills_cards_and_heatmap_scrolls() -> None:
     for canvas_id in ("fbcsp-shift-heatmap", "fbcsp-ewma-trace", "fbcsp-stage2-events"):
         assert f'id="{canvas_id}"' in template
         assert f"'{canvas_id}': Math.max" in template
+
+
+def test_kl_inspector_is_placed_after_stage2_event_log():
+    root = Path(__file__).resolve().parents[2]
+    template = (root / "templates" / "bci_eda.html").read_text(encoding="utf-8")
+    css = (root / "static" / "bci_eda.css").read_text(encoding="utf-8")
+    js = (root / "static" / "kl_event_inspector.js").read_text(encoding="utf-8")
+    assert template.index('id="fbcsp-stage2-events"') < template.index('class="eda-event-table-wrap"')
+    assert template.index('class="eda-event-table-wrap"') < template.index('class="eda-kl-inspector"')
+    for control in ("fbcsp-kl-event-select", "fbcsp-kl-feature-select",
+                    "fbcsp-kl-event-timeline", "fbcsp-kl-components",
+                    "fbcsp-kl-probabilities"):
+        assert f'id="{control}"' in template
+        assert control in js
+    assert "kl_event_inspector.js" in template
+    assert ".eda-kl-inspector canvas" in css
+    assert "not a zero divergence" in js
