@@ -234,6 +234,69 @@
               </tbody>
             </table>
           </div>
+          {% if feature_chart.cse_events.kl_diagnostics is defined %}
+          <section class="eda-kl-inspector" aria-label="KL divergence diagnostic inspector">
+            <div class="eda-section-heading">
+              <div><p class="eyebrow">Additional distribution evidence · exploratory</p>
+                <h2>KL divergence around Stage-II warning windows</h2></div>
+              <p>The same retained, training-fitted PCA features and two disjoint Stage-II windows.
+                Forward/reverse KL are descriptive marginal histogram estimates, not p-values.
+                Hotelling confirmations and the published-count reproduction are unchanged.</p>
+            </div>
+            <div class="eda-event-counters eda-kl-counters">
+              <div><strong>{{ feature_chart.cse_events.kl_diagnostics.eligible_count }}</strong><span>KL-evaluable candidate windows</span></div>
+              <div><strong>{{ feature_chart.cse_events.kl_diagnostics.n_bins }}</strong><span>Calibration-fitted bins per PC</span></div>
+              <div><strong>{{ feature_chart.cse_events.kl_diagnostics.pseudocount }}</strong><span>Probability pseudocount</span></div>
+            </div>
+            {% if feature_chart.cse_events.kl_diagnostics.events %}
+            <article class="eda-channel-card">
+              <h3>Event-level KL magnitude</h3>
+              <canvas id="fbcsp-kl-event-timeline" aria-label="Forward and reverse KL at eligible EWMA warning indices"></canvas>
+              <p class="eda-feature-note">Event positions show the EWMA warning index; scores become available only after the future comparison window completes.
+                Missing points indicate skipped, pending, or otherwise ineligible tests—not a zero divergence.</p>
+            </article>
+            <article class="eda-channel-card">
+              <div class="eda-kl-controls">
+                <label for="fbcsp-kl-event-select">Inspect warning
+                  <select id="fbcsp-kl-event-select">
+                    {% for event in feature_chart.cse_events.kl_diagnostics.events %}
+                    <option value="{{ loop.index0 }}" {% if event.kl_status == 'diagnostic_only' and loop.first %}selected{% endif %}>Trial {{ event.alarm_index }} · {{ event.hotelling_status }} · {{ event.kl_status }}</option>
+                    {% endfor %}
+                  </select>
+                </label>
+                <label for="fbcsp-kl-feature-select">PCA component
+                  <select id="fbcsp-kl-feature-select">
+                    {% for name in feature_chart.cse_events.kl_diagnostics.feature_names %}
+                    <option value="{{ loop.index0 }}">{{ name }}</option>
+                    {% endfor %}
+                  </select>
+                </label>
+              </div>
+              <p id="fbcsp-kl-event-summary" class="eda-feature-note" role="status" aria-live="polite"></p>
+              <div class="eda-kl-values">
+                <div><span>Forward KL · before || after</span><strong id="fbcsp-kl-forward">—</strong></div>
+                <div><span>Reverse KL · after || before</span><strong id="fbcsp-kl-reverse">—</strong></div>
+                <div><span>Hotelling decision</span><strong id="fbcsp-kl-hotelling">—</strong></div>
+              </div>
+              <div class="eda-kl-charts">
+                <section>
+                  <h4>Which PCA component contributes?</h4>
+                  <canvas id="fbcsp-kl-components" aria-label="Per-component forward KL divergence"></canvas>
+                </section>
+                <section>
+                  <h4>Before and after distributions</h4>
+                  <canvas id="fbcsp-kl-probabilities" aria-label="Reference and current smoothed histogram probabilities for selected component"></canvas>
+                </section>
+              </div>
+              <p class="eda-feature-note">Smoothed bin probabilities use calibration-fitted boundaries; the first and last bins include out-of-range values.
+                The aggregate KL is the mean of the per-PC marginal scores, not a multivariate joint KL.
+                The diagram does not establish ground-truth drift or classifier harm.</p>
+            </article>
+            {% else %}
+            <div class="eda-feature-unavailable">No EWMA warning candidates are available for KL examination under this configuration.</div>
+            {% endif %}
+          </section>
+          {% endif %}
         </section>
         {% endif %}
 
@@ -758,5 +821,6 @@
     drawAll();
   </script>
   {% endif %}
+  <script defer src="{{ url_for('static', filename='kl_event_inspector.js') }}"></script>
 </body>
 </html>
