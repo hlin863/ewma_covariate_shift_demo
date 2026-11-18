@@ -81,6 +81,7 @@
         <li><span>02</span><div><h3>Temporal filter bank</h3><p>Ten overlapping 8–30 Hz bands, eighth-order zero-phase Butterworth filtering.</p></div></li>
         <li><span>03</span><div><h3>Spatial features</h3><p>CSP extreme components and log-normalised variance; {{ split.features }} features with one component per side.</p></div></li>
         <li><span>04</span><div><h3>Detection path</h3><p>PCA → PC1 EWMA warning → multivariate Stage-II validation. Fit and evaluation are kept separate.</p></div></li>
+        <li><span>04b</span><div><h3>Exploratory KL distribution diagnostic</h3><p>After the baseline Stage-II test, optional KL compares calibration-binned marginal PCA feature distributions in the same before/after windows. It does not alter Hotelling confirmation or imply ground-truth drift. <a href="{{ url_for('bci_eda.data_distributions', dataset='2a') }}#kl-inspector">Inspect KL at the relevant Stage-II events →</a> (requires local 2A recordings and official Session-II labels).</p></div></li>
         <li><span>05</span><div><h3>Classifier path</h3><p>Single or bagged linear SVM on FBCSP features, currently a separate benchmark from CSE-triggered adaptation.</p></div></li>
       </ol>
     </section>
