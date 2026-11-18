@@ -62,17 +62,18 @@ def _optional_number(value):
 
 
 def detection_event_payload(training_features, evaluation_features,
-                            evaluation_cue_onsets) -> dict:
+                            evaluation_cue_onsets=None) -> dict:
     """Run a single clearly specified exploratory Stage-I/Stage-II configuration.
 
     Warnings refer to the evaluation feature row, and Stage-II decisions
     retain separate warning and validation times (the latter may be later).
     """
     evaluation = np.asarray(evaluation_features, dtype=float)
-    onsets = np.asarray(evaluation_cue_onsets, dtype=float)
-    if evaluation.ndim != 2 or len(evaluation) != len(onsets):
+    onsets = (None if evaluation_cue_onsets is None
+              else np.asarray(evaluation_cue_onsets, dtype=float))
+    if evaluation.ndim != 2 or (onsets is not None and len(evaluation) != len(onsets)):
         raise ValueError("Evaluation features and source cue times must align")
-    if not np.isfinite(onsets).all():
+    if onsets is not None and not np.isfinite(onsets).all():
         raise ValueError("Cue onset times must be finite")
     config = CSEConfig(
         pca_components=PCA_COMPONENTS,
@@ -153,7 +154,7 @@ def detection_event_payload(training_features, evaluation_features,
         idx = int(record["time"])
         warnings.append({
             "index": idx,
-            "cue_onset_seconds": float(onsets[idx]),
+            "cue_onset_seconds": float(onsets[idx]) if onsets is not None else None,
             "ewma": _optional_number(record.get("ewma")),
             "feature_value": _optional_number(record.get("x")),
             "prediction": _optional_number(record.get("prediction")),
@@ -168,10 +169,10 @@ def detection_event_payload(training_features, evaluation_features,
         finish_index = int(finish_index) if finish_index is not None else None
         validations.append({
             "alarm_index": alarm_index,
-            "alarm_cue_onset_seconds": float(onsets[alarm_index]),
+            "alarm_cue_onset_seconds": (float(onsets[alarm_index]) if onsets is not None else None),
             "validation_index": finish_index,
             "validation_cue_onset_seconds": (
-                float(onsets[finish_index]) if finish_index is not None else None
+                float(onsets[finish_index]) if onsets is not None and finish_index is not None else None
             ),
             "status": str(record["status"]),
             "confirmed": bool(record["confirmed_shift"]),

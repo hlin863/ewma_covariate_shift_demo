@@ -4,6 +4,7 @@ from src.web.dashboard import app
 from src.web.abcd import abcd_bp
 from src.web.bci_reconstruction import bci_reconstruction_bp
 from src.web.bci_eda import bci_eda_bp
+from src.web.kl_results import kl_results_bp
 from src.web.data_structures import data_structures_bp
 from src.web.decision_models import decision_models_bp
 from src.web.diethe import diethe_bp
@@ -34,6 +35,9 @@ if "bci_reconstruction" not in app.blueprints:
 
 if "bci_eda" not in app.blueprints:
     app.register_blueprint(bci_eda_bp)
+
+if "kl_results" not in app.blueprints:
+    app.register_blueprint(kl_results_bp)
 
 if "data_structures" not in app.blueprints:
     app.register_blueprint(data_structures_bp)

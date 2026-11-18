@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BCI KL Stage-II figures · CSE Research</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='navigation.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='kl_results.css') }}">
+</head>
+<body><main class="page-shell kl-results-page">
+<header class="hero">
+  <div><p class="eyebrow">Research results / Exploratory Stage-II evidence</p>
+  <h1>KL divergence · reproducible BCI figure gallery</h1>
+  <p class="lede">Saved figures from real BCI Competition IV 2A/2B feature streams.
+    KL is the mean of per-PCA-component histogram divergences.
+    These results do not replace Hotelling confirmations, provide a calibrated KL p-value,
+    or resolve the published-versus-computed CSE discrepancies.</p></div>
+  <nav class="kl-results-nav">
+    <a href="{{ url_for('results_catalog') }}">All saved results</a>
+    <a href="{{ url_for('bci_eda.data_distributions', dataset='2a') }}#kl-inspector">2A live event inspector</a>
+    <a href="{{ url_for('data_processing_page') }}#processing">Processing methodology</a>
+  </nav>
+</header>
+<form class="kl-filter" method="get" action="{{ url_for('kl_results.results') }}">
+  <label>Dataset <select name="dataset">
+    <option value="">Both 2A and 2B</option>
+    <option value="2a" {{ 'selected' if dataset == '2a' }}>BCI IV 2A</option>
+    <option value="2b" {{ 'selected' if dataset == '2b' }}>BCI IV 2B</option>
+  </select></label>
+  <label>Participant <select name="subject">
+    <option value="">All available</option>
+    {% for number in range(1, 10) %}
+    <option value="{{ number }}" {{ 'selected' if subject_num == number|string }}>{{ '%02d'|format(number) }}</option>
+    {% endfor %}
+  </select></label>
+  <button type="submit">View saved evidence</button>
+</form>
+<section class="kl-intro" aria-label="Figure reading guide">
+  <article><strong>A · Event-level magnitude</strong><p>Eligible EWMA warning locations; two KL directions. A point is diagnostic evidence, not a new confirmed shift.</p></article>
+  <article><strong>B · PCA contribution</strong><p>Forward marginal KL on the exact selected Stage-II candidate's retained components.</p></article>
+  <article><strong>C · Paired histograms</strong><p>Before and after probability distributions in calibration-fitted bins for the same candidate and component.</p></article>
+</section>
+<h2 class="kl-results-heading">Saved runs ({{ count }})</h2>
+{% for run in runs %}
+<section class="kl-run" aria-label="Run {{ run.subject }} {{ run.run_id }}">
+  <div class="kl-run-head">
+    <div><p class="eyebrow">{{ run.dataset|upper }} / {{ run.subject }}</p>
+      <h3>{{ run.subject }} · KL Stage-II diagnostic</h3>
+      <p>Run {{ run.run_directory }} · {{ run.status|replace('_',' ') }} ·
+         {{ run.eligible_count }} eligible / {{ run.event_count }} Stage-II records</p>
+    </div>
+    <div class="kl-run-meta"><span>H = {{ run.detector_config.get('window_size','—') }}</span>
+      <span>PCA = {{ run.detector_config.get('pca_components','—') }}</span>
+      <span>{{ run.kl_bins }} bins</span><span>Pseudocount {{ run.kl_pseudocount }}</span>
+    </div>
+  </div>
+  {% if run.status == 'figures_generated' %}
+  <p class="kl-run-note">All figures below originate from the <strong>same recorded run</strong>.
+    Panel B and C use warning {{ run.selected_alarm }} and the selected component
+    {{ run.selected_component }}; original Hotelling status: <strong>{{ run.selected_hotelling_status }}</strong>.
+    KL is available only once the post-warning window is complete.</p>
+  <div class="kl-figures">
+    {% for name,label in [
+       ('01_kl_event_magnitude.png', 'A · Forward and reverse KL at EWMA warnings'),
+       ('02_kl_per_pca_component.png', 'B · Contribution of retained PCA components'),
+       ('03_kl_before_after_probabilities.png', 'C · Before/after probability estimates')] %}
+      {% for artifact in run.artifacts if artifact.name == name %}
+      <figure >
+        <figcaption>{{ label }}</figcaption>
+        <a href="{{ url_for('outputs_file', filename=artifact.relative_path) }}" target="_blank" rel="noopener">
+        <img loading="lazy" src="{{ url_for('outputs_file', filename=artifact.relative_path) }}" alt="{{ label }} for {{ run.subject }} at warning {{ run.selected_alarm }}"></a>
+      </figure>
+      {% endfor %}
+    {% endfor %}
+  </div>
+  {% for artifact in run.artifacts if artifact.name == '04_kl_slide12_composite.png' %}
+    <figure class="kl-composite"><figcaption>Slide 12 · Combined publication/presentation-ready figure</figcaption>
+      <a href="{{ url_for('outputs_file', filename=artifact.relative_path) }}" target="_blank" rel="noopener">
+        <img loading="lazy" src="{{ url_for('outputs_file', filename=artifact.relative_path) }}" alt="Composite real BCI KL figure for {{ run.subject }}">
+      </a></figure>
+  {% endfor %}
+  {% else %}
+    <p class="kl-run-note">No complete eligible KL candidate windows for this run. Figures have not been fabricated; the event log and manifest remain available.</p>
+  {% endif %}
+  <div class="kl-artifacts">
+    <strong>Evidence and export files:</strong>
+    {% for artifact in run.artifacts %}
+      {% if artifact.name.endswith('.csv') or artifact.name.endswith('.json') or artifact.name.endswith('.svg') %}
+      <a href="{{ url_for('outputs_file', filename=artifact.relative_path) }}">{{ artifact.name }}</a>
+      {% endif %}
+    {% endfor %}
+  </div>
+  <p class="kl-run-note">Source revision: <code>{{ run.code_revision }}</code>.
+    Run metadata and input fingerprints are retained in manifest.json.
+    These exploratory figures are not the published Raza Table 1 reproduction.</p>
+</section>
+{% else %}
+<div class="kl-empty" role="status">
+  <h3>No exported real-BCI KL figures found for this selection</h3>
+  <p>The plot renderer is implemented, but the original BCI IV GDF files are not tracked in this repository.
+     Run <code>python -m scripts.export_kl_bci_figures --dataset 2a --subject 1 --labels-2a data/raw/bci_competition_iv_2a_labels</code>
+     on a machine with the official recordings. Dataset 2B uses <code>--dataset 2b</code> and requires Sessions I–V GDF files.
+     Without those files, the application does not manufacture BCI measurements.</p>
+</div>
+{% endfor %}
+</main></body></html>

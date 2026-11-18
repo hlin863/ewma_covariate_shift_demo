@@ -76,3 +76,70 @@ splits to avoid tuning on held-out data.
 
 **Status:** new opt-in exploratory diagnostic. No claim of reproduced published
 KL scores, improved BCI detection, improved classification, or energy savings.
+
+## Real BCI IV 2A/2B slide-12 evidence exports (18 November 2026)
+
+Use the exact development-fitted dataset paths rather than making synthetic BCI
+plots from mock values. Neither the official GDF recordings nor evaluation-label
+MAT archives are committed to GitHub. The following commands require those
+inputs on the executing machine:
+
+```sh
+python -m scripts.export_kl_bci_figures --dataset 2a --subject 1 \
+  --data-2a data/raw/bci_competition_iv_2a \
+  --labels-2a data/raw/bci_competition_iv_2a_labels
+
+python -m scripts.export_kl_bci_figures --dataset 2b --subject 1 \
+  --data-2b data/raw/bci_competition_iv_2b
+```
+
+Dataset 2A uses the **existing** `_load_dataset_2a_feature_timelines` pathway:
+official left/right Session-II labels are needed to select trial membership.
+KL itself still uses only FBCSP/PCA observations, not evaluation labels.
+
+Dataset 2B reuses the **Raza-2019 development split**, with Sessions I–III for
+labelled development and IV–V as an unlabelled evaluation stream. The 2B
+run uses the same explicitly exploratory PCA2/H10/EWMA lambda 0.2 settings as
+the 2A EDA inspector, *not* the subject-specific published lambda or the
+PCA3/H10 Table-1 reproduction. The 2B dataflow is indexed by evaluation
+trial ordinal; no false cue-onset-second metadata is supplied.
+
+Every invocation exports to an input/configuration/revision-fingerprinted folder:
+
+```text
+outputs/experiments/kl_stage2/
+  2a/A01/<run-key>/
+  2b/B01/<run-key>/
+    manifest.json
+    kl_events.csv
+    kl_events.json
+    01_kl_event_magnitude.png (+ .svg)
+    02_kl_per_pca_component.png (+ .svg)
+    03_kl_before_after_probabilities.png (+ .svg)
+    04_kl_slide12_composite.png (+ .svg)
+```
+
+The four figures are generated **only when an eligible event exists**.
+Otherwise a manifest and event logs are written with
+`status=no_eligible_windows`; no zero-valued dummy dots or misleading
+synthetic plots are created. The default selected event is the eligible
+warning with the greatest forward marginal KL, explicitly *for illustration*
+and not as a tuned detector/ground-truth shift declaration. `--selected-alarm`
+may select a different eligible warning consistently for B/C and the composite.
+
+The **A** event plot displays each eligible warning with forward/reverse KL;
+the **B** plot decomposes the chosen warning by retained PCA component;
+the **C** plot shows before/after probabilities for the same event and its
+highest-forward-KL component. The fourth image arranges A/B/C as one
+slide-ready composite. Moving the chart legend above the plot eliminates
+the overlapping scale annotation observed in the original browser image.
+
+To inspect saved results, visit `/results/kl-stage2`. The BCI exploratory
+page `/data-distributions` links to that gallery, and `/results`
+discovers the latest manifest-backed export. The browser never silently
+generates figures or claims a run exists unless its artifacts are present.
+
+Saved KL values are **marginal descriptive divergences**, and the selected
+observation still needs the post-warning comparison window to arrive.
+The scores do not supersede any Hotelling outcome, alter reproduction
+counts, confirm clinical concept drift, or initiate SVM retraining.

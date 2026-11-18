@@ -45,6 +45,26 @@ RESULT_DEFINITIONS = (
         ],
     },
     {
+        "id": "kl-stage2",
+        "title": "BCI IV 2A/2B · KL divergence research figures",
+        "domain": "bci",
+        "domain_label": "Exploratory Stage-II distribution evidence",
+        "datasets": ["BCI Competition IV 2A", "BCI Competition IV 2B"],
+        "methods": ["Training-fitted FBCSP/PCA", "EWMA", "Hotelling T²",
+                    "Marginal histogram KL", "Provenance exports"],
+        "purpose": (
+            "Inspect saved per-warning forward/reverse KL scores, PCA feature "
+            "contributions, paired probability histograms and slide-ready composite. "
+            "KL does not change Hotelling decisions or trigger SVM adaptation."
+        ),
+        "detail_endpoint": "kl_results.results",
+        "detail_label": "Open saved KL figures and provenance",
+        "command": "python -m scripts.export_kl_bci_figures --dataset 2a --subject 1",
+        "primary_artifact": "experiments/kl_stage2",
+        "preview_columns": [],
+        "artifacts": [],
+    },
+    {
         "id": "online-adaptive-learning",
         "title": "Online adaptive learning — event-driven feature replay",
         "domain": "bci",
@@ -968,6 +988,30 @@ def _build_results_catalog(outputs_root: str | Path) -> list[dict[str, object]]:
             if definition["id"] == "lambda-sweep"
             else None
         )
+        if definition["id"] == "kl-stage2":
+            # A real KL export is stored in a run-key directory, not a static
+            # guessed filename; only manifest-backed runs count as available.
+            from src.web.kl_results import discover_saved_kl_runs
+            recorded = discover_saved_kl_runs(root)
+            item["status"] = "available" if recorded else "not-generated"
+            if recorded:
+                latest = recorded[0]
+                item["artifacts"] = [
+                    {
+                        "relative_path": a["relative_path"],
+                        "label": a["name"].replace("_", " "),
+                        "available": True,
+                        "is_figure": a["name"].endswith(".png"),
+                        "size_kb": round(
+                            (root / a["relative_path"]).stat().st_size / 1024, 1
+                        ),
+                    }
+                    for a in latest["artifacts"] if a["name"].endswith((".png", ".json", ".csv"))
+                ]
+                item["available_count"] = len(item["artifacts"])
+                item["artifact_count"] = len(item["artifacts"])
+                item["has_figures"] = any(a["is_figure"] for a in item["artifacts"])
+                item["preview"] = None
         # Expand any configuration placeholders in the command string so
         # paths like the dataset labels can be configured via app.config.
         if "command" in item and isinstance(item["command"], str):
