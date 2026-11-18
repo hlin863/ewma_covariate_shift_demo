@@ -34,8 +34,8 @@
       return {ctx, width, height};
     }
 
-    function axes(ctx, w, h, yTitle, xTitle) {
-      const m = {left: 64, right: 20, top: 26, bottom: 62};
+    function axes(ctx, w, h, yTitle, xTitle, top = 26) {
+      const m = {left: 64, right: 20, top, bottom: 62};
       const width = w - m.left - m.right, height = h - m.top - m.bottom;
       ctx.fillStyle = css('--eda-plot-bg') || '#0d1728';
       ctx.fillRect(m.left, m.top, width, height);
@@ -52,10 +52,10 @@
     }
 
     function drawTimeline() {
-      const area = canvasArea('fbcsp-kl-event-timeline', 310);
+      const area = canvasArea('fbcsp-kl-event-timeline', 255);
       if (!area) return;
       const {ctx, width, height} = area;
-      const m = axes(ctx, width, height, 'Mean marginal KL', 'EWMA warning trial index');
+      const m = axes(ctx, width, height, 'Mean marginal KL', 'EWMA warning trial index', 62);
       const evaluated = data.events.filter(e => e.kl_status === 'diagnostic_only'
         && Number.isFinite(e.forward) && Number.isFinite(e.reverse));
       if (!evaluated.length) {
@@ -82,9 +82,9 @@
           ctx.beginPath(); ctx.arc(x(e.alarm_index), y(e[key]), 4, 0, Math.PI * 2); ctx.fill();
         });
         const offset = key === 'forward' ? 0 : 152;
-        ctx.fillRect(m.left + 12 + offset, m.top + 9, 13, 4);
+        ctx.fillRect(m.left + 12 + offset, 28, 13, 4);
         ctx.fillStyle = text(); ctx.font = '11px system-ui';
-        ctx.fillText(label, m.left + 30 + offset, m.top + 15);
+        ctx.fillText(label, m.left + 30 + offset, 34);
       }
       const selected = data.events[Number(eventSelect.value)];
       if (selected?.kl_status === 'diagnostic_only') {
