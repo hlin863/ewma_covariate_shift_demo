@@ -9,6 +9,9 @@ from __future__ import annotations
 import numpy as np
 
 from src.detection.core import CSEConfig, run_cse
+from src.detection.stage2.kl_diagnostics import (
+    KLDiagnosticConfig, attach_kl_diagnostics, fit_kl_histogram_edges,
+)
 
 WINDOW_SIZE = 10
 PCA_COMPONENTS = 2
@@ -87,6 +90,64 @@ def detection_event_payload(training_features, evaluation_features,
         testing_times=np.arange(len(evaluation), dtype=int),
         config=config,
     )
+    # Opt-in descriptive diagnostics on the exact retained PCA representation
+    # and eligible windows already selected by the unchanged Hotelling runner.
+    kl_config = KLDiagnosticConfig(n_bins=8, pseudocount=0.5)
+    kl_records = attach_kl_diagnostics(
+        validation_results=result.validation_results,
+        testing_features=result.testing_transformed,
+        testing_times=np.arange(len(evaluation), dtype=int),
+        calibration_features=result.pca_result.training_transformed,
+        config=kl_config,
+    )
+    kl_edges = fit_kl_histogram_edges(
+        result.pca_result.training_transformed, kl_config
+    )
+    kl_events = []
+    for record in kl_records.to_dict("records"):
+        alarm_idx = int(record["alarm_time"])
+        status = str(record["kl_status"])
+        event = {
+            "alarm_index": alarm_idx,
+            "validation_index": (
+                int(record["validation_time"])
+                if record["validation_time"] is not None
+                and np.isfinite(record["validation_time"])
+                else None
+            ),
+            "hotelling_status": str(record["status"]),
+            "kl_status": status,
+            "forward": _optional_number(record["kl_reference_to_current"]),
+            "reverse": _optional_number(record["kl_current_to_reference"]),
+            "per_feature": (
+                [float(x) for x in record["kl_per_feature"]]
+                if record["kl_per_feature"] is not None else []
+            ),
+            "histograms": [],
+        }
+        if status == "diagnostic_only":
+            h = int(record["sample_size"])
+            before = result.testing_transformed[alarm_idx-h+1:alarm_idx+1]
+            after = result.testing_transformed[alarm_idx+1:alarm_idx+h+1]
+            event["reference_window"] = [alarm_idx-h+1, alarm_idx]
+            event["current_window"] = [alarm_idx+1, alarm_idx+h]
+            for column, boundaries in enumerate(kl_edges):
+                a = np.histogram(before[:, column], bins=boundaries)[0].astype(float)
+                b = np.histogram(after[:, column], bins=boundaries)[0].astype(float)
+                a += kl_config.pseudocount
+                b += kl_config.pseudocount
+                a /= a.sum()
+                b /= b.sum()
+                event["histograms"].append({
+                    "reference": a.tolist(),
+                    "current": b.tolist(),
+                    "edges": [
+                        ("-inf" if np.isneginf(edge) else
+                         "+inf" if np.isposinf(edge) else float(edge))
+                        for edge in boundaries
+                    ],
+                })
+        kl_events.append(event)
     warnings = []
     for record in result.warning_results.to_dict("records"):
         idx = int(record["time"])
@@ -119,6 +180,16 @@ def detection_event_payload(training_features, evaluation_features,
             "current_end_index": _optional_number(record.get("current_end_time")),
         })
     return {
+        "kl_diagnostics": {
+            "events": kl_events,
+            "feature_names": [
+                f"PC{index + 1}" for index in range(result.testing_transformed.shape[1])
+            ],
+            "n_bins": kl_config.n_bins,
+            "pseudocount": kl_config.pseudocount,
+            "method": "marginal histogram KL; descriptive, not joint KL or a significance test",
+            "eligible_count": sum(e["kl_status"] == "diagnostic_only" for e in kl_events),
+        },
         "warnings": warnings,
         "validations": validations,
         "config": {
