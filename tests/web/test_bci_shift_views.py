@@ -97,3 +97,16 @@ def test_kl_event_payload_uses_eligible_stage2_windows_and_calibration_bins():
     assert kl["eligible_count"] == sum(
         e["kl_status"] == "diagnostic_only" for e in kl["events"]
     )
+
+
+def test_2b_ordinal_kl_payload_does_not_forge_cue_onsets():
+    rng = np.random.default_rng(90)
+    train = rng.normal(size=(85, 4))
+    eval_x = rng.normal(size=(90, 4))
+    eval_x[33:] += 3
+    payload = detection_event_payload(train, eval_x)
+    assert len(payload["warnings"]) == len(eval_x)
+    assert all(row["cue_onset_seconds"] is None for row in payload["warnings"])
+    assert all(row["alarm_cue_onset_seconds"] is None for row in payload["validations"])
+    assert all(row["validation_cue_onset_seconds"] is None for row in payload["validations"])
+    assert payload["kl_diagnostics"]["n_bins"] == 8
