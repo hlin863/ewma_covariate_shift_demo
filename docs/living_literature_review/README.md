@@ -72,6 +72,19 @@ a direct extension proposed by every earlier paper. Paper reproductions,
 paper-inspired experiments and repository-originated extensions are labelled
 separately in the study tracker.
 
+## Current assessment evidence map (19 November 2026)
+
+The initial PhD assessment asks three linked but non-equivalent questions. **RQ1** concerns reconstructing Raza's detector and explaining published-versus-computed counts; **RQ2** concerns the decision to update a classifier after predictive deterioration; **RQ3** concerns the accuracy-versus-update-cost trade-off. Detection of `P(X)` change alone does not prove classifier harm, nor does an executable retraining policy prove that updates are beneficial.
+
+| Question | Literature | Implementation | Evidence and limitations |
+| --- | --- | --- | --- |
+| RQ1: detector reproducibility | Raza et al. (2015, 2019); Chowdhury et al. (2018) | [CSE core](../../src/detection/core.py), [Table 1 runner](../../scripts/run_bci_table1_reproduction.py), [Stage-II tests](../../src/detection/stage2/) | [Comparison CSV](../../outputs/metrics/bci_table1_comparison.csv) and [baseline audit](../../outputs/baseline_2026_10_12/README.md); **B01 14/10 published, computed 17/0 versus 17/5 unresolved** |
+| RQ2: when to adapt | Diethe et al. (2019); Gupta et al. (2024) | [Policies](../../src/adaptation/policies.py), [accuracy controller](../../src/adaptation/twin_adapt/controller.py), [matched BCI runner](../../scripts/run_matched_bci_comparison.py) | [TWIN-ADAPT BCI protocol](../twin_adapt_bci.md); chronological predictions and feedback semantics must be held constant for comparative claims |
+| RQ3: adaptive cost | Gupta et al. (2024); Hurtado et al. (2023) | [Optimisation runner](../../scripts/run_twin_adapt_optimization.py) | [Development-only optimisation guide](../twin_adapt_optimization.md); illustrative objective and single-run outputs are not proof of robust superiority |
+| Exploratory change evidence | PCA score/residual and marginal KL approaches | [Complementary PCA](../../src/detection/stage1/complementary.py), [KL diagnostics](../../src/detection/stage2/kl_diagnostics.py) | [KL figure export and limitations](../kl_stage2_diagnostics.md); KL is descriptive, does not alter Hotelling `confirmed_shift`, and never triggers SVM updates |
+
+**Publication and assessment guardrail:** include the Git SHA, command/configuration manifest, dataset/session roles, seed, run ID, output path and status (implemented, diagnostic, measured, tentative, unresolved, validated) when mapping claims to evidence. The 18 November KL figure exports are presentation artifacts derived from source data, not new classifier results. Newer work does not retrospectively resolve the B01 Stage-II conflict or prove numerical agreement with the original papers.
+
 ## Preservation principle
 
 The repository favours **one canonical runnable implementation plus preserved
