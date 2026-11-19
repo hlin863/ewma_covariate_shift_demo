@@ -8,6 +8,29 @@ Start with [docs/living_literature_review/README.md](docs/living_literature_revi
 
 For a current architecture map covering the top-level repository, canonical `src/` packages, compatibility layer, experiments, outputs and web views, see [docs/project_structure.md](docs/project_structure.md).
 
+## Research status snapshot — 19 November 2026
+
+This is a **documentation snapshot** of the `main` branch at `c394f38ca510c8ee4135d5e45ed9f7e90907ddd2` (18 November 2026), not a claim that every method has been numerically reproduced. The [living literature study tracker](docs/living_literature_review/studies.md), [archived-output provenance](outputs/baseline_2026_10_12/README.md), and [research output guide](outputs/README.md) provide the more detailed evidence boundary.
+
+| Research strand | Implemented / documented | Evidence boundary / next decision |
+| --- | --- | --- |
+| Raza (2015, 2019) EWMA/CSE reproduction | FBCSP with development-fitted PCA; Stage-I warnings; alternative Stage-II interpretations; subject-level Table-1 comparison runners | Archived 2A/2B CSW/CSV counts are not a verified numerical reproduction; run metadata, PCA retention and Stage-II event eligibility must be pinned before comparison |
+| B01 reconciliation | Historical baseline audit and saved warning rows; [baseline evidence register](outputs/baseline_2026_10_12/README.md) | Published B01 14/10 versus computed 17/0 (cross-subject file) and 17/5 (B01-only file) remain **unresolved**; no historical complete per-warning Hotelling log establishes which configuration produced each confirmation count |
+| Online classifier adaptation | Chronological predict-before-label-release linear-SVM controller, fixed replay, development-only cost-aware search and [matched-comparison runner](scripts/run_matched_bci_comparison.py) | A runnable comparison is not proof of matched multi-seed superiority; label availability, model initialisation, subject/split equivalence and cumulative retraining/search cost must be reported |
+| PCA representation diagnostics | [Complementary PC-score/residual monitor](src/detection/stage1/complementary.py) and synthetic subspace scenarios | Exploratory diagnostics do not establish improved real-EEG detection or adaptation benefit |
+| Optional KL diagnostics (17–18 Nov) | [KL Stage-II descriptive module](src/detection/stage2/kl_diagnostics.py), [method guide](docs/kl_stage2_diagnostics.md), saved [figure export runner](scripts/export_kl_bci_figures.py), and `/results/kl-stage2` gallery | Marginal histogram KL scores are **not p-values or Hotelling confirmations**; 2B gallery timelines use trial ordinals, not fabricated cue-onset seconds; exports require actual local source data and are manifest-backed |
+| Multivariate structural-change exploration | [Park inspection guide](docs/park_multivariate_inspection.md) and related experimental inspection modules | Research exploration/stubs; no validated equivalence to published dynamic-PCA/wavelet change-point results |
+
+**Assessment-writing rule:** a research manuscript, initial-assessment Word document, poster or slide should cite a *specific* Git commit, experiment/run ID, effective configuration and output path for each numerical claim. Always distinguish **published reference**, **archived measured output**, **exploratory diagnostic**, **implemented capability** and **unresolved result**. Do not promote archived values to newly rerun results or conflate EWMA shift warnings, Hotelling confirmations, KL diagnostics and accuracy-triggered adaptation warnings.
+
+### Short route from literature to evidence
+
+1. [Published-method lineage](docs/living_literature_review/README.md) → [study-to-code status](docs/living_literature_review/studies.md).
+2. [FBCSP](src/bci/fbcsp.py) → [CSE orchestration](src/detection/core.py) → [Table-1 reproduction runner](scripts/run_bci_table1_reproduction.py).
+3. [Saved Table-1 comparison](outputs/metrics/bci_table1_comparison.csv) → [historical configuration and B01 contradiction](outputs/baseline_2026_10_12/README.md).
+4. [TWIN-ADAPT BCI protocol](docs/twin_adapt_bci.md) → [cost-aware search](docs/twin_adapt_optimization.md) → [matched comparison](scripts/run_matched_bci_comparison.py).
+5. [KL Stage-II research diagnostics](docs/kl_stage2_diagnostics.md) → [source-controlled figures](scripts/export_kl_bci_figures.py) → `/results/kl-stage2`.
+
 ## Project structure
 
 The active code is organised by research responsibility rather than as one flat `src` directory:
