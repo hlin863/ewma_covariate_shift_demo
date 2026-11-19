@@ -43,6 +43,21 @@ experiments/twin_adapt_optimization/2b/subject_01/<run_id>/
         manifest.json
 ```
 
+## November 2026 provenance additions
+
+The latest research results include a **separate opt-in KL Stage-II diagnostic gallery** and a **matched BCI adaptation comparison runner**. Neither rewrites the historical 2015/2019 reproduction archive.
+
+| Evidence family | Entry point | What is supported | What is not implied |
+| --- | --- | --- | --- |
+| Published-versus-computed BCI Table 1 | [comparison CSV](metrics/bci_table1_comparison.csv) and [baseline audit](baseline_2026_10_12/README.md) | Historical warning/confirmation aggregates and B01 conflicting archived records | A configuration-locked numerical reproduction or a resolved Stage-II event trace |
+| BCI KL diagnostics | [export runner](../scripts/export_kl_bci_figures.py) and [method/manifest guide](../docs/kl_stage2_diagnostics.md) | Configuration-fingerprinted `experiments/kl_stage2/<dataset>/<subject>/<run-key>/` event CSV/JSON, manifest, eligible-event PNG/SVG figure panels and gallery at `/results/kl-stage2` | Hotelling confirmation, classifier improvement or simulated EEG presented as measured results |
+| Matched BCI adaptation | [comparison runner](../scripts/run_matched_bci_comparison.py) and [implementation](../src/adaptation/experiments/matched_bci_comparison.py) | Common-runner framework for policy comparisons | Completed multi-seed causal comparison without checking archived configuration and run output |
+| NAINT presentation exports | [presentation figure exporter](../scripts/export_naint_slide_figures.py) | Presentation-ready derived visualisations and associated source context | A substitute for experiment-level JSON/CSV evidence |
+
+For KL experiments the official raw EEG files remain local, not committed. The 2B exploratory KL timeline is indexed by trial ordinal rather than reconstructed cue-onset seconds. If no eligible Stage-II comparison exists, only manifests and event records are saved; **do not draw zero-valued fake events**. The source guide specifies the exact required inputs and the per-run output contract.
+
+**Evidence boundary:** retain immutable historical outputs. Published B01 warning/confirmation counts of **14/10** do not match the archived **17/0** cross-subject and **17/5** B01-only reports. Neither archived confirmation count can be endorsed without its corresponding event-level validation and effective configuration. See [baseline provenance](baseline_2026_10_12/README.md).
+
 ## Export figures for archived experiment runs
 
 No raw EEG dataset is necessary because the exporter uses already saved CSVs.
