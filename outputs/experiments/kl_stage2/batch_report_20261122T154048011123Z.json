@@ -1,0 +1,35 @@
+{
+  "purpose": "Real BCI KL Stage-II figure-export batch; no synthetic fallback",
+  "requested_dataset": "both",
+  "requested_subjects": [
+    1
+  ],
+  "runs": [
+    {
+      "dataset": "2a",
+      "subject": "A01",
+      "status": "figures_generated",
+      "directory": "C:\\Users\\haoch\\OneDrive\\Desktop\\ewma_covariate_shift_demo\\ewma_covariate_shift_demo\\outputs\\experiments\\kl_stage2\\2a\\A01\\834980dfcadbcb27",
+      "manifest": "C:\\Users\\haoch\\OneDrive\\Desktop\\ewma_covariate_shift_demo\\ewma_covariate_shift_demo\\outputs\\experiments\\kl_stage2\\2a\\A01\\834980dfcadbcb27\\manifest.json",
+      "figures": [
+        "01_kl_event_magnitude.png",
+        "02_kl_per_pca_component.png",
+        "03_kl_before_after_probabilities.png",
+        "04_kl_slide12_composite.png"
+      ]
+    },
+    {
+      "dataset": "2b",
+      "subject": "B01",
+      "status": "figures_generated",
+      "directory": "C:\\Users\\haoch\\OneDrive\\Desktop\\ewma_covariate_shift_demo\\ewma_covariate_shift_demo\\outputs\\experiments\\kl_stage2\\2b\\B01\\ee0adde2612ee38f",
+      "manifest": "C:\\Users\\haoch\\OneDrive\\Desktop\\ewma_covariate_shift_demo\\ewma_covariate_shift_demo\\outputs\\experiments\\kl_stage2\\2b\\B01\\ee0adde2612ee38f\\manifest.json",
+      "figures": [
+        "01_kl_event_magnitude.png",
+        "02_kl_per_pca_component.png",
+        "03_kl_before_after_probabilities.png",
+        "04_kl_slide12_composite.png"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+alarm_index,validation_index,hotelling_status,kl_status,forward,reverse,reference_start,reference_end,current_start,current_end
+7,,insufficient_reference_window,ineligible_insufficient_reference_window,,,,,,
+24,34,confirmed,diagnostic_only,0.7156018844967302,0.6878676302503701,15,24,25,34
+25,,skipped_nearby_alarm,ineligible_skipped_nearby_alarm,,,,,,
+48,58,confirmed,diagnostic_only,0.45804625556985945,0.33997951577880475,39,48,49,58
+96,106,confirmed,diagnostic_only,0.6817158566634376,0.6112399334342601,87,96,97,106
+97,,skipped_nearby_alarm,ineligible_skipped_nearby_alarm,,,,,,
+120,130,rejected,diagnostic_only,0.2199311795174982,0.2505419083753686,111,120,121,130
+125,,skipped_nearby_alarm,ineligible_skipped_nearby_alarm,,,,,,

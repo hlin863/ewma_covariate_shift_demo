@@ -1,0 +1,49 @@
+{
+  "dataset": "2b",
+  "subject": "B02",
+  "detector_config": {
+    "pca_components": 2,
+    "lambda": 0.2,
+    "initialization": "training_final",
+    "validation_mode": "paper_two_sample",
+    "window_size": 10,
+    "covariance_method": "shrinkage",
+    "alpha": 0.05,
+    "status": "exploratory recomputation, not a published-count reproduction"
+  },
+  "kl_method": "marginal histogram KL; descriptive, not joint KL or a significance test",
+  "kl_bins": 8,
+  "kl_pseudocount": 0.5,
+  "input_sources": [
+    "C:\\Users\\haoch\\OneDrive\\Desktop\\ewma_covariate_shift_demo\\ewma_covariate_shift_demo\\data\\raw\\bci_competition_iv_2b\\B0201T.gdf (bytes=7262736, mtime_ns=1785713035999976500)",
+    "C:\\Users\\haoch\\OneDrive\\Desktop\\ewma_covariate_shift_demo\\ewma_covariate_shift_demo\\data\\raw\\bci_competition_iv_2b\\B0202T.gdf (bytes=7262712, mtime_ns=1785713036108281100)",
+    "C:\\Users\\haoch\\OneDrive\\Desktop\\ewma_covariate_shift_demo\\ewma_covariate_shift_demo\\data\\raw\\bci_competition_iv_2b\\B0203T.gdf (bytes=5577900, mtime_ns=1785713036194068700)",
+    "C:\\Users\\haoch\\OneDrive\\Desktop\\ewma_covariate_shift_demo\\ewma_covariate_shift_demo\\data\\raw\\bci_competition_iv_2b\\B0204E.gdf (bytes=4348416, mtime_ns=1785713036262368800)",
+    "C:\\Users\\haoch\\OneDrive\\Desktop\\ewma_covariate_shift_demo\\ewma_covariate_shift_demo\\data\\raw\\bci_competition_iv_2b\\B0205E.gdf (bytes=5692140, mtime_ns=1785713036344422100)"
+  ],
+  "calibration_count": 280,
+  "evaluation_count": 280,
+  "seed": 42,
+  "code_revision": "a398e7992820bf3dcea70a7acb2c01a977c3b2e6",
+  "run_id": "00334b3934a3bcda",
+  "event_count": 18,
+  "eligible_count": 9,
+  "selected_alarm": 189,
+  "selected_validation_index": 199,
+  "selected_hotelling_status": "confirmed",
+  "selected_component": "PC1",
+  "status": "figures_generated",
+  "artifacts": [
+    "kl_events.csv",
+    "kl_events.json",
+    "01_kl_event_magnitude.png",
+    "01_kl_event_magnitude.svg",
+    "02_kl_per_pca_component.png",
+    "02_kl_per_pca_component.svg",
+    "03_kl_before_after_probabilities.png",
+    "03_kl_before_after_probabilities.svg",
+    "04_kl_slide12_composite.png",
+    "04_kl_slide12_composite.svg"
+  ],
+  "interpretation": "Unsupervised descriptive mean marginal histogram KL across retained PCA features; Stage-II Hotelling decisions unchanged. No calibrated KL significance test, no SVM adaptation claim, no published-count resolution."
+}

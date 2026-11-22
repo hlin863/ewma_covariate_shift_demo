@@ -1,0 +1,6 @@
+alarm_index,validation_index,hotelling_status,kl_status,forward,reverse,reference_start,reference_end,current_start,current_end
+1,,insufficient_reference_window,ineligible_insufficient_reference_window,,,,,,
+17,27,rejected,diagnostic_only,0.2925319997145178,0.32410781041694925,8,17,18,27
+95,105,rejected,diagnostic_only,0.31255363732995806,0.3747381767891106,86,95,96,105
+116,126,rejected,diagnostic_only,0.3396221543163175,0.38777337890620694,107,116,117,126
+118,,skipped_nearby_alarm,ineligible_skipped_nearby_alarm,,,,,,
