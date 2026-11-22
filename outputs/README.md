@@ -74,3 +74,20 @@ For the NAINT slides, use the established
 `scripts/export_naint_slide_figures.py` workflow under
 `outputs/presentations/naint_2026_11_20/`. Presentation-ready figures are
 separate from the run-specific charts used for scientific provenance.
+
+## Batch export of BCI KL Slide-12 figures
+
+To populate the canonical `experiments/kl_stage2/<dataset>/<subject>/<run-key>/`
+folders across selected subjects, use:
+
+```powershell
+python -m scripts.export_kl_bci_batch --dataset both --subjects 1 2
+```
+
+The wrapper calls the existing real-data exporter for each subject and writes
+`experiments/kl_stage2/batch_report_<UTC>.json` with per-subject success,
+`no_eligible_windows`, or failure reasons. The subject manifests, original
+Hotelling decisions, PNG/SVG assets, and event logs remain unchanged. Official
+GDF recordings (and 2A evaluation-label files for trial selection) are needed
+locally; absent inputs generate explicit failures, not synthetic figures. See
+[KL output archive](experiments/kl_stage2/README.md).
