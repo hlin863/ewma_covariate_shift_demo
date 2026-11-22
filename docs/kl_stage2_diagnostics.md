@@ -143,3 +143,21 @@ Saved KL values are **marginal descriptive divergences**, and the selected
 observation still needs the post-warning comparison window to arrive.
 The scores do not supersede any Hotelling outcome, alter reproduction
 counts, confirm clinical concept drift, or initiate SVM retraining.
+
+## Batch generation for presentation/application output folders
+
+To export A01 and B01 from the official local files in one reproducible pass:
+
+```powershell
+python -m scripts.export_kl_bci_batch --dataset both --subjects 1
+```
+
+Use `--subjects 1 2 3` for several participants, `--dataset 2a` or `2b`
+for a single dataset, and `--output-root` to select a separate evidence root.
+This is an orchestration wrapper around the subject exporter, **not a new
+KL detector**. It records an additional UTC-named batch JSON report under
+`outputs/experiments/kl_stage2/` and reuses the existing run-key folders,
+`manifest.json`, event CSV/JSON, and four PNG/SVG figure families. A missing
+GDF/label file is a reported failure; a complete run with no eligible KL
+window is reported separately without fabricated figures. The application
+continues to read these manifests at `/results/kl-stage2`.
